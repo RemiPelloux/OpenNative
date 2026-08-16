@@ -26,6 +26,7 @@ object ShaderHealthMonitor {
     var state = ShaderHealthState(ShaderWarmth.UNAVAILABLE, null, 0, 0, 0, 0, 0, 0)
         private set
 
+    @Synchronized
     fun sessionStarted(container: Container, paths: ShaderCacheManager.CachePaths, initial: ShaderCacheManager.CacheStats) {
         sessionContainer = container
         maintenanceRequested = false
@@ -41,6 +42,7 @@ object ShaderHealthMonitor {
         )
     }
 
+    @Synchronized
     fun sessionFinished(finalStats: ShaderCacheManager.CacheStats, result: ShaderCacheManager.CacheSessionResult) {
         state = state.copy(
             warmth = if (result.wroteCache()) ShaderWarmth.GROWING else ShaderWarmth.WARM,
@@ -51,6 +53,7 @@ object ShaderHealthMonitor {
         )
     }
 
+    @Synchronized
     fun inspect(container: Container): ShaderHealthState {
         val health = ShaderCacheManager.inspectHealth(container)
         return state.copy(
@@ -62,15 +65,18 @@ object ShaderHealthMonitor {
         ).also { state = it }
     }
 
+    @Synchronized
     fun prune(container: Container, maximumTotalBytes: Long, maximumInactiveGenerations: Int) =
         ShaderCacheManager.pruneInactive(container, maximumTotalBytes, maximumInactiveGenerations).also {
             inspect(container)
         }
 
+    @Synchronized
     fun requestMaintenanceAfterExit() {
         if (sessionContainer != null) maintenanceRequested = true
     }
 
+    @Synchronized
     fun performPendingMaintenance() {
         val owner = sessionContainer
         if (owner != null && maintenanceRequested) {
@@ -80,6 +86,7 @@ object ShaderHealthMonitor {
         sessionContainer = null
     }
 
+    @Synchronized
     fun resetSession() {
         state = state.copy(warmth = ShaderWarmth.UNAVAILABLE, sessionAddedBytes = 0, sessionAddedFiles = 0)
     }

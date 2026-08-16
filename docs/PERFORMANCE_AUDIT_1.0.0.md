@@ -161,6 +161,29 @@ flag becomes default without binary-size, correctness, FPS, p95/p99 and thermal 
 
 These are correctness and overhead improvements. They are not yet evidence of a game FPS increase.
 
+## Implemented for 1.0.0
+
+- A clean shutdown now writes a bounded manifest of the 64 most recently modified active shader-cache
+  files while performing the existing end-of-session scan. The launch path validates generation,
+  backend root stamps, canonical containment, file size and modification time before using an entry.
+- Read-ahead is memory-aware and limited to 0, 4, 8 or 16 MiB. It uses one 256 KiB direct buffer and is
+  disabled for cold caches, unknown memory state, Android low-memory state or less than 1.5 GiB free.
+  No network shader-cache source was added because foreign caches cannot be proven compatible or safe.
+- Normal sessions still calculate bounded in-memory frame and pressure metrics for the Adaptive Engine,
+  but no longer format or persist JSONL samples every two seconds. Persistent capture and periodic
+  metric logs are enabled only by a diagnostic launch.
+- The X server startup log moved from the Compose body into an `appId`-keyed launch effect, preventing
+  repeated INFO logging during recomposition.
+- Snapshot, cleanup and Shader Health state transitions are serialized at session boundaries so guest
+  termination cannot race UI teardown. The renderer and frame-statistics paths acquire no new lock.
+- Unit tests cover warmup memory tiers, byte/file caps, changed-file rejection and canonical path escape.
+
+### Expected impact and measurement status
+
+The disk-write removal eliminates a deterministic background I/O path. Shader read-ahead is intended to
+reduce first-use cache misses after a clean session, but its end-to-end effect remains game and storage
+dependent. Neither change is described as an FPS gain until alternating cold/warm A/B captures complete.
+
 ## What is already in good shape
 
 - Frame timestamps use a bounded, allocation-free ring on the render path.

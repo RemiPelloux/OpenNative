@@ -215,7 +215,7 @@ object PowerManager {
      * Start the performance driver and restore saved profile if available
      * @param containerDir The container directory for saving/restoring per-container profiles
      */
-    fun start(containerDir: File? = null) {
+    fun start(containerDir: File? = null, persistentMetricsCapture: Boolean = false) {
         this.containerDir = containerDir
         resolveGameAffinityOwnership()
         getDriver().start()
@@ -230,7 +230,7 @@ object PowerManager {
             AdaptiveFpsCapController.start(containerDir, tunerLogDirectory())
         }
 
-        appContext?.let { PerformanceMetricsCollector.start(it) }
+        appContext?.let { PerformanceMetricsCollector.start(it, persistentCapture = persistentMetricsCapture) }
             ?: Timber.tag("PowerManager").w("No application context, metrics collector not started")
 
         if (currentProfile?.enableFanControl != false) {

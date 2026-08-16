@@ -5,13 +5,16 @@ import com.winlator.core.envvars.EnvVars;
 import com.winlator.xenvironment.ImageFs;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayDeque;
+import java.util.Base64;
 import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.Locale;
@@ -19,6 +22,7 @@ import java.util.Set;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
 
 /** Owns persistent, compatibility-scoped shader caches for one game container. */
 public final class ShaderCacheManager {
@@ -31,6 +35,11 @@ public final class ShaderCacheManager {
     private static final String VKD3D_CACHE_VARIABLE = "VKD3D_SHADER_CACHE_PATH";
     private static final String STATS_SNAPSHOT_PREFIX = ".stats-";
     private static final String STATS_SNAPSHOT_VERSION = "v1";
+    private static final String WARMUP_MANIFEST_PREFIX = ".warmup-";
+    private static final String WARMUP_MANIFEST_VERSION = "v1";
+    private static final int MAX_MANIFEST_FILES = 64;
+    private static final long MAX_WARMUP_MANIFEST_BYTES = 64L * 1024L;
+    private static final int WARMUP_BUFFER_BYTES = 256 * 1024;
 
     private ShaderCacheManager() {}
 
@@ -256,7 +265,7 @@ public final class ShaderCacheManager {
     }
 
     /** Reuses the last clean-session snapshot when none of the active cache roots changed. */
-    public static CacheStats inspectForLaunch(CachePaths paths) {
+    public static synchronized CacheStats inspectForLaunch(CachePaths paths) {
         CacheStats cached = readStatsSnapshot(paths);
         // Consume the clean-session marker. A crash cannot leave trusted stale statistics behind.
         statsSnapshotFile(paths).delete();
@@ -264,10 +273,84 @@ public final class ShaderCacheManager {
     }
 
     /** Performs a real scan and atomically records it for the next launch. */
-    public static CacheStats inspectAndSnapshot(CachePaths paths) {
-        CacheStats stats = inspect(paths);
-        writeStatsSnapshot(paths, stats);
-        return stats;
+    public static synchronized CacheStats inspectAndSnapshot(CachePaths paths) {
+        CacheInspection inspection = inspectWithFiles(paths);
+        writeStatsSnapshot(paths, inspection.stats);
+        writeWarmupManifest(paths, inspection.files);
+        return inspection.stats;
+    }
+
+    /**
+     * Builds a bounded read-ahead plan from files observed after the previous clean session.
+     * The manifest contains only local relative paths and is rejected after any generation or
+     * file metadata change. No cache content is copied, downloaded or parsed by OpenNative.
+     */
+    public static WarmupPlan planWarmup(CachePaths paths, long maximumBytes, int maximumFiles) {
+        if (maximumBytes <= 0L || maximumFiles <= 0) return WarmupPlan.empty();
+        File manifest = warmupManifestFile(paths);
+        if (!manifest.isFile() || manifest.length() <= 0L
+                || manifest.length() > MAX_WARMUP_MANIFEST_BYTES) return WarmupPlan.empty();
+        String value = FileUtils.readString(manifest);
+        if (value == null) return WarmupPlan.empty();
+
+        try {
+            String[] lines = value.trim().split("\\R");
+            if (lines.length < 5 || !WARMUP_MANIFEST_VERSION.equals(lines[0])) return WarmupPlan.empty();
+            if (!paths.generation.equals(markerValue(lines[1], "generation"))) return WarmupPlan.empty();
+            if (Long.parseLong(markerValue(lines[2], "mesaStamp")) != rootStamp(paths.hostMesaDirectory)
+                    || Long.parseLong(markerValue(lines[3], "dxvkStamp")) != rootStamp(paths.hostDxvkDirectory)
+                    || Long.parseLong(markerValue(lines[4], "vkd3dStamp")) != rootStamp(paths.hostVkd3dDirectory)) {
+                return WarmupPlan.empty();
+            }
+
+            File canonicalRoot = paths.hostRoot.getCanonicalFile();
+            List<WarmupEntry> entries = new ArrayList<>();
+            long plannedBytes = 0L;
+            int fileLimit = Math.min(maximumFiles, MAX_MANIFEST_FILES);
+            for (int index = 5; index < lines.length && entries.size() < fileLimit; index++) {
+                String[] fields = lines[index].split("\\t", -1);
+                if (fields.length != 4 || !"file".equals(fields[0])) continue;
+                String relative = new String(Base64.getUrlDecoder().decode(fields[1]), StandardCharsets.UTF_8);
+                long recordedLength = Long.parseLong(fields[2]);
+                long recordedModified = Long.parseLong(fields[3]);
+                File candidate = new File(canonicalRoot, relative).getCanonicalFile();
+                if (!candidate.toPath().startsWith(canonicalRoot.toPath()) || !candidate.isFile()) continue;
+                if (candidate.length() != recordedLength || candidate.lastModified() != recordedModified) continue;
+                long advisedBytes = Math.min(recordedLength, maximumBytes - plannedBytes);
+                if (advisedBytes <= 0L) break;
+                entries.add(new WarmupEntry(candidate, advisedBytes));
+                plannedBytes += advisedBytes;
+            }
+            return new WarmupPlan(List.copyOf(entries), plannedBytes, true);
+        } catch (IOException | IllegalArgumentException ignored) {
+            return WarmupPlan.empty();
+        }
+    }
+
+    /** Sequentially warms the page cache with one fixed direct buffer. */
+    public static WarmupResult applyWarmup(WarmupPlan plan) {
+        if (plan == null || plan.entries.isEmpty()) return new WarmupResult(0, 0L, 0);
+        int advisedFiles = 0;
+        int skippedFiles = 0;
+        long advisedBytes = 0L;
+        ByteBuffer buffer = ByteBuffer.allocateDirect(WARMUP_BUFFER_BYTES);
+        for (WarmupEntry entry : plan.entries) {
+            try (FileInputStream input = new FileInputStream(entry.file)) {
+                long remaining = entry.bytes;
+                while (remaining > 0L) {
+                    buffer.clear();
+                    buffer.limit((int) Math.min(buffer.capacity(), remaining));
+                    int read = input.getChannel().read(buffer);
+                    if (read <= 0) break;
+                    remaining -= read;
+                }
+                advisedFiles++;
+                advisedBytes += entry.bytes - remaining;
+            } catch (IOException ignored) {
+                skippedFiles++;
+            }
+        }
+        return new WarmupResult(advisedFiles, advisedBytes, skippedFiles);
     }
 
     public static CacheSessionResult compare(CacheStats before, CacheStats after) {
@@ -302,7 +385,7 @@ public final class ShaderCacheManager {
      * Deletes oldest inactive backend generations until both limits are met. Active generations
      * and files outside the managed cache root are never candidates.
      */
-    public static CacheMaintenanceResult pruneInactive(
+    public static synchronized CacheMaintenanceResult pruneInactive(
             Container container,
             long maximumTotalBytes,
             int maximumInactiveGenerations
@@ -331,7 +414,7 @@ public final class ShaderCacheManager {
         return new CacheMaintenanceResult(removed, freedBytes, totalBytes, remaining);
     }
 
-    public static boolean clearActive(Container container) {
+    public static synchronized boolean clearActive(Container container) {
         CachePaths paths = activePaths(container);
         File allowedRoot = managedRoot(container);
         boolean cleared;
@@ -349,7 +432,7 @@ public final class ShaderCacheManager {
         return cleared;
     }
 
-    public static boolean clearAll(Container container) {
+    public static synchronized boolean clearAll(Container container) {
         File root = managedRoot(container);
         return deleteTreeInsideRoot(root, root);
     }
@@ -388,6 +471,57 @@ public final class ShaderCacheManager {
             newest = Math.max(newest, stats.newestWriteMillis);
         }
         return new CacheStats(bytes, files, newest);
+    }
+
+    private static CacheInspection inspectWithFiles(CachePaths paths) {
+        Set<File> roots = new LinkedHashSet<>();
+        if (paths.splitLayout) {
+            roots.add(paths.hostMesaDirectory);
+            roots.add(paths.hostDxvkDirectory);
+            roots.add(paths.hostVkd3dDirectory);
+        } else {
+            roots.add(paths.hostRoot);
+        }
+        Comparator<CacheFile> oldestFirst = Comparator.comparingLong(CacheFile::modified)
+                .thenComparingLong(CacheFile::length);
+        PriorityQueue<CacheFile> newestFiles = new PriorityQueue<>(MAX_MANIFEST_FILES, oldestFirst);
+        long bytes = 0L;
+        int fileCount = 0;
+        long newest = 0L;
+        for (File root : roots) {
+            if (!root.isDirectory()) continue;
+            Deque<File> pending = new ArrayDeque<>();
+            pending.add(root);
+            while (!pending.isEmpty()) {
+                File[] children = pending.removeFirst().listFiles();
+                if (children == null) continue;
+                for (File child : children) {
+                    if (child.isDirectory()) {
+                        pending.addLast(child);
+                    } else if (child.isFile()) {
+                        long length = child.length();
+                        long modified = child.lastModified();
+                        bytes += length;
+                        fileCount++;
+                        newest = Math.max(newest, modified);
+                        if (length > 0L) {
+                            CacheFile oldest = newestFiles.peek();
+                            if (newestFiles.size() < MAX_MANIFEST_FILES) {
+                                newestFiles.add(new CacheFile(child, length, modified));
+                            } else if (oldest != null && (modified > oldest.modified
+                                    || modified == oldest.modified && length > oldest.length)) {
+                                newestFiles.poll();
+                                newestFiles.add(new CacheFile(child, length, modified));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        List<CacheFile> files = new ArrayList<>(newestFiles);
+        files.sort(Comparator.comparingLong(CacheFile::modified).reversed()
+                .thenComparing(Comparator.comparingLong(CacheFile::length).reversed()));
+        return new CacheInspection(new CacheStats(bytes, fileCount, newest), files);
     }
 
     private static CacheStats readStatsSnapshot(CachePaths paths) {
@@ -441,8 +575,52 @@ public final class ShaderCacheManager {
         }
     }
 
+    private static void writeWarmupManifest(CachePaths paths, List<CacheFile> files) {
+        File manifest = warmupManifestFile(paths);
+        File parent = manifest.getParentFile();
+        if (parent == null || !createDirectory(parent)) return;
+        File temp = new File(parent, manifest.getName() + ".tmp");
+        StringBuilder value = new StringBuilder(512)
+                .append(WARMUP_MANIFEST_VERSION).append('\n')
+                .append("generation=").append(paths.generation).append('\n')
+                .append("mesaStamp=").append(rootStamp(paths.hostMesaDirectory)).append('\n')
+                .append("dxvkStamp=").append(rootStamp(paths.hostDxvkDirectory)).append('\n')
+                .append("vkd3dStamp=").append(rootStamp(paths.hostVkd3dDirectory)).append('\n');
+        try {
+            File canonicalRoot = paths.hostRoot.getCanonicalFile();
+            for (CacheFile cacheFile : files) {
+                File canonicalFile = cacheFile.file.getCanonicalFile();
+                if (!canonicalFile.toPath().startsWith(canonicalRoot.toPath())) continue;
+                String relative = canonicalRoot.toPath().relativize(canonicalFile.toPath()).toString();
+                String encoded = Base64.getUrlEncoder().withoutPadding()
+                        .encodeToString(relative.getBytes(StandardCharsets.UTF_8));
+                value.append("file\t").append(encoded)
+                        .append('\t').append(cacheFile.length)
+                        .append('\t').append(cacheFile.modified)
+                        .append('\n');
+            }
+            Files.write(temp.toPath(), value.toString().getBytes(StandardCharsets.UTF_8));
+            replaceAtomically(temp, manifest);
+        } catch (IOException ignored) {
+            temp.delete();
+        }
+    }
+
+    private static void replaceAtomically(File temp, File target) throws IOException {
+        try {
+            Files.move(temp.toPath(), target.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException atomicMoveUnavailable) {
+            Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
     static File statsSnapshotFile(CachePaths paths) {
         return new File(paths.hostRoot, STATS_SNAPSHOT_PREFIX + paths.generation);
+    }
+
+    static File warmupManifestFile(CachePaths paths) {
+        return new File(paths.hostRoot, WARMUP_MANIFEST_PREFIX + paths.generation);
     }
 
     private static long rootStamp(File root) {
@@ -677,5 +855,19 @@ public final class ShaderCacheManager {
             int remainingInactiveGenerations
     ) {}
 
+    public record WarmupEntry(File file, long bytes) {}
+
+    public record WarmupPlan(List<WarmupEntry> entries, long bytes, boolean fromManifest) {
+        static WarmupPlan empty() {
+            return new WarmupPlan(List.of(), 0L, false);
+        }
+    }
+
+    public record WarmupResult(int advisedFiles, long advisedBytes, int skippedFiles) {}
+
     private record GenerationDirectory(File directory, long bytes, long newestWriteMillis) {}
+
+    private record CacheFile(File file, long length, long modified) {}
+
+    private record CacheInspection(CacheStats stats, List<CacheFile> files) {}
 }

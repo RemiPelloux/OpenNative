@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.0 - 2026-08-16
+
+- Add a bounded predictive shader warmup based only on files observed after the previous clean session.
+- Reject stale, modified and path-escaping warmup entries; never download or import foreign shader caches.
+- Scale shader read-ahead from 0 to 16 MiB using Android's current available-memory and low-memory state.
+- Keep adaptive metrics in memory while disabling JSONL writes and periodic metric logs during normal play; persistent capture now requires diagnostics mode.
+- Move the X server startup log out of the Compose recomposition path.
+- Serialize shader snapshot, cleanup and health-state transitions at session boundaries without adding locks to frame delivery.
+- Retain the release-candidate database batching, component integrity, shader snapshots and sustained memory-pressure governor.
+- Add regression tests for warmup bounds, memory gating, changed files and managed-root confinement.
+
+OpenNative 1.0.0 does not claim a universal FPS increase. Renderer, translation-runtime and game-specific gains still require controlled A/B captures on the same device, scene, driver and thermal state.
+
 ## 1.0.0-rc.1 - 2026-08-16
 
 - Remove confirmed Steam, package, DLC, branch and Nexus collection N+1 query paths with chunked reads that respect SQLite's 999-parameter limit.

@@ -1,6 +1,7 @@
 package app.gamenative.ui.screen.xserver
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.content.Context
 import android.database.ContentObserver
 import android.graphics.Color
@@ -28,6 +29,7 @@ import androidx.activity.compose.BackHandler
 import app.gamenative.BuildConfig
 import app.gamenative.performance.adaptive.AdaptiveEngineCoordinator
 import app.gamenative.performance.shaders.ShaderHealthMonitor
+import app.gamenative.performance.shaders.ShaderWarmupPolicy
 import app.gamenative.performance.runtime.ComponentInstallPolicy
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -359,7 +361,6 @@ fun XServerScreen(
     onWindowUnmapped: ((Window) -> Unit)? = null,
     onGameLaunchError: ((String) -> Unit)? = null,
 ) {
-    Timber.i("Starting up XServerScreen")
     val context = LocalContext.current
     val view = LocalView.current
     val scope = rememberCoroutineScope()
@@ -382,6 +383,7 @@ fun XServerScreen(
     var taskAffinityMaskWoW64 = 0
 
     LaunchedEffect(appId) {
+        Timber.i("Starting XServerScreen for %s", appId)
         isExiting.set(false)
     }
 
@@ -2238,7 +2240,10 @@ fun XServerScreen(
 
                             // Start performance driver after environment is set up
                             AdaptiveEngineCoordinator.start(container)
-                            PowerManager.start(container.rootDir)
+                            PowerManager.start(
+                                containerDir = container.rootDir,
+                                persistentMetricsCapture = diagnostics,
+                            )
 
                             // Pin game process to performance cores (CPUs 4-7)
                             container.executablePath
@@ -3758,6 +3763,25 @@ private fun setupXEnvironment(
         if (!envVars.has("WINEESYNC")) envVars.put("WINEESYNC", "1")
         val shaderCachePaths = ShaderCacheManager.prepare(container, envVars)
         val initialCacheStats = ShaderCacheManager.inspectForLaunch(shaderCachePaths)
+        val memoryInfo = ActivityManager.MemoryInfo()
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        runCatching { activityManager?.getMemoryInfo(memoryInfo) }
+        val warmupBudget = ShaderWarmupPolicy.decide(
+            activeCacheBytes = initialCacheStats.bytes(),
+            availableMemoryBytes = activityManager?.let { memoryInfo.availMem },
+            lowMemory = activityManager?.let { memoryInfo.lowMemory } ?: true,
+        )
+        val warmupResult = if (warmupBudget.enabled) {
+            ShaderCacheManager.applyWarmup(
+                ShaderCacheManager.planWarmup(
+                    shaderCachePaths,
+                    warmupBudget.maximumBytes,
+                    warmupBudget.maximumFiles,
+                ),
+            )
+        } else {
+            ShaderCacheManager.WarmupResult(0, 0L, 0)
+        }
         activeShaderCachePaths = shaderCachePaths
         shaderCacheStatsAtLaunch = initialCacheStats
         ShaderHealthMonitor.sessionStarted(container, shaderCachePaths, initialCacheStats)
@@ -3770,6 +3794,13 @@ private fun setupXEnvironment(
             initialCacheStats.files() > 0,
             initialCacheStats.files(),
             initialCacheStats.bytes(),
+        )
+        Timber.i(
+            "Shader warmup reason=%s advisedFiles=%d advisedBytes=%d skippedFiles=%d",
+            warmupBudget.reason,
+            warmupResult.advisedFiles(),
+            warmupResult.advisedBytes(),
+            warmupResult.skippedFiles(),
         )
 
         val ffpGameDir = runCatching {

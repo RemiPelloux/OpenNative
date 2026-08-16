@@ -62,6 +62,7 @@ object PerformanceMetricsCollector {
     private var cachedTotalMemoryBytes: Long? = null
     private var cachedLowMemory = false
     private var cachedMemoryPressure = LinuxMemoryPressureReading(null, null, null, null)
+    private var persistentCapture = false
 
     @Volatile
     private var paused = false
@@ -70,7 +71,11 @@ object PerformanceMetricsCollector {
     var isRunning: Boolean = false
         private set
 
-    fun start(context: Context, sessionStartMillis: Long = System.currentTimeMillis()) {
+    fun start(
+        context: Context,
+        sessionStartMillis: Long = System.currentTimeMillis(),
+        persistentCapture: Boolean = false,
+    ) {
         if (isRunning) return
 
         val appContext = context.applicationContext
@@ -88,10 +93,11 @@ object PerformanceMetricsCollector {
         cachedLowMemory = false
         cachedMemoryPressure = LinuxMemoryPressureReading(null, null, null, null)
         sampleCount = 0L
+        this.persistentCapture = persistentCapture
         paused = false
         FrameTimeRing.start()
         AdaptivePerformanceObserver.start()
-        openLog(appContext, sessionStartMillis)
+        if (persistentCapture) openLog(appContext, sessionStartMillis)
 
         val gpuPaths = SystemMetricsSources.gpuUsagePaths()
         Timber.tag(TAG).i(
@@ -195,10 +201,10 @@ object PerformanceMetricsCollector {
         val prediction = AdaptivePerformanceObserver.observe(snapshot, PowerManager.targetFps)
         AdaptiveEngineCoordinator.observe(snapshot, prediction)
         publish(snapshot)
-        if (decision.writeLog) appendLog(snapshot, prediction)
+        if (persistentCapture && decision.writeLog) appendLog(snapshot, prediction)
 
         sampleCount++
-        if (sampleCount % LOG_EVERY_N_SAMPLES == 0L) {
+        if (persistentCapture && sampleCount % LOG_EVERY_N_SAMPLES == 0L) {
             Timber.tag(TAG).i(
                 "fps=%.1f p95=%.1fms slow=%d/%d cpu=%s%%(%s) gpu=%s%% cpuTemp=%s gpuTemp=%s adaptive=%s confidence=%.2f",
                 snapshot.fps,
@@ -310,5 +316,6 @@ object PerformanceMetricsCollector {
 
     private fun closeLog() {
         sessionLog.close()
+        persistentCapture = false
     }
 }

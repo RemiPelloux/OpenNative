@@ -31,7 +31,9 @@ This project does not include games. Use it only with software and store account
 - **Backend-aware shader cache:** DXVK, Mesa/Zink and VKD3D caches persist per game with independent compatibility keys. A Turnip update keeps reusable DXVK state while rotating driver-specific Vulkan caches; existing OpenNative caches migrate without a copy and custom paths remain untouched.
 - **Faster safe launches:** OpenNative no longer extracts DXVK, the graphics driver and PulseAudio on every launch. Versioned integrity sentinels reuse healthy files, repair damage automatically and preserve the previous component if staged extraction fails.
 - **Incremental shader inspection:** a clean shutdown records active-cache statistics atomically. The next launch consumes that snapshot when cache roots are unchanged, while crashes, modifications, pruning and deletion still force a real scan.
+- **Predictive local shader warmup:** a clean session records a path-safe manifest of its most recently touched cache files. The next launch can read ahead at most 16 MiB when Android reports sufficient free memory; changed files and foreign paths are rejected, and OpenNative never downloads third-party shader caches.
 - **Sustained memory governor:** the Adaptive Engine reads swap and Linux PSI on the slow metrics cadence and uses hysteresis before pausing model training or cache maintenance. It does not change clocks, kill the guest or overwrite explicit user settings.
+- **Capture-only disk telemetry:** adaptive metrics remain available in memory, while JSONL writes and periodic performance logs are disabled during normal play and enabled only for an explicit diagnostic launch.
 - **Adaptive Engine 0.3:** classifies CPU, GPU, memory, thermal and pacing pressure; predicts five-second p95/temperature; identifies per-game frame cost with bounded RLS; and stages aspect-correct resolution changes for the next launch with confidence, hysteresis, cooldown and rollback. Existing games default to observation mode.
 - **Shader Health:** shows cold/warm/growing state, active generation and cache growth in the quick menu and Thor cockpit. Explicit maintenance runs only after game exit and never removes the active Mesa, DXVK or VKD3D generation.
 - **Capability-driven Snapdragon support:** records Qualcomm/Adreno, CPU policy topology and Android Performance Hint availability from runtime capabilities. OpenNative does not force clocks, affinity, unsafe math or speculative driver variables.
@@ -57,16 +59,15 @@ OpenNative deliberately keeps the existing application ID `com.remipelloux.gamen
 
 ## Install
 
-The public `0.3.0-beta.1` prerelease currently includes a tested `modernRelease`
-APK for the AYN Thor development device. The `1.0.0-rc.1` source and local APK
-add database, component-cache, shader-cache and memory-governor work, but remain
-a release candidate pending AYN Thor A/B and soak certification.
+OpenNative `1.0.0` ships a `modernRelease` APK for Android ARM64. It preserves the
+existing application ID and signing identity so it can update the current OpenNative
+test installation without deleting private containers or saves. Do not uninstall the
+existing app before upgrading.
 
-Redistribution of that binary is under
-review: the inherited bundle contains three upstream prebuilt shims marked
-proprietary and does not include a downstream redistribution grant. Stable
-binary releases require permission from their copyright holder or compatible
-replacements; source remains available for permitted local builds.
+The inherited bundle contains three upstream prebuilt shims marked proprietary
+without a confirmed downstream redistribution grant. Review
+[THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES) before redistributing the APK; this
+remains a supply-chain limitation, not a performance defect.
 
 Developers can build the source below where permitted. Install it over the
 current OpenNative test build; do not uninstall first if you need to preserve
@@ -137,6 +138,14 @@ For the 1.0 release-candidate runtime paths:
   --tests 'com.winlator.core.ShaderCacheManagerTest' \
   --tests 'app.gamenative.performance.device.MemoryPressurePolicyTest' \
   --tests 'app.gamenative.powercontrol.metrics.MemoryPressureReaderTest'
+```
+
+For the 1.0 shader warmup policy and manifest validation:
+
+```bash
+./gradlew :app:testModernDebugUnitTest \
+  --tests 'com.winlator.core.ShaderCacheManagerTest' \
+  --tests 'app.gamenative.performance.shaders.ShaderWarmupPolicyTest'
 ```
 
 For performance work, follow [docs/PERFORMANCE.md](docs/PERFORMANCE.md). A change is promoted only when repeated measurements show a gain without a stability or thermal regression.

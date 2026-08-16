@@ -13,6 +13,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.Base64;
 
 public class ShaderCacheManagerTest {
     @Rule
@@ -233,6 +234,86 @@ public class ShaderCacheManagerTest {
 
         assertEquals(1, refreshed.files());
         assertEquals(2L, refreshed.bytes());
+    }
+
+    @Test
+    public void cleanSessionCreatesBoundedWarmupPlan() throws Exception {
+        ShaderCacheManager.CachePaths paths = paths("CUSTOM_GAME_WARMUP");
+        ShaderCacheManager.prepare(paths, new EnvVars());
+        File newest = new File(paths.hostDxvkDirectory(), "newest.dxvk-cache");
+        File older = new File(paths.hostMesaDirectory(), "older.cache");
+        Files.write(newest.toPath(), new byte[] {1, 2, 3, 4, 5, 6});
+        Files.write(older.toPath(), new byte[] {7, 8, 9, 10});
+        older.setLastModified(Math.max(1L, newest.lastModified() - 10_000L));
+
+        ShaderCacheManager.inspectAndSnapshot(paths);
+        ShaderCacheManager.WarmupPlan plan = ShaderCacheManager.planWarmup(paths, 7L, 2);
+
+        assertTrue(plan.fromManifest());
+        assertEquals(2, plan.entries().size());
+        assertEquals(newest.getCanonicalFile(), plan.entries().get(0).file());
+        assertEquals(7L, plan.bytes());
+        assertEquals(1L, plan.entries().get(1).bytes());
+    }
+
+    @Test
+    public void changedCacheFileIsExcludedFromWarmup() throws Exception {
+        ShaderCacheManager.CachePaths paths = paths("CUSTOM_GAME_CHANGED_WARMUP");
+        ShaderCacheManager.prepare(paths, new EnvVars());
+        File cacheFile = new File(paths.hostDxvkDirectory(), "game.dxvk-cache");
+        Files.write(cacheFile.toPath(), new byte[] {1, 2, 3});
+        ShaderCacheManager.inspectAndSnapshot(paths);
+
+        Files.write(cacheFile.toPath(), new byte[] {1, 2, 3, 4});
+        ShaderCacheManager.WarmupPlan plan = ShaderCacheManager.planWarmup(paths, 1024L, 4);
+
+        assertTrue(plan.fromManifest());
+        assertTrue(plan.entries().isEmpty());
+    }
+
+    @Test
+    public void warmupReadsOnlyThePlannedByteBudget() throws Exception {
+        ShaderCacheManager.CachePaths paths = paths("CUSTOM_GAME_APPLY_WARMUP");
+        ShaderCacheManager.prepare(paths, new EnvVars());
+        File cacheFile = new File(paths.hostDxvkDirectory(), "game.dxvk-cache");
+        Files.write(cacheFile.toPath(), new byte[1024]);
+        ShaderCacheManager.inspectAndSnapshot(paths);
+
+        ShaderCacheManager.WarmupResult result = ShaderCacheManager.applyWarmup(
+                ShaderCacheManager.planWarmup(paths, 257L, 1)
+        );
+
+        assertEquals(1, result.advisedFiles());
+        assertEquals(257L, result.advisedBytes());
+        assertEquals(0, result.skippedFiles());
+    }
+
+    @Test
+    public void warmupManifestCannotEscapeManagedRoot() throws Exception {
+        ShaderCacheManager.CachePaths paths = paths("CUSTOM_GAME_WARMUP_ESCAPE");
+        ShaderCacheManager.prepare(paths, new EnvVars());
+        File cacheFile = new File(paths.hostDxvkDirectory(), "game.dxvk-cache");
+        Files.write(cacheFile.toPath(), new byte[] {1});
+        ShaderCacheManager.inspectAndSnapshot(paths);
+        File outside = temporaryFolder.newFile("outside.cache");
+        Files.write(outside.toPath(), new byte[] {9});
+
+        File manifest = ShaderCacheManager.warmupManifestFile(paths);
+        String[] lines = new String(
+                Files.readAllBytes(manifest.toPath()),
+                java.nio.charset.StandardCharsets.UTF_8
+        ).trim().split("\\R");
+        String escaped = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(outside.getCanonicalPath().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        lines[5] = "file\t" + escaped + "\t1\t" + outside.lastModified();
+        Files.write(
+                manifest.toPath(),
+                (String.join("\n", lines) + "\n").getBytes(java.nio.charset.StandardCharsets.UTF_8)
+        );
+
+        ShaderCacheManager.WarmupPlan plan = ShaderCacheManager.planWarmup(paths, 1024L, 4);
+
+        assertTrue(plan.entries().isEmpty());
     }
 
     private ShaderCacheManager.CachePaths paths(String id) throws Exception {
