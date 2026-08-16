@@ -2,6 +2,8 @@
 
 OpenNative prioritizes measured frame pacing, stability and handheld ergonomics. Items move from experimental to default only after repeatable A/B tests.
 
+The milestone plan from the current beta through the stable `1.0.0` release is maintained in [docs/ROADMAP_1.0.0.md](docs/ROADMAP_1.0.0.md). The evidence and static findings behind that plan are in [docs/PERFORMANCE_AUDIT_1.0.0.md](docs/PERFORMANCE_AUDIT_1.0.0.md).
+
 ## Now
 
 ### 1. Frame delivery and shader path
@@ -42,4 +44,3 @@ OpenNative prioritizes measured frame pacing, stability and handheld ergonomics.
 ## Promotion criteria
 
 A performance change needs five warmed runs per variant on the same scene and configuration. Promote it when it improves median FPS by at least 3%, clearly improves p95/p99 frametime, or reduces power/temperature without a meaningful performance loss. Reject changes with crashes, visual corruption, input regressions or more than 2% regression in another representative workload.
-

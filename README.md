@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/license-GPL--3.0-36C5F0?style=flat-square)](LICENSE)
 [![Upstream](https://img.shields.io/badge/based_on-GameNative-F4C542?style=flat-square)](https://github.com/utkarshdalal/GameNative)
 
-[Features](#what-opennative-adds) · [Install](#install) · [Gamma Emerald](docs/GAMMA_EMERALD.md) · [Performance](docs/PERFORMANCE.md) · [Roadmap](ROADMAP.md)
+[Features](#what-opennative-adds) · [Install](#install) · [Gamma Emerald](docs/GAMMA_EMERALD.md) · [Performance](docs/PERFORMANCE.md) · [1.0 Roadmap](docs/ROADMAP_1.0.0.md) · [Roadmap](ROADMAP.md)
 
 </div>
 
@@ -38,6 +38,8 @@ These changes have automated coverage and device smoke testing. They are not pre
 
 The `0.3.0` architecture and safety model are documented in [`docs/ADAPTIVE_ENGINE.md`](docs/ADAPTIVE_ENGINE.md); implementation and release gates are tracked in [`docs/ROADMAP_0.3.0.md`](docs/ROADMAP_0.3.0.md).
 
+The path to a stable `1.0.0`, including renderer, translation, shader, memory, N+1, compatibility and release gates, is documented in [`docs/ROADMAP_1.0.0.md`](docs/ROADMAP_1.0.0.md). Its source audit is in [`docs/PERFORMANCE_AUDIT_1.0.0.md`](docs/PERFORMANCE_AUDIT_1.0.0.md).
+
 ## Compatibility
 
 | Target | Status |
@@ -52,11 +54,12 @@ OpenNative deliberately keeps the existing application ID `com.remipelloux.gamen
 
 ## Install
 
-The public repository currently ships source releases. A tested `modernRelease`
-APK is built for the AYN Thor development device, but is not attached publicly:
-the inherited bundle contains three upstream prebuilt shims marked proprietary
-and does not include a downstream redistribution grant. A public binary will
-require permission from their copyright holder or compatible replacements.
+The public `0.3.0-beta.1` prerelease currently includes a tested `modernRelease`
+APK for the AYN Thor development device. Redistribution of that binary is under
+review: the inherited bundle contains three upstream prebuilt shims marked
+proprietary and does not include a downstream redistribution grant. Stable
+binary releases require permission from their copyright holder or compatible
+replacements; source remains available for permitted local builds.
 
 Developers can build the source below where permitted. Install it over the
 current OpenNative test build; do not uninstall first if you need to preserve
