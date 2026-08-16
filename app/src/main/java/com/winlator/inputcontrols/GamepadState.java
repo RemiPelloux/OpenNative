@@ -25,6 +25,22 @@ public class GamepadState {
         return povHat;
     }
 
+    /**
+     * Returns the SDL hat bit mask for the current D-pad state.
+     *
+     * The shared-memory bridge exposes both the individual SDL buttons and a
+     * POV hat.  Keeping the two representations in sync is important for
+     * games that read DirectInput's POV instead of the SDL button mapping.
+     */
+    public byte getSdlHat() {
+        byte hat = 0;
+        if (dpad[0]) hat |= 0x01; // SDL_HAT_UP
+        if (dpad[1]) hat |= 0x02; // SDL_HAT_RIGHT
+        if (dpad[2]) hat |= 0x04; // SDL_HAT_DOWN
+        if (dpad[3]) hat |= 0x08; // SDL_HAT_LEFT
+        return hat;
+    }
+
     public void writeTo(ByteBuffer buffer) {
         buffer.putShort(buttons);
         buffer.put(getPovHat());

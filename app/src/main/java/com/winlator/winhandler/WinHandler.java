@@ -75,7 +75,6 @@ public class WinHandler {
     private final ByteBuffer sendData;
     private final DatagramPacket sendPacket;
     private DatagramSocket socket;
-    private final ArrayList<Integer> xinputProcesses;
     private final XServer xServer;
     private final XServerRendererView xServerView;
 
@@ -160,7 +159,6 @@ public class WinHandler {
         this.dinputMapperType = (byte) 1;
         this.preferredInputApi = PreferredInputApi.BOTH;
         this.gamepadClients = new CopyOnWriteArrayList();
-        this.xinputProcesses = new ArrayList<>();
         this.xServer = xServer;
         this.xServerView = xServerView;
         this.controllerManager = ControllerManager.getInstance();
@@ -572,39 +570,14 @@ public class WinHandler {
                 boolean notify = this.receiveData.get() == 1;
                 final ControlsProfile profile = inputControlsView.getProfile();
                 final boolean useVirtualGamepad = inputControlsView != null && profile != null && profile.isVirtualGamepad();
-                int processId = this.receiveData.getInt();
+                this.receiveData.getInt();
                 if (!useVirtualGamepad && ((externalController = this.currentController) == null || !externalController.isConnected())) {
                     this.currentController = ExternalController.getController(0);
                 }
                 boolean enabled2 = this.currentController != null || useVirtualGamepad;
                 if (enabled2) {
-                    switch (this.preferredInputApi) {
-                        case DINPUT:
-                            boolean hasXInputProcess = this.xinputProcesses.contains(Integer.valueOf(processId));
-                            if (isXInput) {
-                                if (!hasXInputProcess) {
-                                    this.xinputProcesses.add(Integer.valueOf(processId));
-                                    break;
-                                }
-                            } else if (hasXInputProcess) {
-                                enabled = false;
-                                break;
-                            }
-                            break;
-                        case XINPUT:
-                            if (isXInput) {
-                                enabled = false;
-                                break;
-                            }
-                            break;
-                        case BOTH:
-                            if (!isXInput) {
-                                enabled = false;
-                                break;
-                            }
-                            break;
-                    }
-                    if (notify) {
+                    enabled = GamepadApiPolicy.isEnabled(this.preferredInputApi, isXInput);
+                    if (notify && enabled) {
                         if (!this.gamepadClients.contains(Integer.valueOf(port))) {
                             this.gamepadClients.add(Integer.valueOf(port));
                         }
@@ -689,7 +662,6 @@ public class WinHandler {
             case RequestCodes.RELEASE_GAMEPAD:
                 this.currentController = null;
                 this.gamepadClients.clear();
-                this.xinputProcesses.clear();
                 return;
             case RequestCodes.CURSOR_POS_FEEDBACK:
                 short x = this.receiveData.getShort();
@@ -1132,7 +1104,7 @@ public class WinHandler {
         for (int i = 0; i < 15; i++) {
             buffer.put(OFF_BTN + i, sdlButtons[i]);
         }
-        buffer.put(OFF_HAT, (byte)0);
+        buffer.put(OFF_HAT, state.getSdlHat());
 
         notifyStateChanged(slot);
     }
@@ -1185,7 +1157,7 @@ public class WinHandler {
         }
 
         // Hat at offset 31
-        buffer.put(OFF_HAT, (byte) 0);
+        buffer.put(OFF_HAT, state.getSdlHat());
 
         // Notify native side that state changed
         notifyStateChanged(slot);
