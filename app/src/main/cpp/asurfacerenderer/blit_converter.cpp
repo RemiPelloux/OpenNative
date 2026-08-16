@@ -455,8 +455,15 @@ int BlitConverter::doConvert(AHardwareBuffer* source, AHardwareBuffer* destinati
 #endif
 
     const bool swapRedBlue = sourceDesc.format == AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
-    glUniform1i(swapRedBlueLocation_, swapRedBlue ? 1 : 0);
-    glBindTexture(GL_TEXTURE_2D, importedSource->texture);
+    const GLint swapRedBlueValue = swapRedBlue ? 1 : 0;
+    if (currentSwapRedBlue_ != swapRedBlueValue) {
+        glUniform1i(swapRedBlueLocation_, swapRedBlueValue);
+        currentSwapRedBlue_ = swapRedBlueValue;
+    }
+    if (currentSourceTexture_ != importedSource->texture) {
+        glBindTexture(GL_TEXTURE_2D, importedSource->texture);
+        currentSourceTexture_ = importedSource->texture;
+    }
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     if (!checkGl("fullscreen BGRA-byte to RGBA blit")) {
@@ -586,7 +593,9 @@ void BlitConverter::bindPrivateState() {
     glUseProgram(program_);
     glUniform1i(sourceSamplerLocation_, 0);
     glUniform1i(swapRedBlueLocation_, 0);
+    currentSwapRedBlue_ = 0;
     glActiveTexture(GL_TEXTURE0);
+    currentSourceTexture_ = 0;
     glDisable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_STENCIL_TEST);
@@ -631,7 +640,9 @@ void BlitConverter::cleanupGL() {
     program_ = 0; vao_ = 0; fbo_ = 0;
     sourceSamplerLocation_ = -1; swapRedBlueLocation_ = -1;
     currentFramebufferTexture_ = 0;
+    currentSourceTexture_ = 0;
     currentViewportWidth_ = -1; currentViewportHeight_ = -1;
+    currentSwapRedBlue_ = 0;
 
     if (display_ != EGL_NO_DISPLAY) {
         eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -683,6 +694,7 @@ bool BlitConverter::importBuffer(AHardwareBuffer* buffer, ImportedBuffer& import
     GLuint texture = 0;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
+    currentSourceTexture_ = texture;
 
     while (glGetError() != GL_NO_ERROR) {}
     gGlEGLImageTargetTexture2DOES(GL_TEXTURE_2D, image);
@@ -690,6 +702,7 @@ bool BlitConverter::importBuffer(AHardwareBuffer* buffer, ImportedBuffer& import
     if (importError != GL_NO_ERROR) {
         LOGE("glEGLImageTargetTexture2DOES failed for format=%u: 0x%x", desc.format, importError);
         glDeleteTextures(1, &texture);
+        currentSourceTexture_ = 0;
         gEglDestroyImageKHR(display_, image);
         AHardwareBuffer_release(buffer);
         return false;
@@ -704,6 +717,7 @@ bool BlitConverter::importBuffer(AHardwareBuffer* buffer, ImportedBuffer& import
 
     if (!texture || !checkGl("import AHardwareBuffer texture")) {
         if (texture) glDeleteTextures(1, &texture);
+        currentSourceTexture_ = 0;
         gEglDestroyImageKHR(display_, image);
         AHardwareBuffer_release(buffer);
         return false;
@@ -726,6 +740,10 @@ void BlitConverter::destroyImportedBuffer(ImportedBuffer& imported) {
         glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
         currentFramebufferTexture_ = 0;
+    }
+    if (currentSourceTexture_ == imported.texture) {
+        glBindTexture(GL_TEXTURE_2D, 0);
+        currentSourceTexture_ = 0;
     }
 
     if (imported.texture) glDeleteTextures(1, &imported.texture);

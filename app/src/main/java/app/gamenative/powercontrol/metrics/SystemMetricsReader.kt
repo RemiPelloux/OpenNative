@@ -15,6 +15,59 @@ data class CpuUsageReading(val percent: Int, val source: CpuUsageSource)
 
 data class GpuUsageReading(val percent: Int, val source: String)
 
+/** Parses unsigned decimal fields without allocating regex matches or token lists. */
+internal fun parseUnsignedLongFields(
+    line: String,
+    destination: LongArray,
+    startIndex: Int = 0,
+): Int {
+    var index = startIndex.coerceAtLeast(0)
+    var count = 0
+    while (index < line.length && count < destination.size) {
+        while (index < line.length && !line[index].isDigit()) index++
+        if (index >= line.length) break
+
+        var value = 0L
+        while (index < line.length && line[index].isDigit()) {
+            val digit = line[index] - '0'
+            if (value > (Long.MAX_VALUE - digit) / 10L) return count
+            value = value * 10L + digit
+            index++
+        }
+        destination[count++] = value
+    }
+    return count
+}
+
+/** Matches the old token-based percentage parser without temporary collections. */
+internal fun parseFirstPercentToken(line: String): Int? {
+    var value = 0L
+    var tokenHasDigit = false
+    var insideToken = false
+
+    for (char in line) {
+        if (char.isWhitespace()) {
+            if (insideToken && tokenHasDigit) return value.coerceIn(0L, 100L).toInt()
+            insideToken = false
+            tokenHasDigit = false
+            value = 0L
+        } else {
+            insideToken = true
+            if (char.isDigit()) {
+                tokenHasDigit = true
+                val digit = char - '0'
+                value = if (value > (Long.MAX_VALUE - digit) / 10L) {
+                    Long.MAX_VALUE
+                } else {
+                    value * 10L + digit
+                }
+            }
+        }
+    }
+
+    return if (tokenHasDigit) value.coerceIn(0L, 100L).toInt() else null
+}
+
 /**
  * Device sysfs discovery shared by the metrics collector and the on-screen HUD.
  * Discovery results are cached process-wide so both consumers scan the tree once.
@@ -219,11 +272,7 @@ object SystemMetricsSources {
 
     fun readPercentFromLine(path: String): Int? {
         val raw = readFirstLine(path)?.trim() ?: return null
-        val token = raw.split(Regex("\\s+"))
-            .map { it.replace(Regex("[^0-9]"), "") }
-            .firstOrNull { it.isNotEmpty() }
-            ?: return null
-        return token.toIntOrNull()?.coerceIn(0, 100)
+        return parseFirstPercentToken(raw)
     }
 
     fun readLongFromLine(path: String): Long? {
@@ -238,6 +287,7 @@ object SystemMetricsSources {
 class CpuUsageSampler {
     private var lastTotal: Long? = null
     private var lastIdle: Long? = null
+    private val statFields = LongArray(16)
 
     fun reset() {
         lastTotal = null
@@ -245,16 +295,14 @@ class CpuUsageSampler {
     }
 
     fun sample(): CpuUsageReading? {
-        val parts = SystemMetricsSources.readFirstLine("/proc/stat")
-            ?.trim()
-            ?.split(Regex("\\s+"))
-
-        if (parts != null && parts.size >= 5 && parts.firstOrNull() == "cpu") {
-            val values = parts.drop(1).mapNotNull { it.toLongOrNull() }
-            if (values.size >= 4) {
-                val idle = values.getOrElse(3) { 0L }
-                val iowait = values.getOrElse(4) { 0L }
-                val total = values.sum()
+        val line = SystemMetricsSources.readFirstLine("/proc/stat")
+        if (line != null && line.startsWith("cpu")) {
+            val fieldCount = parseUnsignedLongFields(line, statFields, startIndex = 3)
+            if (fieldCount >= 4) {
+                val idle = statFields[3]
+                val iowait = if (fieldCount > 4) statFields[4] else 0L
+                var total = 0L
+                for (index in 0 until fieldCount) total += statFields[index]
                 val idleTotal = idle + iowait
 
                 val previousTotal = lastTotal
@@ -370,6 +418,7 @@ class GpuBusyDelta {
  */
 class GpuUsageSampler {
     private val busyDelta = GpuBusyDelta()
+    private val busyFields = LongArray(2)
     private var lastGpuInfoMs: Long? = null
     private var lastGpuInfoWallMs: Long = 0L
 
@@ -390,10 +439,9 @@ class GpuUsageSampler {
         return when (path.substringAfterLast("/")) {
             "gpubusy" -> {
                 val raw = SystemMetricsSources.readFirstLine(path)?.trim() ?: return null
-                val parts = raw.split(Regex("\\s+"))
-                if (parts.size < 2) return null
-                val busy = parts[0].toLongOrNull() ?: return null
-                val total = parts[1].toLongOrNull() ?: return null
+                if (parseUnsignedLongFields(raw, busyFields) < 2) return null
+                val busy = busyFields[0]
+                val total = busyFields[1]
                 busyDelta.update(busy, total)?.let { GpuUsageReading(it, path) }
             }
             "gpuinfo" -> {

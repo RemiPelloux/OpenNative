@@ -124,7 +124,6 @@ private:
     };
 
     static constexpr size_t kMaximumConvertedBuffersPerWindow = 8;
-    static constexpr int    kPoolWaitMs                        = 3;
 
     // ---- SurfaceControl map -------------------------------------------------
     std::mutex windowScMutex;

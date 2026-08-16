@@ -118,8 +118,10 @@ private:
     GLint  swapRedBlueLocation_   = -1;
 
     GLuint  currentFramebufferTexture_ = 0;
+    GLuint  currentSourceTexture_      = 0;
     GLsizei currentViewportWidth_      = -1;
     GLsizei currentViewportHeight_     = -1;
+    GLint   currentSwapRedBlue_        = 0;
 
     bool initialized_        = false;
     bool supportsServerWait_ = false;

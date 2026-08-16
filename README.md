@@ -19,8 +19,8 @@ This project does not include games. Use it only with software and store account
 
 ## What OpenNative adds
 
-- **Non-blocking SurfaceFlinger compatibility path:** BGRA-to-RGBA conversion is queued asynchronously instead of blocking frame submission on `future.get()`.
-- **Lower telemetry overhead:** expensive sensors are sampled less often, hidden metrics do no work, and JSONL session logs are buffered instead of flushed every 500 ms.
+- **Non-blocking SurfaceFlinger compatibility path:** BGRA-to-RGBA conversion is queued asynchronously, saturated pools drop stale frames instead of waiting on the presentation thread, and redundant GL state changes are cached.
+- **Lower telemetry overhead:** expensive sensors are sampled less often, `/proc` and sysfs counters use allocation-light parsers, and JSONL session logs are buffered instead of flushed every 500 ms.
 - **Dual-screen performance cockpit:** the game stays on the primary display while metrics and session shortcuts can use an Android secondary display.
 - **Portable container profiles:** versioned exports preserve relevant Wine, graphics, controller and display settings without embedding device-local paths.
 - **Controller runtime fixes:** only configured controller slots create guest-side workers; single-player containers no longer provision four players by default.

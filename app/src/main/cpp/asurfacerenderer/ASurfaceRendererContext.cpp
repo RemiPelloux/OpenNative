@@ -976,7 +976,7 @@ ASurfaceRendererContext::acquireConvertedBuffer(int64_t contentId, uint32_t widt
     };
 
     {
-        std::unique_lock<std::mutex> lock(state->mutex);
+        std::lock_guard<std::mutex> lock(state->mutex);
         if (state->stopping) return nullptr;
         if (ConvertedBufferSlot* reusable = findReusable()) return reusable;
 
@@ -990,18 +990,10 @@ ASurfaceRendererContext::acquireConvertedBuffer(int64_t contentId, uint32_t widt
         }
 
         if (matchingCount >= kMaximumConvertedBuffersPerWindow) {
-            state->condition.wait_for(lock, std::chrono::milliseconds(kPoolWaitMs),[&] {
-                if (state->stopping) return true;
-                for (const auto& slot : state->slots) {
-                    if (slot->contentId == contentId &&
-                        slot->width  == width  &&
-                        slot->height == height &&
-                        !slot->inUse) return true;
-                }
-                return false;
-            });
-            if (state->stopping) return nullptr;
-            return findReusable();
+            // Frame submission must never wait for the asynchronous conversion
+            // worker. A saturated pool means this frame is already stale; drop
+            // it and let the next frame reuse the first released slot.
+            return nullptr;
         }
     }
 
