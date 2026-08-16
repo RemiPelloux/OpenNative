@@ -61,6 +61,7 @@ object PerformanceMetricsCollector {
     private var cachedAvailableMemoryBytes: Long? = null
     private var cachedTotalMemoryBytes: Long? = null
     private var cachedLowMemory = false
+    private var cachedMemoryPressure = LinuxMemoryPressureReading(null, null, null, null)
 
     @Volatile
     private var paused = false
@@ -85,6 +86,7 @@ object PerformanceMetricsCollector {
         cachedAvailableMemoryBytes = null
         cachedTotalMemoryBytes = null
         cachedLowMemory = false
+        cachedMemoryPressure = LinuxMemoryPressureReading(null, null, null, null)
         sampleCount = 0L
         paused = false
         FrameTimeRing.start()
@@ -184,6 +186,10 @@ object PerformanceMetricsCollector {
             availableMemoryBytes = cachedAvailableMemoryBytes,
             totalMemoryBytes = cachedTotalMemoryBytes,
             lowMemory = cachedLowMemory,
+            swapUsedBytes = cachedMemoryPressure.swapUsedBytes,
+            swapTotalBytes = cachedMemoryPressure.swapTotalBytes,
+            memoryPsiSomeAvg10 = cachedMemoryPressure.psiSomeAvg10,
+            memoryPsiFullAvg10 = cachedMemoryPressure.psiFullAvg10,
         )
 
         val prediction = AdaptivePerformanceObserver.observe(snapshot, PowerManager.targetFps)
@@ -217,10 +223,12 @@ object PerformanceMetricsCollector {
             cachedAvailableMemoryBytes = memoryInfo.availMem
             cachedTotalMemoryBytes = memoryInfo.totalMem
             cachedLowMemory = memoryInfo.lowMemory
+            cachedMemoryPressure = MemoryPressureReader.read()
         } catch (_: Exception) {
             cachedAvailableMemoryBytes = null
             cachedTotalMemoryBytes = null
             cachedLowMemory = false
+            cachedMemoryPressure = LinuxMemoryPressureReading(null, null, null, null)
         }
     }
 
@@ -270,6 +278,7 @@ object PerformanceMetricsCollector {
                 "\"frameTimeMaxMs\":%.2f,\"slowFrameCount\":%d,\"totalFrameCount\":%d," +
                 "\"cpuUsagePercent\":%s,\"cpuUsageSource\":\"%s\",\"gpuUsagePercent\":%s," +
                 "\"cpuTempC\":%s,\"gpuTempC\":%s,\"availableMemoryBytes\":%s,\"totalMemoryBytes\":%s,\"lowMemory\":%s," +
+                "\"swapUsedBytes\":%s,\"swapTotalBytes\":%s,\"memoryPsiSomeAvg10\":%s,\"memoryPsiFullAvg10\":%s," +
                 "\"adaptiveBottleneck\":\"%s\",\"adaptiveAdvice\":\"%s\"," +
                 "\"predictedP95Ms\":%.2f,\"predictedTemperatureC\":%s,\"adaptiveConfidence\":%.3f}",
             snapshot.timestampMs,
@@ -287,6 +296,10 @@ object PerformanceMetricsCollector {
             snapshot.availableMemoryBytes?.toString() ?: "null",
             snapshot.totalMemoryBytes?.toString() ?: "null",
             snapshot.lowMemory,
+            snapshot.swapUsedBytes?.toString() ?: "null",
+            snapshot.swapTotalBytes?.toString() ?: "null",
+            snapshot.memoryPsiSomeAvg10?.let { String.format(Locale.US, "%.2f", it) } ?: "null",
+            snapshot.memoryPsiFullAvg10?.let { String.format(Locale.US, "%.2f", it) } ?: "null",
             prediction.bottleneck.name,
             prediction.resolutionAdvice.name,
             prediction.predictedP95Ms,

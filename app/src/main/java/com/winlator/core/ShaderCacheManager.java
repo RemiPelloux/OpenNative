@@ -7,6 +7,8 @@ import com.winlator.xenvironment.ImageFs;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayDeque;
@@ -27,6 +29,8 @@ public final class ShaderCacheManager {
     private static final String MESA_CACHE_VARIABLE = "MESA_SHADER_CACHE_DIR";
     private static final String DXVK_CACHE_VARIABLE = "DXVK_STATE_CACHE_PATH";
     private static final String VKD3D_CACHE_VARIABLE = "VKD3D_SHADER_CACHE_PATH";
+    private static final String STATS_SNAPSHOT_PREFIX = ".stats-";
+    private static final String STATS_SNAPSHOT_VERSION = "v1";
 
     private ShaderCacheManager() {}
 
@@ -251,6 +255,21 @@ public final class ShaderCacheManager {
         return inspectPaths(roots);
     }
 
+    /** Reuses the last clean-session snapshot when none of the active cache roots changed. */
+    public static CacheStats inspectForLaunch(CachePaths paths) {
+        CacheStats cached = readStatsSnapshot(paths);
+        // Consume the clean-session marker. A crash cannot leave trusted stale statistics behind.
+        statsSnapshotFile(paths).delete();
+        return cached != null ? cached : inspect(paths);
+    }
+
+    /** Performs a real scan and atomically records it for the next launch. */
+    public static CacheStats inspectAndSnapshot(CachePaths paths) {
+        CacheStats stats = inspect(paths);
+        writeStatsSnapshot(paths, stats);
+        return stats;
+    }
+
     public static CacheSessionResult compare(CacheStats before, CacheStats after) {
         return new CacheSessionResult(
                 before.files > 0 || before.bytes > 0,
@@ -323,7 +342,10 @@ public final class ShaderCacheManager {
         } else {
             cleared = deleteTreeInsideRoot(allowedRoot, paths.hostRoot);
         }
-        if (cleared) new File(allowedRoot, ACTIVE_GENERATION_FILE).delete();
+        if (cleared) {
+            new File(allowedRoot, ACTIVE_GENERATION_FILE).delete();
+            statsSnapshotFile(paths).delete();
+        }
         return cleared;
     }
 
@@ -366,6 +388,65 @@ public final class ShaderCacheManager {
             newest = Math.max(newest, stats.newestWriteMillis);
         }
         return new CacheStats(bytes, files, newest);
+    }
+
+    private static CacheStats readStatsSnapshot(CachePaths paths) {
+        File snapshot = statsSnapshotFile(paths);
+        if (!snapshot.isFile() || snapshot.length() <= 0L) return null;
+        String value = FileUtils.readString(snapshot);
+        if (value == null) return null;
+        try {
+            String[] lines = value.trim().split("\\R");
+            if (lines.length != 8 || !STATS_SNAPSHOT_VERSION.equals(lines[0])) return null;
+            if (!paths.generation.equals(markerValue(lines[1], "generation"))) return null;
+            long mesaStamp = Long.parseLong(markerValue(lines[2], "mesaStamp"));
+            long dxvkStamp = Long.parseLong(markerValue(lines[3], "dxvkStamp"));
+            long vkd3dStamp = Long.parseLong(markerValue(lines[4], "vkd3dStamp"));
+            if (mesaStamp != rootStamp(paths.hostMesaDirectory)
+                    || dxvkStamp != rootStamp(paths.hostDxvkDirectory)
+                    || vkd3dStamp != rootStamp(paths.hostVkd3dDirectory)) return null;
+            long bytes = Long.parseLong(markerValue(lines[5], "bytes"));
+            int files = Integer.parseInt(markerValue(lines[6], "files"));
+            long newest = Long.parseLong(markerValue(lines[7], "newest"));
+            if (bytes < 0L || files < 0 || newest < 0L) return null;
+            return new CacheStats(bytes, files, newest);
+        } catch (RuntimeException ignored) {
+            return null;
+        }
+    }
+
+    private static void writeStatsSnapshot(CachePaths paths, CacheStats stats) {
+        File snapshot = statsSnapshotFile(paths);
+        File parent = snapshot.getParentFile();
+        if (parent == null || !createDirectory(parent)) return;
+        File temp = new File(parent, snapshot.getName() + ".tmp");
+        String value = STATS_SNAPSHOT_VERSION + "\n"
+                + "generation=" + paths.generation + "\n"
+                + "mesaStamp=" + rootStamp(paths.hostMesaDirectory) + "\n"
+                + "dxvkStamp=" + rootStamp(paths.hostDxvkDirectory) + "\n"
+                + "vkd3dStamp=" + rootStamp(paths.hostVkd3dDirectory) + "\n"
+                + "bytes=" + stats.bytes + "\n"
+                + "files=" + stats.files + "\n"
+                + "newest=" + stats.newestWriteMillis + "\n";
+        try {
+            Files.write(temp.toPath(), value.getBytes(StandardCharsets.UTF_8));
+            try {
+                Files.move(temp.toPath(), snapshot.toPath(),
+                        StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException atomicMoveUnavailable) {
+                Files.move(temp.toPath(), snapshot.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException ignored) {
+            temp.delete();
+        }
+    }
+
+    static File statsSnapshotFile(CachePaths paths) {
+        return new File(paths.hostRoot, STATS_SNAPSHOT_PREFIX + paths.generation);
+    }
+
+    private static long rootStamp(File root) {
+        return root.isDirectory() ? root.lastModified() : -1L;
     }
 
     static boolean deleteTreeInsideRoot(File allowedRoot, File target) {

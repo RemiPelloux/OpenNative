@@ -4,6 +4,7 @@ import app.gamenative.powercontrol.metrics.MetricsSnapshot
 import com.winlator.container.Container
 import app.gamenative.performance.device.MemoryPressureLevel
 import app.gamenative.performance.device.MemoryPressurePolicy
+import app.gamenative.performance.device.MemoryPressureGovernor
 
 data class AdaptiveEngineState(
     val mode: AdaptiveResolutionMode,
@@ -33,6 +34,7 @@ object AdaptiveEngineCoordinator {
     private var controller: AdaptiveResolutionController? = null
     private var rlsModel = FrameCostRlsModel()
     private var activeResolution: RenderResolution? = null
+    private val memoryGovernor = MemoryPressureGovernor()
 
     @Volatile
     var state: AdaptiveEngineState? = null
@@ -74,6 +76,7 @@ object AdaptiveEngineCoordinator {
         val baseline = container.getExtra(PROBE_BASELINE_KEY, "").toFloatOrNull()
         if (previous != null && baseline != null) controller?.markProbe(previous, baseline)
         rlsModel = FrameCostRlsModel()
+        memoryGovernor.reset()
         val pending = ResolutionLadder.parse(container.getExtra(PENDING_KEY, ""))
         state = AdaptiveEngineState(
             mode(container), active, pending, ResolutionDecisionReason.WARMUP, rlsModel.estimate(),
@@ -86,10 +89,18 @@ object AdaptiveEngineCoordinator {
         val owner = container ?: return null
         val localLadder = ladder ?: return null
         val active = activeResolution ?: return null
-        val memory = MemoryPressurePolicy.decide(
-            snapshot.totalMemoryBytes,
-            snapshot.availableMemoryBytes,
-            snapshot.lowMemory,
+        val memory = memoryGovernor.observe(
+            snapshot.timestampMs,
+            MemoryPressurePolicy.decide(
+                snapshot.totalMemoryBytes,
+                snapshot.availableMemoryBytes,
+                snapshot.lowMemory,
+                snapshot.swapUsedBytes,
+                snapshot.swapTotalBytes,
+                snapshot.memoryPsiSomeAvg10,
+                snapshot.memoryPsiFullAvg10,
+            ),
+            immediateCritical = snapshot.lowMemory,
         )
         val safeWindow = memory.allowModelTraining &&
             prediction.bottleneck !in setOf(
@@ -196,6 +207,7 @@ object AdaptiveEngineCoordinator {
         controller = null
         activeResolution = null
         rlsModel.reset()
+        memoryGovernor.reset()
         state = null
     }
 

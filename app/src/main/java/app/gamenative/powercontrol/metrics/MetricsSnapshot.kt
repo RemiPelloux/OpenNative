@@ -20,4 +20,8 @@ data class MetricsSnapshot(
     val availableMemoryBytes: Long?,
     val totalMemoryBytes: Long?,
     val lowMemory: Boolean,
+    val swapUsedBytes: Long? = null,
+    val swapTotalBytes: Long? = null,
+    val memoryPsiSomeAvg10: Float? = null,
+    val memoryPsiFullAvg10: Float? = null,
 )

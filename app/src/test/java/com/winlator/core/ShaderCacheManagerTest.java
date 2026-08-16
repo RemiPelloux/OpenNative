@@ -176,6 +176,65 @@ public class ShaderCacheManagerTest {
         assertEquals(2048L, warm.addedBytes());
     }
 
+    @Test
+    public void reusesValidLaunchSnapshot() throws Exception {
+        ShaderCacheManager.CachePaths paths = paths("CUSTOM_GAME_SNAPSHOT");
+        ShaderCacheManager.prepare(paths, new EnvVars());
+        File cacheFile = new File(paths.hostDxvkDirectory(), "game.dxvk-cache");
+        Files.write(cacheFile.toPath(), new byte[] {1, 2, 3, 4});
+
+        ShaderCacheManager.CacheStats scanned = ShaderCacheManager.inspectAndSnapshot(paths);
+        cacheFile.setLastModified(cacheFile.lastModified() + 10_000L);
+        ShaderCacheManager.CacheStats cached = ShaderCacheManager.inspectForLaunch(paths);
+
+        assertEquals(scanned, cached);
+    }
+
+    @Test
+    public void firstLaunchWithoutSnapshotPerformsRealScan() throws Exception {
+        ShaderCacheManager.CachePaths paths = paths("CUSTOM_GAME_NO_SNAPSHOT");
+        ShaderCacheManager.prepare(paths, new EnvVars());
+        File cacheFile = new File(paths.hostDxvkDirectory(), "existing.dxvk-cache");
+        Files.write(cacheFile.toPath(), new byte[] {1, 2, 3});
+
+        ShaderCacheManager.CacheStats initial = ShaderCacheManager.inspectForLaunch(paths);
+
+        assertEquals(1, initial.files());
+        assertEquals(3L, initial.bytes());
+    }
+
+    @Test
+    public void staleSnapshotFallsBackToRealScan() throws Exception {
+        ShaderCacheManager.CachePaths paths = paths("CUSTOM_GAME_STALE_SNAPSHOT");
+        ShaderCacheManager.prepare(paths, new EnvVars());
+        ShaderCacheManager.inspectAndSnapshot(paths);
+        File cacheFile = new File(paths.hostDxvkDirectory(), "new.dxvk-cache");
+        Files.write(cacheFile.toPath(), new byte[] {1, 2, 3});
+        paths.hostDxvkDirectory().setLastModified(System.currentTimeMillis() + 10_000L);
+
+        ShaderCacheManager.CacheStats refreshed = ShaderCacheManager.inspectForLaunch(paths);
+
+        assertEquals(1, refreshed.files());
+        assertEquals(3L, refreshed.bytes());
+    }
+
+    @Test
+    public void corruptSnapshotFallsBackToRealScan() throws Exception {
+        ShaderCacheManager.CachePaths paths = paths("CUSTOM_GAME_CORRUPT_SNAPSHOT");
+        ShaderCacheManager.prepare(paths, new EnvVars());
+        File cacheFile = new File(paths.hostMesaDirectory(), "mesa.cache");
+        Files.write(cacheFile.toPath(), new byte[] {7, 8});
+        Files.write(
+                ShaderCacheManager.statsSnapshotFile(paths).toPath(),
+                "broken".getBytes(java.nio.charset.StandardCharsets.UTF_8)
+        );
+
+        ShaderCacheManager.CacheStats refreshed = ShaderCacheManager.inspectForLaunch(paths);
+
+        assertEquals(1, refreshed.files());
+        assertEquals(2L, refreshed.bytes());
+    }
+
     private ShaderCacheManager.CachePaths paths(String id) throws Exception {
         return paths(temporaryFolder.newFolder(id));
     }

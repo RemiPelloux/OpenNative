@@ -28,6 +28,7 @@ import androidx.activity.compose.BackHandler
 import app.gamenative.BuildConfig
 import app.gamenative.performance.adaptive.AdaptiveEngineCoordinator
 import app.gamenative.performance.shaders.ShaderHealthMonitor
+import app.gamenative.performance.runtime.ComponentInstallPolicy
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -229,9 +230,7 @@ import kotlin.math.roundToInt
 import kotlin.text.lowercase
 import com.winlator.PrefManager as WinlatorPrefManager
 
-// Always re-extract drivers and DXVK on every launch to handle cases of container corruption
-// where games randomly stop working. Set to false once corruption issues are resolved.
-private const val ALWAYS_REEXTRACT = true
+private const val COMPONENT_MARKER_VERSION = "opennative-1"
 
 // Guard to prevent duplicate game_exited events when multiple exit triggers fire simultaneously
 private val isExiting = AtomicBoolean(false)
@@ -3758,7 +3757,7 @@ private fun setupXEnvironment(
         envVars.remove("VKD3D_FRAME_RATE")
         if (!envVars.has("WINEESYNC")) envVars.put("WINEESYNC", "1")
         val shaderCachePaths = ShaderCacheManager.prepare(container, envVars)
-        val initialCacheStats = ShaderCacheManager.inspect(shaderCachePaths)
+        val initialCacheStats = ShaderCacheManager.inspectForLaunch(shaderCachePaths)
         activeShaderCachePaths = shaderCachePaths
         shaderCacheStatsAtLaunch = initialCacheStats
         ShaderHealthMonitor.sessionStarted(container, shaderCachePaths, initialCacheStats)
@@ -3892,7 +3891,7 @@ private fun setupXEnvironment(
         val cachePaths = activeShaderCachePaths
         val initialCacheStats = shaderCacheStatsAtLaunch
         if (cachePaths != null && initialCacheStats != null) {
-            runCatching { ShaderCacheManager.inspect(cachePaths) }
+            runCatching { ShaderCacheManager.inspectAndSnapshot(cachePaths) }
                 .onSuccess { finalStats ->
                     val result = ShaderCacheManager.compare(initialCacheStats, finalStats)
                     ShaderHealthMonitor.sessionFinished(finalStats, result)
@@ -4962,7 +4961,7 @@ private suspend fun setupWineSystemFiles(
         containerDataChanged = true
     }
 
-    // Always refresh components files
+    // Repair bundled components only when their version or critical files changed.
     refreshComponentsFiles(context)
 
     // Normalize dxwrapper for state (dxvk includes version for extraction switch)
@@ -4979,7 +4978,17 @@ private suspend fun setupWineSystemFiles(
         )
     }
 
-    val needReextract = ALWAYS_REEXTRACT || xServerState.value.dxwrapper != container.getExtra("dxwrapper") || variantChanged || wineVersionChanged
+    val dxWrapperFingerprint = ComponentInstallPolicy.fingerprint(
+        COMPONENT_MARKER_VERSION,
+        xServerState.value.dxwrapper,
+        container.containerVariant,
+        container.wineVersion,
+    )
+    val dxWrapperMarker = File(container.rootDir, ".cache/opennative-components/dxwrapper.marker")
+    val dxWrapperCriticalFiles = dxWrapperCriticalFiles(imageFs, xServerState.value.dxwrapper)
+    val needReextract = xServerState.value.dxwrapper != container.getExtra("dxwrapper") ||
+        variantChanged || wineVersionChanged ||
+        ComponentInstallPolicy.needsInstall(dxWrapperMarker, dxWrapperFingerprint, dxWrapperCriticalFiles)
 
     Timber.i("needReextract is " + needReextract)
     Timber.i("xServerState.value.dxwrapper is " + xServerState.value.dxwrapper)
@@ -4996,6 +5005,10 @@ private suspend fun setupWineSystemFiles(
             contentsManager,
             onExtractFileListener,
         )
+        check(ComponentInstallPolicy.isHealthy(dxWrapperCriticalFiles)) {
+            "DX wrapper extraction completed without all critical files"
+        }
+        ComponentInstallPolicy.markInstalled(dxWrapperMarker, dxWrapperFingerprint)
         container.putExtra("dxwrapper", xServerState.value.dxwrapper)
         containerDataChanged = true
     }
@@ -5122,15 +5135,42 @@ private suspend fun applyGeneralPatches(
 }
 
 private fun refreshComponentsFiles(context: Context) {
-    val extractionPairs = listOf(
-        "pulseaudio-gamenative-20260612.tzst" to File(context.filesDir, "pulseaudio")
+    val components = listOf(
+        AssetUtils.VersionedComponent(
+            assetFile = "pulseaudio-gamenative-20260612.tzst",
+            targetDir = File(context.filesDir, "pulseaudio"),
+            fingerprint = "$COMPONENT_MARKER_VERSION:pulseaudio-gamenative-20260612",
+            criticalRelativePaths = listOf("pactl", "modules/module-native-protocol-unix.so"),
+        )
     )
 
     AssetUtils.extractComponentsWithVersionCheck(
-        extractionPairs,
+        components,
         context.assets,
         TarCompressorUtils.Type.ZSTD
     )
+}
+
+private fun dxWrapperCriticalFiles(imageFs: ImageFs, dxwrapper: String): List<File> {
+    val windowsDir = File(imageFs.rootDir, ImageFs.WINEPREFIX + "/drive_c/windows")
+    val dxvkSentinels = arrayOf(
+        "${'$'}{system32}/d3d11.dll",
+        "${'$'}{system32}/dxgi.dll",
+        "${'$'}{syswow64}/d3d11.dll",
+        "${'$'}{syswow64}/dxgi.dll",
+    )
+    val templates = when (dxwrapper.substringBefore('-')) {
+        "vkd3d" -> dxvkSentinels + ContentsManager.VKD3D_TRUST_FILES
+        "wined3d", "cnc" -> arrayOf("${'$'}{system32}/d3d11.dll", "${'$'}{system32}/dxgi.dll")
+        else -> dxvkSentinels
+    }
+    return templates.map { template ->
+        File(
+            template
+                .replace("${'$'}{system32}", File(windowsDir, "system32").path)
+                .replace("${'$'}{syswow64}", File(windowsDir, "syswow64").path)
+        )
+    }
 }
 
 /**
@@ -5493,9 +5533,11 @@ private suspend fun extractGraphicsDriverFiles(
 
         val imageFs = ImageFs.find(context)
         val configDir = imageFs.configDir
-        val sentinel = File(configDir, ".current_graphics_driver")   // lives in shared tree
-        val onDiskId = sentinel.takeIf { it.exists() }?.readText() ?: ""
-        val changed = ALWAYS_REEXTRACT || cacheId != container.getExtra("graphicsDriver") || cacheId != onDiskId
+        val sentinel = File(configDir, ".current_graphics_driver")
+        val graphicsCriticalFiles = graphicsDriverCriticalFiles(imageFs, graphicsDriver)
+        val driverFingerprint = ComponentInstallPolicy.fingerprint(COMPONENT_MARKER_VERSION, cacheId)
+        val changed = cacheId != container.getExtra("graphicsDriver") ||
+            ComponentInstallPolicy.needsInstall(sentinel, driverFingerprint, graphicsCriticalFiles)
         Timber.i("Changed is " + changed + " will re-extract drivers accordingly.")
         val rootDir = imageFs.rootDir
         envVars.put("vblank_mode", "0")
@@ -5510,13 +5552,6 @@ private suspend fun extractGraphicsDriverFiles(
             val vulkanICDDir = File(rootDir, "/usr/share/vulkan/icd.d")
             FileUtils.delete(vulkanICDDir)
             vulkanICDDir.mkdirs()
-            container.putExtra("graphicsDriver", cacheId)
-            container.saveData()
-            if (!sentinel.exists()) {
-                sentinel.parentFile?.mkdirs()
-                sentinel.createNewFile()
-            }
-            sentinel.writeText(cacheId)
         }
         if (dxwrapper.contains("dxvk")) {
             DXVKHelper.setEnvVars(context, dxwrapperConfig, envVars)
@@ -5629,6 +5664,14 @@ private suspend fun extractGraphicsDriverFiles(
                 extractGraphicsDriverComponent(context, "zink-22.2.5", rootDir)
             }
         }
+        if (changed) {
+            check(ComponentInstallPolicy.isHealthy(graphicsCriticalFiles)) {
+                "Graphics driver extraction completed without all critical files"
+            }
+            ComponentInstallPolicy.markInstalled(sentinel, driverFingerprint)
+            container.putExtra("graphicsDriver", cacheId)
+            container.saveData()
+        }
     } else {
         var adrenoToolsDriverId: String? = ""
         val selectedDriverVersion: String?
@@ -5682,8 +5725,21 @@ private suspend fun extractGraphicsDriverFiles(
         // 2. Get the WRAPPER that was last saved to the container's settings.
         val lastInstalledMainWrapper = container.getExtra("lastInstalledMainWrapper")
 
-        // 3. Check if we need to extract a new wrapper file.
-        if (ALWAYS_REEXTRACT || firstTimeBoot || mainWrapperSelection != lastInstalledMainWrapper) {
+        val wrapperCriticalFiles = graphicsDriverCriticalFiles(imageFs, "wrapper")
+        val wrapperMarker = File(imageFs.configDir, ".current_bionic_wrapper")
+        val needsZinkDlls = container.wineVersion.contains("arm64ec") &&
+            GPUInformation.getRenderer(null, null)?.contains("Mali") != true
+        val wrapperFingerprint = ComponentInstallPolicy.fingerprint(
+            COMPONENT_MARKER_VERSION,
+            mainWrapperSelection,
+            currentWrapperVersion,
+            needsZinkDlls.toString(),
+        )
+
+        // 3. Repair only when the selected wrapper or its on-disk files changed.
+        if (firstTimeBoot || mainWrapperSelection != lastInstalledMainWrapper ||
+            ComponentInstallPolicy.needsInstall(wrapperMarker, wrapperFingerprint, wrapperCriticalFiles)
+        ) {
             // We only extract if the selection is actually a wrapper file.
             if (mainWrapperSelection.lowercase(Locale.getDefault()).startsWith("wrapper")) {
                 val wrapperComponentId = mainWrapperSelection.lowercase(Locale.getDefault())
@@ -5709,14 +5765,17 @@ private suspend fun extractGraphicsDriverFiles(
                 }
                 Log.d("XServerDisplayActivity", "First time container boot, extracting extra_libs.tzst")
                 extractGraphicsDriverComponent(context, "extra_libs", rootDir!!)
-                val renderer = GPUInformation.getRenderer(null, null)
-                if (container.wineVersion.contains("arm64ec") && renderer?.contains("Mali") != true) {
+                if (needsZinkDlls) {
                     extractGraphicsDriverComponent(
                         context,
                         "zink_dlls",
                         File(rootDir, ImageFs.WINEPREFIX + "/drive_c/windows")
                     )
                 }
+                check(ComponentInstallPolicy.isHealthy(wrapperCriticalFiles)) {
+                    "Bionic wrapper extraction completed without all critical files"
+                }
+                ComponentInstallPolicy.markInstalled(wrapperMarker, wrapperFingerprint)
             }
         }
 
@@ -5802,6 +5861,37 @@ private suspend fun extractGraphicsDriverFiles(
             envVars.put("ENABLE_VKBASALT", "1")
             envVars.put("VKBASALT_CONFIG", vkbasaltConfig)
         }
+    }
+}
+
+private fun graphicsDriverCriticalFiles(imageFs: ImageFs, graphicsDriver: String): List<File> {
+    val templates = when (graphicsDriver.lowercase(Locale.ROOT)) {
+        "turnip" -> arrayOf(
+            "${'$'}{libdir}/libvulkan_freedreno.so",
+            "${'$'}{sharedir}/vulkan/icd.d/freedreno_icd.aarch64.json",
+            "${'$'}{libdir}/libGL.so.1",
+            "${'$'}{libdir}/libglapi.so.0",
+        )
+        "virgl" -> arrayOf("${'$'}{libdir}/libGL.so.1", "${'$'}{libdir}/libglapi.so.0")
+        "vortek", "adreno", "sd-8-elite" -> arrayOf(
+            "${'$'}{libdir}/libvulkan_vortek.so",
+            "${'$'}{sharedir}/vulkan/icd.d/vortek_icd.aarch64.json",
+            "${'$'}{libdir}/libGL.so.1",
+            "${'$'}{libdir}/libglapi.so.0",
+        )
+        else -> arrayOf(
+            "${'$'}{libdir}/libvulkan_wrapper.so",
+            "${'$'}{sharedir}/vulkan/icd.d/wrapper_icd.aarch64.json",
+            "${'$'}{libdir}/libmain_hook.so",
+            "${'$'}{libdir}/libhook_impl.so",
+        )
+    }
+    return templates.map { template ->
+        File(
+            template
+                .replace("${'$'}{libdir}", imageFs.lib64Dir.path)
+                .replace("${'$'}{sharedir}", imageFs.shareDir.path)
+        )
     }
 }
 
