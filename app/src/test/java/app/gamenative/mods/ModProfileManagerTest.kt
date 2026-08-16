@@ -4,6 +4,12 @@ import app.gamenative.data.ModInstall
 import app.gamenative.data.ModInstallStatus
 import app.gamenative.data.ModProfile
 import app.gamenative.data.ModProfileInstallState
+import app.gamenative.db.dao.ModDao
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
+import io.mockk.slot
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -63,6 +69,29 @@ class ModProfileManagerTest {
             ),
             priorities,
         )
+    }
+
+    @Test
+    fun ensureStatesForInstalls_batchesMissingStatesWithoutFollowUpQueries() = runBlocking {
+        val dao = mockk<ModDao>()
+        val profile = profile(createdAt = 200L)
+        val installs = listOf(
+            install("alpha", modName = "Alpha", createdAt = 100L),
+            install("bravo", modName = "Bravo", createdAt = 100L),
+        )
+        val written = slot<List<ModProfileInstallState>>()
+        coEvery { dao.getProfileInstallStates(profile.appId, profile.profileId) } returns emptyList()
+        coEvery { dao.upsertProfileInstallStates(capture(written)) } returns Unit
+
+        val result = ModProfileManager.ensureStatesForInstalls(dao, profile, installs)
+
+        coVerify(exactly = 1) { dao.getProfileInstallStates(profile.appId, profile.profileId) }
+        coVerify(exactly = 1) { dao.upsertProfileInstallStates(any()) }
+        coVerify(exactly = 0) { dao.upsertProfileInstallState(any()) }
+        coVerify(exactly = 0) { dao.ensureProfileInstallState(any(), any(), any(), any()) }
+        assertEquals(setOf("alpha", "bravo"), written.captured.map { it.installId }.toSet())
+        assertEquals(written.captured.sortedBy { it.priority }, result)
+        assertTrue(result.all { it.enabled })
     }
 
     private fun profile(createdAt: Long): ModProfile =

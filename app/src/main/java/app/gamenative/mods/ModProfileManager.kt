@@ -40,33 +40,44 @@ object ModProfileManager {
         installs: List<ModInstall>,
     ): List<ModProfileInstallState> {
         val existingStates = dao.getProfileInstallStates(profile.appId, profile.profileId)
-        val existingByInstallId = existingStates.associateBy { it.installId }
+        val statesByInstallId = existingStates.associateByTo(LinkedHashMap()) { it.installId }
         val profileHasExistingStates = existingStates.isNotEmpty()
-        var changed = false
+        var nextPriority = (existingStates.maxOfOrNull { it.priority } ?: -1) + 1
+        val now = System.currentTimeMillis()
 
         installs.forEach { install ->
-            val existing = existingByInstallId[install.installId]
+            val existing = statesByInstallId[install.installId]
             when {
                 existing == null -> {
-                    dao.ensureProfileInstallState(
-                        profile = profile,
+                    statesByInstallId[install.installId] = ModProfileInstallState(
+                        profileId = profile.profileId,
                         installId = install.installId,
+                        appId = profile.appId,
                         enabled = defaultMissingStateEnabled(profile, install, profileHasExistingStates),
+                        priority = nextPriority++,
+                        updatedAt = now,
                     )
-                    changed = true
                 }
                 install.status == ModInstallStatus.DISABLED.name && existing.enabled -> {
-                    dao.upsertProfileInstallState(existing.copy(enabled = false, updatedAt = System.currentTimeMillis()))
-                    changed = true
+                    statesByInstallId[install.installId] = existing.copy(enabled = false, updatedAt = now)
                 }
             }
         }
 
-        return if (changed) {
-            dao.getProfileInstallStates(profile.appId, profile.profileId)
-        } else {
-            existingStates
-        }.let { states -> normalizePriorities(dao, states, installs) }
+        val normalizedPriorities = normalizedPriorityByInstallId(statesByInstallId.values.toList(), installs)
+        val finalStates = statesByInstallId.values.map { state ->
+            val normalized = normalizedPriorities[state.installId]
+            if (normalized != null && state.priority != normalized) {
+                state.copy(priority = normalized, updatedAt = now)
+            } else {
+                state
+            }
+        }.sortedWith(compareBy<ModProfileInstallState> { it.priority }.thenBy { it.installId })
+
+        val existingById = existingStates.associateBy { it.installId }
+        val changedStates = finalStates.filter { existingById[it.installId] != it }
+        if (changedStates.isNotEmpty()) dao.upsertProfileInstallStates(changedStates)
+        return finalStates
     }
 
     internal fun defaultMissingStateEnabled(
@@ -86,15 +97,18 @@ object ModProfileManager {
         val normalizedPriorities = normalizedPriorityByInstallId(states, installs)
         if (normalizedPriorities.isEmpty()) return states
 
-        var changed = false
-        states.forEach { state ->
-            val normalized = normalizedPriorities[state.installId] ?: return@forEach
-            if (state.priority != normalized) {
-                dao.upsertProfileInstallState(state.copy(priority = normalized, updatedAt = System.currentTimeMillis()))
-                changed = true
+        val now = System.currentTimeMillis()
+        val normalizedStates = states.map { state ->
+            val normalized = normalizedPriorities[state.installId]
+            if (normalized != null && state.priority != normalized) {
+                state.copy(priority = normalized, updatedAt = now)
+            } else {
+                state
             }
         }
-        return if (changed) dao.getProfileInstallStates(states.first().appId, states.first().profileId) else states
+        val changedStates = normalizedStates.filterIndexed { index, state -> state != states[index] }
+        if (changedStates.isNotEmpty()) dao.upsertProfileInstallStates(changedStates)
+        return normalizedStates.sortedWith(compareBy<ModProfileInstallState> { it.priority }.thenBy { it.installId })
     }
 
     internal fun normalizedPriorityByInstallId(

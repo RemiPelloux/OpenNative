@@ -819,13 +819,22 @@ object NexusModManager {
     suspend fun cleanupFailedArchivesForApp(context: Context, appId: String): ModCleanupResult = withContext(Dispatchers.IO) {
         val dao = dao(context)
         val installs = dao.getInstallsForApp(appId)
-        val reclaimedBytes = installs
-            .filter { it.status == ModInstallStatus.ERROR.name }
+        val failedInstalls = installs.filter { it.status == ModInstallStatus.ERROR.name }
+        val refreshedById = if (failedInstalls.isEmpty()) {
+            emptyMap()
+        } else {
+            failedInstalls
+                .map { it.installId }
+                .chunked(500)
+                .flatMap { dao.getInstallsByIds(it) }
+                .associateBy { it.installId }
+        }
+        val reclaimedBytes = failedInstalls
             .sumOf { install ->
                 val importActiveBeforeRefresh =
                     ModDownloadRegistry.get(install.installId) != null
                 val stillFailed =
-                    dao.getInstall(install.installId)?.status == ModInstallStatus.ERROR.name
+                    refreshedById[install.installId]?.status == ModInstallStatus.ERROR.name
                 val importActiveAfterRefresh =
                     ModDownloadRegistry.get(install.installId) != null
                 if (importActiveBeforeRefresh || !stillFailed || importActiveAfterRefresh) {

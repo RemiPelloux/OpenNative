@@ -103,9 +103,7 @@ public class Win32AppWorkarounds {
             Timber.i("Steam.exe found, not applying affinity!");
             return;
         }
-        String pinnedProcessName = PowerManager.INSTANCE.getPinnedGameProcessName();
-        if (PowerManager.INSTANCE.getOwnsGameAffinity() && pinnedProcessName != null
-                && pinnedProcessName.equalsIgnoreCase(className)) {
+        if (PowerManager.INSTANCE.shouldHoldGameAffinity(className)) {
             Timber.tag("PowerManager").i("Power control holds the affinity of %s, container CPU list not applied", className);
             return;
         }

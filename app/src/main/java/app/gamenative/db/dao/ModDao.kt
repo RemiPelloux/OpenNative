@@ -26,6 +26,9 @@ interface ModDao {
     @Query("SELECT * FROM mod_install WHERE install_id = :installId")
     suspend fun getInstall(installId: String): ModInstall?
 
+    @Query("SELECT * FROM mod_install WHERE install_id IN (:installIds)")
+    suspend fun getInstallsByIds(installIds: List<String>): List<ModInstall>
+
     @Query(
         """
         SELECT * FROM mod_install
@@ -121,6 +124,9 @@ interface ModDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertProfileInstallState(state: ModProfileInstallState)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertProfileInstallStates(states: List<ModProfileInstallState>)
 
     @Transaction
     suspend fun ensureProfileInstallState(

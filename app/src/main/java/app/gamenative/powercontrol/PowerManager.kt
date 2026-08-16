@@ -213,7 +213,8 @@ object PowerManager {
         getDriver().start()
         restoreSavedProfile()
 
-        // Pin PulseAudio to dedicated performance cores if PServer is available
+        // Infrastructure affinity is opt-in with game pinning. Container affinity remains the
+        // source of truth when the profile leaves pinning disabled.
         pinPulseAudioToDedicatedCores()
         isGameStarted = true
 
@@ -531,6 +532,8 @@ object PowerManager {
             if (previousProfile != null && previousProfile.enableGamePinning != profile.enableGamePinning) {
                 val processName = pinnedGameProcessName
                 if (profile.enableGamePinning) {
+                    pinPulseAudioToDedicatedCores()
+                    pinBackgroundProcesses()
                     if (processName != null) {
                         Timber.tag("PowerManager").i("Game pinning switched on, pinning $processName now")
                         startGamePin(processName, "live toggle")
@@ -887,6 +890,10 @@ object PowerManager {
     private fun pinPulseAudioToDedicatedCores() {
         val driver = getDriver()
         if (driver !is PServerDriver) return
+        if (!isAffinityPolicyEnabled()) {
+            Timber.tag("PowerManager").d("PulseAudio pinning disabled for this session")
+            return
+        }
 
         Thread {
             try {
@@ -931,6 +938,10 @@ object PowerManager {
     fun pinBackgroundProcesses() {
         val driver = getDriver()
         if (driver !is PServerDriver) return
+        if (!isAffinityPolicyEnabled()) {
+            Timber.tag("PowerManager").d("Wine infrastructure pinning disabled for this session")
+            return
+        }
 
         Thread {
             try {
@@ -1172,7 +1183,7 @@ object PowerManager {
      * @return true when the pin reached the process
      */
     internal fun applyGameAffinity(cores: List<Int>): Boolean {
-        if (!ownsGameAffinity) return false
+        if (!isAffinityPolicyEnabled()) return false
         val pid = pinnedGamePid ?: return false
         val processName = pinnedGameProcessName ?: return false
         if (cores.isEmpty()) return false
@@ -1283,41 +1294,64 @@ object PowerManager {
 
     internal fun formatCores(cores: Collection<Int>): String = cores.sorted().joinToString(", ")
 
+    /** True when this profile explicitly delegates affinity management to power control. */
+    internal fun isAffinityPolicyEnabled(): Boolean =
+        ownsGameAffinity && currentProfile?.enableGamePinning == true
+
+    /**
+     * Used by the Win32 window hook to avoid racing the profile's affinity manager. Recording a
+     * process name alone is not enough: the profile must have game pinning enabled.
+     */
+    fun shouldHoldGameAffinity(processName: String): Boolean =
+        isAffinityPolicyEnabled() &&
+            pinnedGameProcessName?.equals(processName, ignoreCase = true) == true
+
     /**
      * Decides once per session whether power control may move the game between cores. A container
      * with an explicit CPU list keeps its own pin, anything else (no list, or the all-cores
      * default) leaves the game affinity to power control.
      */
     private fun resolveGameAffinityOwnership() {
-        val cpuList = containerCpuList(containerDir)
+        val (cpuList, cpuListWoW64) = containerCpuLists(containerDir)
         val allCores = parseCpuList(Container.getFallbackCPUList())
-        val explicit = cpuList != null && parseCpuList(cpuList) != allCores
+        val allWoW64Cores = parseCpuList(Container.getFallbackCPUListWoW64())
+        val explicit = hasExplicitContainerAffinity(cpuList, cpuListWoW64, allCores, allWoW64Cores)
         ownsGameAffinity = !explicit
 
         if (explicit) {
             Timber.tag("PowerManager").i(
-                "Container CPU list is $cpuList, power control does not manage the game affinity this session"
+                "Container affinity is native=${cpuList ?: "unset"}, WoW64=${cpuListWoW64 ?: "unset"}; " +
+                    "power control does not manage game affinity this session"
             )
         } else {
             Timber.tag("PowerManager").i(
-                "Container CPU list is ${cpuList ?: "unset"}, power control manages the game affinity this session"
+                "Container affinity uses defaults; power control may manage it when profile pinning is enabled"
             )
         }
     }
 
+    internal fun hasExplicitContainerAffinity(
+        cpuList: String?,
+        cpuListWoW64: String?,
+        fallbackCores: Set<Int> = parseCpuList(Container.getFallbackCPUList()),
+        fallbackWoW64Cores: Set<Int> = parseCpuList(Container.getFallbackCPUListWoW64()),
+    ): Boolean =
+        (cpuList != null && parseCpuList(cpuList) != fallbackCores) ||
+            (cpuListWoW64 != null && parseCpuList(cpuListWoW64) != fallbackWoW64Cores)
+
     /**
      * The CPU list the container stores, or null when it has none.
      */
-    private fun containerCpuList(dir: File?): String? {
-        if (dir == null) return null
+    private fun containerCpuLists(dir: File?): Pair<String?, String?> {
+        if (dir == null) return null to null
         return runCatching {
             val container = Container(dir.name.substringAfterLast('-'))
             container.rootDir = dir
             container.loadData(JSONObject(container.containerJson))
-            container.getCPUList(false)
+            container.getCPUList(false) to container.getCPUListWoW64(false)
         }.onFailure {
-            Timber.tag("PowerManager").w(it, "Failed to read the CPU list of ${dir.absolutePath}")
-        }.getOrNull()
+            Timber.tag("PowerManager").w(it, "Failed to read the CPU lists of ${dir.absolutePath}")
+        }.getOrDefault(null to null)
     }
 
     /**

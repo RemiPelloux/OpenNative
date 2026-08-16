@@ -22,7 +22,11 @@ import app.gamenative.service.SteamService.Companion.getMainAppDepots
 import com.winlator.container.Container
 import com.winlator.container.ContainerManager
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
@@ -32,6 +36,12 @@ import kotlin.collections.component2
 import kotlin.text.ifEmpty
 
 object CustomGameScanner {
+    private data class CachedIcon(val folderStamp: Long, val path: String)
+
+    private val iconExtractionScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val iconExtractionInFlight = ConcurrentHashMap.newKeySet<String>()
+    private val iconExtractionCompletedAt = ConcurrentHashMap<String, Long>()
+    private val iconPathCache = ConcurrentHashMap<String, CachedIcon>()
 
     // Default root path for Custom Games. Always use the app's external storage sandbox
     // (Android/data/<package>/CustomGames) when available; fall back to internal only if external is unavailable.
@@ -160,6 +170,7 @@ object CustomGameScanner {
         val folderPath = getFolderPathFromAppId(appId) ?: return null
         val folder = File(folderPath)
         if (!folder.exists() || !folder.isDirectory) return null
+        cachedIcon(appId, folder)?.let { return it.path.ifEmpty { null } }
 
         val steamGridLogo = folder.listFiles { file ->
             file.isFile && file.name.startsWith("steamgriddb_logo", ignoreCase = true) &&
@@ -171,7 +182,7 @@ object CustomGameScanner {
         }?.firstOrNull()
         if (steamGridLogo != null) {
             Timber.tag("CustomGameScanner").d("Found SteamGridDB logo: ${steamGridLogo.absolutePath}")
-            return steamGridLogo.absolutePath
+            return rememberIcon(appId, folder, steamGridLogo.absolutePath)
         }
 
         // 2) If we can uniquely identify an exe, try extracting embedded icon(s)
@@ -182,10 +193,10 @@ object CustomGameScanner {
                 val outIco = File(exeFile.parentFile, exeFile.nameWithoutExtension + ".extracted.ico")
                 // Use cache if up to date, else (re)extract
                 val useCached = outIco.exists() && outIco.lastModified() >= exeFile.lastModified()
-                if (useCached) return outIco.absolutePath
+                if (useCached) return rememberIcon(appId, folder, outIco.absolutePath)
                 try {
                     if (ExeIconExtractor.tryExtractMainIcon(exeFile, outIco)) {
-                        return outIco.absolutePath
+                        return rememberIcon(appId, folder, outIco.absolutePath)
                     }
                 } catch (e: Exception) {
                     // swallow and fall back
@@ -194,7 +205,7 @@ object CustomGameScanner {
         }
 
         // Fallback to nearby images if extraction was not possible
-        return findNearbyImageIcon(folder, uniqueExeRel)
+        return rememberIcon(appId, folder, findNearbyImageIcon(folder, uniqueExeRel))
     }
 
     // New: Context-aware variant that prefers the selected container executable's icon
@@ -202,6 +213,7 @@ object CustomGameScanner {
         val folderPath = getFolderPathFromAppId(appId) ?: return null
         val folder = File(folderPath)
         if (!folder.exists() || !folder.isDirectory) return null
+        cachedIcon(appId, folder, contextAware = true)?.let { return it.path.ifEmpty { null } }
 
         val steamGridLogo = folder.listFiles { file ->
             file.isFile && file.name.startsWith("steamgriddb_logo", ignoreCase = true) &&
@@ -213,7 +225,7 @@ object CustomGameScanner {
         }?.firstOrNull()
         if (steamGridLogo != null) {
             Timber.tag("CustomGameScanner").d("Found SteamGridDB logo: ${steamGridLogo.absolutePath}")
-            return steamGridLogo.absolutePath
+            return rememberIcon(appId, folder, steamGridLogo.absolutePath, contextAware = true)
         }
 
         // 2) Try extracting from the selected container executable
@@ -229,12 +241,12 @@ object CustomGameScanner {
                         val useCached = outIco.exists() && outIco.lastModified() >= exeFile.lastModified()
                         if (useCached) {
                             Timber.tag("CustomGameScanner").d("Found cached icon at ${outIco.absolutePath}")
-                            return outIco.absolutePath
+                            return rememberIcon(appId, folder, outIco.absolutePath, contextAware = true)
                         }
                         try {
                             if (ExeIconExtractor.tryExtractMainIcon(exeFile, outIco)) {
                                 Timber.tag("CustomGameScanner").d("Extracted icon to ${outIco.absolutePath}")
-                                return outIco.absolutePath
+                                return rememberIcon(appId, folder, outIco.absolutePath, contextAware = true)
                             }
                         } catch (e: Exception) {
                             Timber.tag("CustomGameScanner").d(e, "Failed to extract icon from ${exeFile.name}")
@@ -256,7 +268,7 @@ object CustomGameScanner {
         val fromUnique = findIconFileForCustomGame(appId)
         if (!fromUnique.isNullOrEmpty()) {
             Timber.tag("CustomGameScanner").d("Found icon from unique executable: $fromUnique")
-            return fromUnique
+            return rememberIcon(appId, folder, fromUnique, contextAware = true)
         }
 
         // 4) As last resort, image heuristic
@@ -266,8 +278,30 @@ object CustomGameScanner {
         } else {
             Timber.tag("CustomGameScanner").d("No icon found for $appId")
         }
-        return fromHeuristic
+        return rememberIcon(appId, folder, fromHeuristic, contextAware = true)
     }
+
+    private fun cachedIcon(appId: String, folder: File, contextAware: Boolean = false): CachedIcon? {
+        val cacheKey = iconCacheKey(appId, contextAware)
+        val cached = iconPathCache[cacheKey] ?: return null
+        val validPath = cached.path.isEmpty() || File(cached.path).isFile
+        if (cached.folderStamp == folder.lastModified() && validPath) return cached
+        iconPathCache.remove(cacheKey, cached)
+        return null
+    }
+
+    private fun rememberIcon(
+        appId: String,
+        folder: File,
+        path: String?,
+        contextAware: Boolean = false,
+    ): String? {
+        iconPathCache[iconCacheKey(appId, contextAware)] = CachedIcon(folder.lastModified(), path.orEmpty())
+        return path
+    }
+
+    private fun iconCacheKey(appId: String, contextAware: Boolean): String =
+        if (contextAware) "$appId#container" else appId
 
     /**
      * Finds a user-supplied cover image for a Custom Game's CAPSULE (vertical box-art) view.
@@ -596,13 +630,28 @@ object CustomGameScanner {
     private fun handleCustomGameDetection(folder: File, appId: String, idPart: Int) {
         CustomGameCache.addEntry(idPart, folder.absolutePath)
 
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-            try {
-                val hasExtractedIcon = folder.listFiles { file ->
-                    file.isFile && file.name.endsWith(".extracted.ico", ignoreCase = true)
-                }?.isNotEmpty() == true
+        scheduleIconExtraction(folder, appId)
+    }
 
-                if (!hasExtractedIcon) {
+    /**
+     * Library recomposition and search can scan the same folder repeatedly. Keep one in-flight IO
+     * job per folder and remember successful work until the folder changes.
+     */
+    private fun scheduleIconExtraction(folder: File, appId: String) {
+        val key = runCatching { folder.canonicalPath }.getOrDefault(folder.absolutePath)
+        val folderStamp = folder.lastModified()
+        if (iconExtractionCompletedAt[key] == folderStamp || !iconExtractionInFlight.add(key)) return
+
+        iconExtractionScope.launch {
+            var completed = false
+            try {
+                val extractedIcon = folder.listFiles { file ->
+                    file.isFile && file.name.endsWith(".extracted.ico", ignoreCase = true)
+                }?.firstOrNull()
+
+                if (extractedIcon != null) {
+                    rememberIcon(appId, folder, extractedIcon.absolutePath)
+                } else {
                     val uniqueExeRel = findUniqueExeRelativeToFolder(folder)
                     if (!uniqueExeRel.isNullOrEmpty()) {
                         val exeFile = File(folder, uniqueExeRel.replace('/', File.separatorChar))
@@ -611,13 +660,20 @@ object CustomGameScanner {
                             if (!outIco.exists() || outIco.lastModified() < exeFile.lastModified()) {
                                 if (ExeIconExtractor.tryExtractMainIcon(exeFile, outIco)) {
                                     Timber.tag("CustomGameScanner").d("Extracted icon for ${folder.name} from ${exeFile.name}")
+                                    rememberIcon(appId, folder, outIco.absolutePath)
                                 }
+                            } else {
+                                rememberIcon(appId, folder, outIco.absolutePath)
                             }
                         }
                     }
                 }
+                completed = true
             } catch (e: Exception) {
                 Timber.tag("CustomGameScanner").d(e, "Icon extraction failed for ${folder.name}")
+            } finally {
+                if (completed) iconExtractionCompletedAt[key] = folder.lastModified()
+                iconExtractionInFlight.remove(key)
             }
         }
     }

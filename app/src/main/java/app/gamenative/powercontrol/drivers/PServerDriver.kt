@@ -1217,7 +1217,9 @@ class PServerDriver(private val context: Context? = null) : PerformanceDriver() 
             enableAdaptiveFpsCap = isTestedDevice,
             enableAutoTuning = isTestedDevice,
             enablePerClusterTuning = isTestedDevice,
-            enableGamePinning = isTestedDevice,
+            // Affinity is workload-sensitive and can reduce performance when the guest runtime
+            // already has an explicit native/WoW64 mask. Keep it opt-in on every device.
+            enableGamePinning = false,
             enableFanControl = isTestedDevice,
             name = PerformancePreset.BALANCED.displayName,
             governor = CpuGovernor.SCHEDUTIL,

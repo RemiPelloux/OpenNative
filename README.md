@@ -26,6 +26,7 @@ This project does not include games. Use it only with software and store account
 - **Controller runtime fixes:** only configured controller slots create guest-side workers; single-player containers no longer provision four players by default.
 - **Fewer database round trips:** GOG upserts, storage migrations and frontend synchronization use batch reads or set-based updates instead of row-by-row N+1 access.
 - **Gamma Emerald validation:** a stable 720p/30 FPS baseline with controller input and an optional low-cost shadow profile is documented separately.
+- **Measured Thor tuning:** affinity is opt-in, native and WoW64 masks are respected, repeated mod writes are batched, and duplicate custom-game icon work is suppressed during library refreshes.
 
 These changes have automated coverage and device smoke testing. They are not presented as a universal FPS uplift: performance claims require controlled before/after captures on the same game, scene, driver and thermal state.
 
