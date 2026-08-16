@@ -1,12 +1,17 @@
 # Changelog
 
-## 0.3.0-alpha.1 - Unreleased
+## 0.3.0-beta.1 - 2026-08-16
 
-- Start Adaptive Engine in observation-only mode; it cannot change resolution or device clocks.
+- Add the guarded Adaptive Engine with observation-only mode as the default and explicit per-game opt-in for automatic resolution changes.
+- Preserve the native resolution ceiling, apply staged changes only on the next launch and roll back unsuccessful probes.
 - Classify sustained GPU, CPU, memory, thermal and frame-pacing pressure from session telemetry.
 - Predict five-second p95 frametime and thermal trends with a bounded constant-state online model.
-- Emit confidence and resolution advice into local performance reports for controlled validation.
+- Never lower resolution for CPU, memory or frame-pacing stalls and never change device clocks.
+- Add Qualcomm/Adreno capability reporting, memory-pressure policy and Shader Health cache diagnostics.
+- Add Adaptive Engine controls to the quick menu and AYN Thor secondary-screen cockpit.
+- Export sanitized local diagnostics with paths and credentials redacted.
 - Sample Android memory pressure on the existing slow resource cadence rather than in the frame path.
+- Document the model, safeguards and remaining AYN Thor performance-certification work.
 
 ## 0.2.2 - 2026-08-16
 
