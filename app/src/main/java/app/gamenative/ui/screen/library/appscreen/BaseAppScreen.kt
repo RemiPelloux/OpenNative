@@ -486,7 +486,11 @@ abstract class BaseAppScreen {
     }
 
     private fun shareDiagnostics(context: Context, libraryItem: LibraryItem) {
-        val file = DiagnosticsLog.file(context, libraryItem.appId)
+        val file = runCatching { DiagnosticsLog.createSanitizedShareFile(context, libraryItem.appId) }
+            .getOrElse {
+                SnackbarManager.show(context.getString(R.string.diagnostics_share_none))
+                return
+            }
         if (!file.exists()) {
             SnackbarManager.show(context.getString(R.string.diagnostics_share_none))
             return

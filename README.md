@@ -29,11 +29,14 @@ This project does not include games. Use it only with software and store account
 - **Measured Thor tuning:** affinity is opt-in, native and WoW64 masks are respected, repeated mod writes are batched, and duplicate custom-game icon work is suppressed during library refreshes.
 - **UE shader and memory stability:** DXVK caches now follow OpenNative's real package path, unlimited profiles receive a conservative device-aware guest-memory budget on 6-14 GB devices, and retired SurfaceFlinger buffers are reclaimed.
 - **Backend-aware shader cache:** DXVK, Mesa/Zink and VKD3D caches persist per game with independent compatibility keys. A Turnip update keeps reusable DXVK state while rotating driver-specific Vulkan caches; existing OpenNative caches migrate without a copy and custom paths remain untouched.
-- **Adaptive Engine preview:** the `0.3.0-alpha.1` branch observes frame pacing, CPU/GPU load, memory and thermals, then records an explainable bottleneck and five-second prediction. This preview does not apply automatic tuning yet.
+- **Adaptive Engine 0.3:** classifies CPU, GPU, memory, thermal and pacing pressure; predicts five-second p95/temperature; identifies per-game frame cost with bounded RLS; and stages aspect-correct resolution changes for the next launch with confidence, hysteresis, cooldown and rollback. Existing games default to observation mode.
+- **Shader Health:** shows cold/warm/growing state, active generation and cache growth in the quick menu and Thor cockpit. Explicit maintenance runs only after game exit and never removes the active Mesa, DXVK or VKD3D generation.
+- **Capability-driven Snapdragon support:** records Qualcomm/Adreno, CPU policy topology and Android Performance Hint availability from runtime capabilities. OpenNative does not force clocks, affinity, unsafe math or speculative driver variables.
+- **Sanitized diagnostics:** shared reports include performance, prediction, memory, resolution and shader state while redacting credentials and device-local paths.
 
 These changes have automated coverage and device smoke testing. They are not presented as a universal FPS uplift: performance claims require controlled before/after captures on the same game, scene, driver and thermal state.
 
-The active `0.3.0` implementation roadmap is documented in [`docs/ROADMAP_0.3.0.md`](docs/ROADMAP_0.3.0.md).
+The `0.3.0` architecture and safety model are documented in [`docs/ADAPTIVE_ENGINE.md`](docs/ADAPTIVE_ENGINE.md); implementation and release gates are tracked in [`docs/ROADMAP_0.3.0.md`](docs/ROADMAP_0.3.0.md).
 
 ## Compatibility
 
@@ -105,6 +108,15 @@ Run the focused JVM suite:
   --tests '*JsonlSessionLogTest' \
   --tests '*PortableContainerProfileTest' \
   --tests '*ExternalDisplayInputControllerTest'
+```
+
+For the 0.3.0 engine and shader cache:
+
+```bash
+./gradlew :app:testModernDebugUnitTest \
+  --tests 'app.gamenative.performance.*' \
+  --tests 'com.winlator.core.ShaderCache*' \
+  --tests 'app.gamenative.utils.DiagnosticsLogTest'
 ```
 
 For performance work, follow [docs/PERFORMANCE.md](docs/PERFORMANCE.md). A change is promoted only when repeated measurements show a gain without a stability or thermal regression.
