@@ -210,6 +210,15 @@ The supporting source audit is in `docs/PERFORMANCE_AUDIT_1.0.0.md`.
 
 ## 1.0: certification and stable release
 
+### Release-candidate implementation status
+
+- Complete: confirmed collection/database N+1 paths are chunked and batched.
+- Complete: managed runtime components use versioned integrity checks instead of forced extraction.
+- Complete: clean-session shader statistics can skip one unchanged launch scan without weakening maintenance checks.
+- Complete: swap/PSI signals and sustained hysteresis feed the bounded Adaptive Engine.
+- Pending: target-device A/B performance captures, 30 launch/stop cycles and 60-minute soak.
+- Pending: redistribution clearance or compatible replacements for inherited proprietary shims.
+
 ### Required scenarios
 
 - Five alternating A/B runs after warmup for every promoted performance change.

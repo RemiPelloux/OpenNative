@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.0-rc.1 - 2026-08-16
+
+- Remove confirmed Steam, package, DLC, branch and Nexus collection N+1 query paths with chunked reads that respect SQLite's 999-parameter limit.
+- Replace forced per-launch DXVK, graphics-driver and PulseAudio extraction with versioned integrity manifests and automatic repair of missing or empty critical files.
+- Promote bundled components through a staged directory so a failed extraction does not destroy the previous working PulseAudio installation.
+- Reuse a clean-session shader-cache statistics snapshot on the next launch, consume it before the guest starts and fall back to a real scan after crashes or cache changes.
+- Add low-allocation swap and Linux PSI sampling on the existing slow resource cadence.
+- Gate adaptive model training and shader maintenance with sustained memory-pressure hysteresis instead of reacting to one noisy sample.
+- Share daemon process-output executors and disable unconditional guest stdout logging in release builds.
+- Add focused tests for component repair, shader snapshot validation, SQLite batches above 999 IDs, swap/PSI parsing and memory-pressure transitions.
+
+This is a release candidate. Performance uplift is not claimed until controlled A/B captures, 30 launch/stop cycles and the 60-minute AYN Thor soak pass.
+
 ## 0.3.0-beta.1 - 2026-08-16
 
 - Add the guarded Adaptive Engine with observation-only mode as the default and explicit per-game opt-in for automatic resolution changes.

@@ -83,18 +83,18 @@ repeated launches can therefore retain threads or spend time formatting guest ou
 at `app/src/main/java/app/gamenative/PluviaApp.kt:188-200`; the source itself marks this as a leak risk.
 The shared teardown is improved, but 1.0 needs one idempotent session owner instead of nullable globals.
 
-### P1: Steam synchronization contains confirmed N+1 database work
+### Resolved in 1.0.0-rc.1: confirmed collection N+1 database work
 
-The following loops execute one or more Room queries per item:
+The audited loops previously executed one or more Room queries per item:
 
 - app-change filtering calls `findApp()` per change in `SteamService.kt:4383-4397`;
 - PICS app processing calls `findApp()` and then `findLicense()` per app at `4464-4468`;
 - package processing calls `findApp()` per app ID, and may call `findLicense()` again, at `4561-4594`;
 - DLC ownership checks call license and app lookups per depot at `806-828`.
 
-These paths are outside the frame loop but can stall large-library refreshes and compete with a game if
-store work remains active. Existing GOG, Epic and Amazon upserts already demonstrate the correct batch
-pattern.
+They now use chunked bulk reads that stay below SQLite's 999-variable limit, in-memory maps and grouped
+writes. DAO tests cover batches above 999 IDs. These paths remain outside the frame loop; synthetic
+query-count and active-game contention measurements are still required for stable certification.
 
 ### P2: the Steam schema performs non-indexable work and can publish stale rows
 
@@ -145,6 +145,21 @@ secret and publication assumptions.
 
 The roadmap must introduce comparable generic ARM64, ThinLTO and optional ARMv9 experiments, but no build
 flag becomes default without binary-size, correctness, FPS, p95/p99 and thermal evidence.
+
+## Implemented for 1.0.0-rc.1
+
+- DXVK, graphics-driver and PulseAudio files are no longer force-extracted on every launch. A versioned
+  marker is accepted only while backend-specific critical files exist and are non-empty; damage triggers
+  repair and PulseAudio promotion preserves the previous directory on failure.
+- Active shader-cache statistics are written after a clean session and consumed once at the next launch
+  when all backend root timestamps still match. Crash, cache mutation, pruning and deletion paths do not
+  trust the snapshot.
+- Swap and Linux PSI memory pressure are sampled without `readLines` on the slow resource cadence.
+  Adaptive restrictions require sustained pressure and recover only after a longer healthy window.
+- Confirmed collection/database N+1 paths are batched, including Steam PICS, packages, DLC, branches and
+  Nexus mod status/profile operations.
+
+These are correctness and overhead improvements. They are not yet evidence of a game FPS increase.
 
 ## What is already in good shape
 

@@ -24,11 +24,14 @@ This project does not include games. Use it only with software and store account
 - **Dual-screen performance cockpit:** the game stays on the primary display while metrics and session shortcuts can use an Android secondary display.
 - **Portable container profiles:** versioned exports preserve relevant Wine, graphics, controller and display settings without embedding device-local paths.
 - **Controller runtime fixes:** only configured controller slots create guest-side workers; single-player containers no longer provision four players by default.
-- **Fewer database round trips:** GOG upserts, storage migrations and frontend synchronization use batch reads or set-based updates instead of row-by-row N+1 access.
+- **Fewer database round trips:** Steam PICS, packages, DLC ownership and private branches plus GOG, Nexus, storage and frontend flows use chunked bulk reads and grouped writes instead of row-by-row N+1 access.
 - **Gamma Emerald validation:** a stable 720p/30 FPS baseline with controller input and an optional low-cost shadow profile is documented separately.
 - **Measured Thor tuning:** affinity is opt-in, native and WoW64 masks are respected, repeated mod writes are batched, and duplicate custom-game icon work is suppressed during library refreshes.
 - **UE shader and memory stability:** DXVK caches now follow OpenNative's real package path, unlimited profiles receive a conservative device-aware guest-memory budget on 6-14 GB devices, and retired SurfaceFlinger buffers are reclaimed.
 - **Backend-aware shader cache:** DXVK, Mesa/Zink and VKD3D caches persist per game with independent compatibility keys. A Turnip update keeps reusable DXVK state while rotating driver-specific Vulkan caches; existing OpenNative caches migrate without a copy and custom paths remain untouched.
+- **Faster safe launches:** OpenNative no longer extracts DXVK, the graphics driver and PulseAudio on every launch. Versioned integrity sentinels reuse healthy files, repair damage automatically and preserve the previous component if staged extraction fails.
+- **Incremental shader inspection:** a clean shutdown records active-cache statistics atomically. The next launch consumes that snapshot when cache roots are unchanged, while crashes, modifications, pruning and deletion still force a real scan.
+- **Sustained memory governor:** the Adaptive Engine reads swap and Linux PSI on the slow metrics cadence and uses hysteresis before pausing model training or cache maintenance. It does not change clocks, kill the guest or overwrite explicit user settings.
 - **Adaptive Engine 0.3:** classifies CPU, GPU, memory, thermal and pacing pressure; predicts five-second p95/temperature; identifies per-game frame cost with bounded RLS; and stages aspect-correct resolution changes for the next launch with confidence, hysteresis, cooldown and rollback. Existing games default to observation mode.
 - **Shader Health:** shows cold/warm/growing state, active generation and cache growth in the quick menu and Thor cockpit. Explicit maintenance runs only after game exit and never removes the active Mesa, DXVK or VKD3D generation.
 - **Capability-driven Snapdragon support:** records Qualcomm/Adreno, CPU policy topology and Android Performance Hint availability from runtime capabilities. OpenNative does not force clocks, affinity, unsafe math or speculative driver variables.
@@ -55,7 +58,11 @@ OpenNative deliberately keeps the existing application ID `com.remipelloux.gamen
 ## Install
 
 The public `0.3.0-beta.1` prerelease currently includes a tested `modernRelease`
-APK for the AYN Thor development device. Redistribution of that binary is under
+APK for the AYN Thor development device. The `1.0.0-rc.1` source and local APK
+add database, component-cache, shader-cache and memory-governor work, but remain
+a release candidate pending AYN Thor A/B and soak certification.
+
+Redistribution of that binary is under
 review: the inherited bundle contains three upstream prebuilt shims marked
 proprietary and does not include a downstream redistribution grant. Stable
 binary releases require permission from their copyright holder or compatible
@@ -120,6 +127,16 @@ For the 0.3.0 engine and shader cache:
   --tests 'app.gamenative.performance.*' \
   --tests 'com.winlator.core.ShaderCache*' \
   --tests 'app.gamenative.utils.DiagnosticsLogTest'
+```
+
+For the 1.0 release-candidate runtime paths:
+
+```bash
+./gradlew :app:testModernDebugUnitTest \
+  --tests 'app.gamenative.performance.runtime.ComponentInstallPolicyTest' \
+  --tests 'com.winlator.core.ShaderCacheManagerTest' \
+  --tests 'app.gamenative.performance.device.MemoryPressurePolicyTest' \
+  --tests 'app.gamenative.powercontrol.metrics.MemoryPressureReaderTest'
 ```
 
 For performance work, follow [docs/PERFORMANCE.md](docs/PERFORMANCE.md). A change is promoted only when repeated measurements show a gain without a stability or thermal regression.
