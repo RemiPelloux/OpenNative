@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0-alpha.1 - Unreleased
+
+- Start Adaptive Engine in observation-only mode; it cannot change resolution or device clocks.
+- Classify sustained GPU, CPU, memory, thermal and frame-pacing pressure from session telemetry.
+- Predict five-second p95 frametime and thermal trends with a bounded constant-state online model.
+- Emit confidence and resolution advice into local performance reports for controlled validation.
+- Sample Android memory pressure on the existing slow resource cadence rather than in the frame path.
+
 ## 0.2.2 - 2026-08-16
 
 - Add persistent per-container shader caches for DXVK, Mesa/Zink and VKD3D across Bionic and glibc launchers.

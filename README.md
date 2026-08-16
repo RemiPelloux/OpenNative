@@ -29,8 +29,11 @@ This project does not include games. Use it only with software and store account
 - **Measured Thor tuning:** affinity is opt-in, native and WoW64 masks are respected, repeated mod writes are batched, and duplicate custom-game icon work is suppressed during library refreshes.
 - **UE shader and memory stability:** DXVK caches now follow OpenNative's real package path, unlimited profiles receive a conservative device-aware guest-memory budget on 6-14 GB devices, and retired SurfaceFlinger buffers are reclaimed.
 - **Backend-aware shader cache:** DXVK, Mesa/Zink and VKD3D caches persist per game with independent compatibility keys. A Turnip update keeps reusable DXVK state while rotating driver-specific Vulkan caches; existing OpenNative caches migrate without a copy and custom paths remain untouched.
+- **Adaptive Engine preview:** the `0.3.0-alpha.1` branch observes frame pacing, CPU/GPU load, memory and thermals, then records an explainable bottleneck and five-second prediction. This preview does not apply automatic tuning yet.
 
 These changes have automated coverage and device smoke testing. They are not presented as a universal FPS uplift: performance claims require controlled before/after captures on the same game, scene, driver and thermal state.
+
+The active `0.3.0` implementation roadmap is documented in [`docs/ROADMAP_0.3.0.md`](docs/ROADMAP_0.3.0.md).
 
 ## Compatibility
 

@@ -17,4 +17,6 @@ data class MetricsSnapshot(
     val gpuUsagePercent: Float?,
     val cpuTempC: Int?,
     val gpuTempC: Int?,
+    val availableMemoryBytes: Long?,
+    val lowMemory: Boolean,
 )

@@ -1,9 +1,12 @@
 package app.gamenative.powercontrol.metrics
 
+import android.app.ActivityManager
 import android.content.Context
 import android.hardware.display.DisplayManager
 import android.os.SystemClock
 import android.view.Display
+import app.gamenative.performance.adaptive.AdaptivePerformanceObserver
+import app.gamenative.performance.adaptive.AdaptivePrediction
 import app.gamenative.powercontrol.PowerBaselineScripts
 import app.gamenative.powercontrol.PowerManager
 import java.io.File
@@ -52,6 +55,10 @@ object PerformanceMetricsCollector {
     private var cachedGpu: GpuUsageReading? = null
     private var cachedCpuTempC: Int? = null
     private var cachedGpuTempC: Int? = null
+    private var activityManager: ActivityManager? = null
+    private val memoryInfo = ActivityManager.MemoryInfo()
+    private var cachedAvailableMemoryBytes: Long? = null
+    private var cachedLowMemory = false
 
     @Volatile
     private var paused = false
@@ -72,9 +79,13 @@ object PerformanceMetricsCollector {
         cachedGpu = null
         cachedCpuTempC = null
         cachedGpuTempC = null
+        activityManager = appContext.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        cachedAvailableMemoryBytes = null
+        cachedLowMemory = false
         sampleCount = 0L
         paused = false
         FrameTimeRing.start()
+        AdaptivePerformanceObserver.start()
         openLog(appContext, sessionStartMillis)
 
         val gpuPaths = SystemMetricsSources.gpuUsagePaths()
@@ -109,6 +120,7 @@ object PerformanceMetricsCollector {
         samplingJob?.cancel()
         samplingJob = null
         FrameTimeRing.stop()
+        AdaptivePerformanceObserver.stop()
         closeLog()
         PowerManager.latestMetrics = null
         Timber.tag(TAG).i("Collector stopped after %d samples", sampleCount)
@@ -126,6 +138,7 @@ object PerformanceMetricsCollector {
         cpuSampler.reset()
         gpuSampler.reset()
         cadence.reset()
+        AdaptivePerformanceObserver.start()
         paused = false
         Timber.tag(TAG).i("Collector resumed")
     }
@@ -145,6 +158,7 @@ object PerformanceMetricsCollector {
         if (decision.sampleResources) {
             cachedCpu = cpuSampler.sample()
             cachedGpu = gpuSampler.sample()
+            sampleMemory()
         }
         if (decision.sampleThermals) {
             cachedCpuTempC = SystemMetricsSources.readTemperatureC(SystemMetricsSources.cpuTempPaths())
@@ -164,15 +178,18 @@ object PerformanceMetricsCollector {
             gpuUsagePercent = cachedGpu?.percent?.toFloat(),
             cpuTempC = cachedCpuTempC,
             gpuTempC = cachedGpuTempC,
+            availableMemoryBytes = cachedAvailableMemoryBytes,
+            lowMemory = cachedLowMemory,
         )
 
+        val prediction = AdaptivePerformanceObserver.observe(snapshot, PowerManager.targetFps)
         publish(snapshot)
-        if (decision.writeLog) appendLog(snapshot)
+        if (decision.writeLog) appendLog(snapshot, prediction)
 
         sampleCount++
         if (sampleCount % LOG_EVERY_N_SAMPLES == 0L) {
             Timber.tag(TAG).i(
-                "fps=%.1f p95=%.1fms slow=%d/%d cpu=%s%%(%s) gpu=%s%% cpuTemp=%s gpuTemp=%s",
+                "fps=%.1f p95=%.1fms slow=%d/%d cpu=%s%%(%s) gpu=%s%% cpuTemp=%s gpuTemp=%s adaptive=%s confidence=%.2f",
                 snapshot.fps,
                 snapshot.frameTimeP95Ms,
                 snapshot.slowFrameCount,
@@ -182,7 +199,21 @@ object PerformanceMetricsCollector {
                 snapshot.gpuUsagePercent?.toInt()?.toString() ?: "-",
                 snapshot.cpuTempC?.toString() ?: "-",
                 snapshot.gpuTempC?.toString() ?: "-",
+                prediction.reason,
+                prediction.confidence,
             )
+        }
+    }
+
+    private fun sampleMemory() {
+        try {
+            val manager = activityManager ?: return
+            manager.getMemoryInfo(memoryInfo)
+            cachedAvailableMemoryBytes = memoryInfo.availMem
+            cachedLowMemory = memoryInfo.lowMemory
+        } catch (_: Exception) {
+            cachedAvailableMemoryBytes = null
+            cachedLowMemory = false
         }
     }
 
@@ -221,17 +252,19 @@ object PerformanceMetricsCollector {
         sessionLog.open(metricsDirectory(context), sessionStartMillis)
     }
 
-    private fun appendLog(snapshot: MetricsSnapshot) {
-        sessionLog.append(toJsonLine(snapshot))
+    private fun appendLog(snapshot: MetricsSnapshot, prediction: AdaptivePrediction) {
+        sessionLog.append(toJsonLine(snapshot, prediction))
     }
 
-    private fun toJsonLine(snapshot: MetricsSnapshot): String {
+    private fun toJsonLine(snapshot: MetricsSnapshot, prediction: AdaptivePrediction): String {
         return String.format(
             Locale.US,
             "{\"timestampMs\":%d,\"fps\":%.2f,\"frameTimeP50Ms\":%.2f,\"frameTimeP95Ms\":%.2f," +
                 "\"frameTimeMaxMs\":%.2f,\"slowFrameCount\":%d,\"totalFrameCount\":%d," +
                 "\"cpuUsagePercent\":%s,\"cpuUsageSource\":\"%s\",\"gpuUsagePercent\":%s," +
-                "\"cpuTempC\":%s,\"gpuTempC\":%s}",
+                "\"cpuTempC\":%s,\"gpuTempC\":%s,\"availableMemoryBytes\":%s,\"lowMemory\":%s," +
+                "\"adaptiveBottleneck\":\"%s\",\"adaptiveAdvice\":\"%s\"," +
+                "\"predictedP95Ms\":%.2f,\"predictedTemperatureC\":%s,\"adaptiveConfidence\":%.3f}",
             snapshot.timestampMs,
             snapshot.fps,
             snapshot.frameTimeP50Ms,
@@ -244,6 +277,13 @@ object PerformanceMetricsCollector {
             snapshot.gpuUsagePercent?.let { String.format(Locale.US, "%.1f", it) } ?: "null",
             snapshot.cpuTempC?.toString() ?: "null",
             snapshot.gpuTempC?.toString() ?: "null",
+            snapshot.availableMemoryBytes?.toString() ?: "null",
+            snapshot.lowMemory,
+            prediction.bottleneck.name,
+            prediction.resolutionAdvice.name,
+            prediction.predictedP95Ms,
+            prediction.predictedTemperatureC?.let { String.format(Locale.US, "%.2f", it) } ?: "null",
+            prediction.confidence,
         )
     }
 
