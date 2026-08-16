@@ -22,6 +22,7 @@ import app.gamenative.PrefManager
 import app.gamenative.R
 import app.gamenative.data.AppInfo
 import app.gamenative.data.CachedLicense
+import app.gamenative.data.ChangeNumbers
 import app.gamenative.data.DepotInfo
 import app.gamenative.data.DownloadInfo
 import app.gamenative.data.EncryptedAppTicket
@@ -133,7 +134,6 @@ import java.io.OutputStream
 import java.lang.NullPointerException
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.Collections
 import java.util.EnumSet
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ConcurrentHashMap
@@ -805,19 +805,32 @@ class SteamService : Service(), IChallengeUrlChanged {
 
         suspend fun getOwnedAppDlc(appId: Int): Map<Int, DepotInfo> {
             val client = instance?.steamClient ?: return emptyMap()
-            val accountId = client.steamID?.accountID?.toInt() ?: return emptyMap()
+            client.steamID?.accountID?.toInt() ?: return emptyMap()
             val ownedGameIds = getOwnedGames(userSteamId!!.convertToUInt64()).map { it.appId }.toHashSet()
+            val appDlc = getAppDlc(appId)
+            val dlcAppIds = appDlc.values
+                .map { it.dlcAppId }
+                .filter { it != INVALID_APP_ID }
+                .distinct()
+            val licensedDlcIds = instance?.licenseDao
+                ?.findLicenses(dlcAppIds)
+                ?.mapTo(HashSet()) { it.packageId }
+                .orEmpty()
+            val cachedDlcIds = instance?.appDao
+                ?.findApps(dlcAppIds)
+                ?.mapTo(HashSet()) { it.id }
+                .orEmpty()
 
-            return getAppDlc(appId).filter { (_, depot) ->
+            return appDlc.filter { (_, depot) ->
                 when {
                     /* Base-game depots always download */
                     depot.dlcAppId == INVALID_APP_ID -> true
 
                     /* ① licence cache */
-                    instance?.licenseDao?.findLicense(depot.dlcAppId) != null -> true
+                    depot.dlcAppId in licensedDlcIds -> true
 
                     /* ② PICS row */
-                    instance?.appDao?.findApp(depot.dlcAppId) != null -> true
+                    depot.dlcAppId in cachedDlcIds -> true
 
                     /* ③ owned-games list */
                     depot.dlcAppId in ownedGameIds -> true
@@ -3092,8 +3105,11 @@ class SteamService : Service(), IChallengeUrlChanged {
                     val callback = steamApps.checkAppBetaPassword(appId, password).await()
                     if (callback.result == EResult.OK) {
                         val dao = instance?.steamUnlockedBranchDao ?: return@withContext callback.betaPasswords
-                    for ((branchName, _) in callback.betaPasswords) {
-                            dao.insert(SteamUnlockedBranch(appId, branchName, password))
+                        val branches = callback.betaPasswords.keys.map { branchName ->
+                            SteamUnlockedBranch(appId, branchName, password)
+                        }
+                        if (branches.isNotEmpty()) {
+                            dao.insertAll(branches)
                         }
                         callback.betaPasswords
                     } else {
@@ -4382,10 +4398,12 @@ class SteamService : Service(), IChallengeUrlChanged {
 
                 // Process any app changes
                 launch {
-                    changesSince.appChanges.values
+                    val appChanges = changesSince.appChanges.values
+                    val existingApps = appDao.findApps(appChanges.map { it.id }).associateBy { it.id }
+                    appChanges
                         .filter { changeData ->
                             // only queue PICS requests for apps existing in the db that have changed
-                            val app = appDao.findApp(changeData.id) ?: return@filter false
+                            val app = existingApps[changeData.id] ?: return@filter false
                             changeData.changeNumber != app.lastChangeNumber
                         }
                         .map { PICSRequest(id = it.id) }
@@ -4399,10 +4417,13 @@ class SteamService : Service(), IChallengeUrlChanged {
 
                 // Process any package changes
                 launch {
-                    val pkgsWithChanges = changesSince.packageChanges.values
+                    val packageChanges = changesSince.packageChanges.values
+                    val existingPackages = licenseDao.findLicenses(packageChanges.map { it.id })
+                        .associateBy { it.packageId }
+                    val pkgsWithChanges = packageChanges
                         .filter { changeData ->
                             // only queue PICS requests for pkgs existing in the db that have changed
-                            val pkg = licenseDao.findLicense(changeData.id) ?: return@filter false
+                            val pkg = existingPackages[changeData.id] ?: return@filter false
                             changeData.changeNumber != pkg.lastChangeNumber
                         }
 
@@ -4461,10 +4482,20 @@ class SteamService : Service(), IChallengeUrlChanged {
                             )
 
                             ensureActive()
-                            val steamAppsMap = picsCallback.apps.values.mapNotNull { app ->
-                                val appFromDb = appDao.findApp(app.id)
+                            val incomingApps = picsCallback.apps.values
+                            val existingApps = appDao.findApps(incomingApps.map { it.id })
+                                .associateBy { it.id }
+                            val existingLicenses = licenseDao.findLicenses(
+                                existingApps.values
+                                    .map { it.packageId }
+                                    .filter { it != INVALID_PKG_ID }
+                                    .distinct(),
+                            ).associateBy { it.packageId }
+                            val staleUfsChanges = mutableListOf<ChangeNumbers>()
+                            val steamAppsMap = incomingApps.mapNotNull { app ->
+                                val appFromDb = existingApps[app.id]
                                 val packageId = appFromDb?.packageId ?: INVALID_PKG_ID
-                                val packageFromDb = if (packageId != INVALID_PKG_ID) licenseDao.findLicense(packageId) else null
+                                val packageFromDb = existingLicenses[packageId]
                                 val ownerAccountId = packageFromDb?.ownerAccountId ?: emptyList()
 
                                 // Apps with -1 for the ownerAccountId should be added.
@@ -4485,7 +4516,7 @@ class SteamService : Service(), IChallengeUrlChanged {
                                     if (ufsParseVersionOutdated && newApp.ufs.saveFilePatterns.any { it.uploadRoot != it.root || it.uploadPath != it.path }) {
                                         // UFS path logic changed and this app has rootoverrides: store 0 to force one
                                         // full cloud query while preserving the local sync snapshot.
-                                        changeNumbersDao.insert(app.id, 0L)
+                                        staleUfsChanges += ChangeNumbers(app.id, 0L)
                                     }
                                     newApp
                                 } else {
@@ -4497,6 +4528,9 @@ class SteamService : Service(), IChallengeUrlChanged {
                                 Timber.i("Inserting ${steamAppsMap.size} PICS apps to database")
                                 db.withTransaction {
                                     appDao.insertAll(steamAppsMap)
+                                    if (staleUfsChanges.isNotEmpty()) {
+                                        changeNumbersDao.insertAll(staleUfsChanges)
+                                    }
                                 }
                             }
                         }
@@ -4525,7 +4559,7 @@ class SteamService : Service(), IChallengeUrlChanged {
                     callback.results.forEach { picsCallback ->
                         // Don't race the queue.
                         if (!isLoggedIn) return@collect
-                        val queue = Collections.synchronizedList(mutableListOf<Int>())
+                        val queue = LinkedHashSet<Int>()
 
                         db.withTransaction {
                             // When the same app appears in multiple packages (e.g. user owns the game and
@@ -4536,13 +4570,24 @@ class SteamService : Service(), IChallengeUrlChanged {
                             // To fix that we (a) process user-owned packages last so they win the
                             // last-write-wins assignment within this batch and (b) refuse to downgrade an
                             // existing user-owned packageId across batches.
-                            val accountId = userSteamId?.accountID?.toInt()
-                            val packageLicenses: Map<Int, SteamLicense> = if (accountId != null) {
-                                val packageIds = picsCallback.packages.values.map { it.id }
-                                licenseDao.findLicenses(packageIds).associateBy { it.packageId }
-                            } else {
-                                emptyMap()
+                            val incomingPackages = picsCallback.packages.values
+                            val packageAppIds = incomingPackages.associate { pkg ->
+                                pkg.id to pkg.keyValues["appids"].children.map { it.asInteger() }
                             }
+                            val packageDepotIds = incomingPackages.associate { pkg ->
+                                pkg.id to pkg.keyValues["depotids"].children.map { it.asInteger() }
+                            }
+                            val allAppIds = packageAppIds.values.flatten().distinct()
+                            val existingApps = appDao.findApps(allAppIds).associateBy { it.id }
+                            val accountId = userSteamId?.accountID?.toInt()
+                            val packageIds = buildSet {
+                                incomingPackages.forEach { add(it.id) }
+                                existingApps.values
+                                    .map { it.packageId }
+                                    .filterTo(this) { it != INVALID_PKG_ID }
+                            }
+                            val packageLicenses = licenseDao.findLicenses(packageIds.toList())
+                                .associateBy { it.packageId }
                             val userOwnedPackageIds: Set<Int> = if (accountId != null) {
                                 packageLicenses.values
                                     .filter { it.ownerAccountId.contains(accountId) }
@@ -4558,20 +4603,17 @@ class SteamService : Service(), IChallengeUrlChanged {
                                 return if (expired) 1 else 2
                             }
 
-                            val orderedPackages = picsCallback.packages.values.sortedBy { pkgRank(it.id) }
+                            val orderedPackages = incomingPackages.sortedBy { pkgRank(it.id) }
+                            val pendingApps = LinkedHashMap<Int, SteamApp>()
 
                             orderedPackages.forEach { pkg ->
-                                val appIds = pkg.keyValues["appids"].children.map { it.asInteger() }
-                                licenseDao.updateApps(pkg.id, appIds)
-
-                                val depotIds = pkg.keyValues["depotids"].children.map { it.asInteger() }
-                                licenseDao.updateDepots(pkg.id, depotIds)
+                                val appIds = packageAppIds[pkg.id].orEmpty()
 
                                 // Insert a stub row (or update) of SteamApps to the database.
                                 appIds.forEach { appid ->
-                                    val existing = appDao.findApp(appid)
+                                    val existing = pendingApps[appid] ?: existingApps[appid]
                                     if (existing == null) {
-                                        appDao.insert(SteamApp(id = appid, packageId = pkg.id))
+                                        pendingApps[appid] = SteamApp(id = appid, packageId = pkg.id)
                                         return@forEach
                                     }
                                     if (existing.packageId == pkg.id) {
@@ -4579,7 +4621,6 @@ class SteamService : Service(), IChallengeUrlChanged {
                                     }
                                     if (accountId != null && existing.packageId != INVALID_PKG_ID) {
                                         val existingLicense = packageLicenses[existing.packageId]
-                                            ?: licenseDao.findLicense(existing.packageId)
                                         val existingRank = when {
                                             existingLicense == null -> 0
                                             !existingLicense.ownerAccountId.contains(accountId) -> 0
@@ -4590,17 +4631,30 @@ class SteamService : Service(), IChallengeUrlChanged {
                                             return@forEach
                                         }
                                     }
-                                    appDao.update(existing.copy(packageId = pkg.id))
+                                    pendingApps[appid] = existing.copy(packageId = pkg.id)
                                 }
 
                                 queue.addAll(appIds)
+                            }
+
+                            val updatedLicenses = incomingPackages.mapNotNull { pkg ->
+                                packageLicenses[pkg.id]?.copy(
+                                    appIds = packageAppIds[pkg.id].orEmpty(),
+                                    depotIds = packageDepotIds[pkg.id].orEmpty(),
+                                )
+                            }
+                            if (updatedLicenses.isNotEmpty()) {
+                                licenseDao.insertAll(updatedLicenses)
+                            }
+                            if (pendingApps.isNotEmpty()) {
+                                appDao.insertAll(pendingApps.values.toList())
                             }
                         }
 
                         try {
                             // TODO: This could be an issue. (Stalling)
                             steamApps.picsGetAccessTokens(
-                                appIds = queue,
+                                appIds = queue.toList(),
                                 packageIds = emptyList(),
                             ).await()
                                 .appTokens

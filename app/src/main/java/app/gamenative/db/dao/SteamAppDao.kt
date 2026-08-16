@@ -145,6 +145,24 @@ interface SteamAppDao {
     @Query("SELECT * FROM steam_app WHERE id = :appId")
     suspend fun findApp(appId: Int): SteamApp?
 
+    @Query("SELECT * FROM steam_app WHERE id IN (:appIds)")
+    suspend fun _findApps(appIds: List<Int>): List<SteamApp>
+
+    /**
+     * Batch-load apps without exceeding Android SQLite's bind-variable limit.
+     * Keeping this wrapper in the DAO prevents callers from falling back to
+     * one query per app when processing large PICS responses.
+     */
+    @Transaction
+    suspend fun findApps(appIds: Collection<Int>): List<SteamApp> {
+        if (appIds.isEmpty()) return emptyList()
+        val appsById = LinkedHashMap<Int, SteamApp>(appIds.size)
+        appIds.toList().chunked(SQLITE_MAX_VARS).forEach { chunk ->
+            _findApps(chunk).forEach { app -> appsById[app.id] = app }
+        }
+        return appsById.values.toList()
+    }
+
     /** Returns all Steam apps sorted by name. */
     @Query("SELECT * FROM steam_app ORDER BY name ASC")
     suspend fun getAllAsList(): List<SteamApp>
@@ -198,6 +216,6 @@ interface SteamAppDao {
     @Query("SELECT * FROM steam_app WHERE config LIKE '%\"installDir\":\"' || :dirName || '\",%'")
     suspend fun findSteamAppWithInstallDir(dirName: String): List<SteamApp>
 
-    @Query("SELECT * FROM steam_app WHERE id IN (:appIds)")
-    suspend fun findSteamAppWithAppIds(appIds: List<Int>): List<SteamApp>
+    @Transaction
+    suspend fun findSteamAppWithAppIds(appIds: List<Int>): List<SteamApp> = findApps(appIds)
 }

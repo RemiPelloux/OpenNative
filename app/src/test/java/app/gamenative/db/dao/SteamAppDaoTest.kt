@@ -191,4 +191,26 @@ class SteamAppDaoTest {
         val apps = appDao.getAllOwnedApps().first()
         assertEquals(listOf("alpha", "Beta", "Zelda"), apps.map { it.name })
     }
+
+    @Test
+    fun `findApps batches requests above SQLite bind limit`() = runBlocking {
+        val apps = (1..1_005).map { id -> makeApp(id = id, packageId = 100 + id) }
+        appDao.insertAll(apps)
+
+        val loaded = appDao.findApps(apps.map { it.id })
+
+        assertEquals(apps.size, loaded.size)
+        assertEquals(apps.map { it.id }.toSet(), loaded.map { it.id }.toSet())
+    }
+
+    @Test
+    fun `findApps returns each app once when ids repeat across batches`() = runBlocking {
+        appDao.insertAll(listOf(makeApp(id = 1, packageId = 100), makeApp(id = 2, packageId = 200)))
+        val ids = List(SQLITE_MAX_VARS) { 1 } + listOf(1, 2, 2)
+
+        val loaded = appDao.findApps(ids)
+
+        assertEquals(setOf(1, 2), loaded.map { it.id }.toSet())
+        assertEquals(2, loaded.size)
+    }
 }

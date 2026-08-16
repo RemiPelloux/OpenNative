@@ -22,11 +22,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.TimeUnit;
 
 public abstract class ProcessHelper {
-    public static final boolean PRINT_DEBUG = true; // FIXME change to false
+    public static final boolean PRINT_DEBUG = BuildConfig.DEBUG;
     private static final ArrayList<Callback<String>> debugCallbacks = new ArrayList<>();
+    private static final AtomicInteger WORKER_ID = new AtomicInteger();
+    private static final ThreadFactory DAEMON_THREAD_FACTORY = runnable -> {
+        Thread thread = new Thread(runnable, "opennative-process-" + WORKER_ID.incrementAndGet());
+        thread.setDaemon(true);
+        return thread;
+    };
+    private static final ExecutorService PROCESS_EXECUTOR = Executors.newCachedThreadPool(DAEMON_THREAD_FACTORY);
     private static final byte SIGCONT = 18;
     private static final byte SIGSTOP = 19;
     private static final byte SIGTERM = 15;
@@ -106,9 +115,7 @@ public abstract class ProcessHelper {
         }
 
         // Verify + retry on a background thread — never block the caller (may be the main thread).
-        //noinspection resource — shutdown() is called after execute(); try-with-resources not available on Android Java 8
-        ExecutorService verifier = Executors.newSingleThreadExecutor();
-        verifier.execute(() -> {
+        PROCESS_EXECUTOR.execute(() -> {
             // Give the kernel 50 ms to deliver SIGSTOP before reading /proc status.
             try { Thread.sleep(50); } catch (InterruptedException ignored) {}
 
@@ -136,7 +143,6 @@ public abstract class ProcessHelper {
                 }
             }
         });
-        verifier.shutdown(); // no new tasks; existing task runs to completion
     }
 
     private static boolean isProcessStopped(int pid) {
@@ -415,7 +421,7 @@ public abstract class ProcessHelper {
     }
 
     private static void createDebugThread(final InputStream inputStream) {
-        Executors.newSingleThreadExecutor().execute(() -> {
+        PROCESS_EXECUTOR.execute(() -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -437,16 +443,16 @@ public abstract class ProcessHelper {
     }
 
     private static void createDebugThread(final InputStream inputStream, final String streamType, final int pid) {
-        Executors.newSingleThreadExecutor().execute(() -> {
+        PROCESS_EXECUTOR.execute(() -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    // Always log to debug log
-                    if (streamType != null && pid != -1) {
-                        Log.d("ProcessOutput", "[PID:" + pid + "][" + streamType + "] " + line);
-                    } else {
-                        // Always log even if streamType/pid not provided
-                        Log.d("ProcessOutput", line);
+                    if (BuildConfig.DEBUG) {
+                        if (streamType != null && pid != -1) {
+                            Log.d("ProcessOutput", "[PID:" + pid + "][" + streamType + "] " + line);
+                        } else {
+                            Log.d("ProcessOutput", line);
+                        }
                     }
 
                     if (PRINT_DEBUG) System.out.println(line);
@@ -463,7 +469,7 @@ public abstract class ProcessHelper {
 
 
     private static void createWaitForThread(java.lang.Process process, final Callback<Integer> terminationCallback) {
-        Executors.newSingleThreadExecutor().execute(new Runnable() {
+        PROCESS_EXECUTOR.execute(new Runnable() {
             @Override
             public void run() {
                 try {

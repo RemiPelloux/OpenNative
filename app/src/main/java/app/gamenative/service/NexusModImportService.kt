@@ -358,8 +358,11 @@ class NexusModImportService : Service() {
                     throw e
                 } catch (e: Exception) {
                     Timber.w(e, "Could not validate Nexus account before resuming imports")
-                    downloadsNeedingLinks.forEach { install ->
-                        dao.updateInstallStatus(install.installId, ModInstallStatus.PAUSED.name)
+                    if (downloadsNeedingLinks.isNotEmpty()) {
+                        dao.updateInstallStatuses(
+                            downloadsNeedingLinks.map { it.installId },
+                            ModInstallStatus.PAUSED.name,
+                        )
                     }
                     null
                 }
@@ -368,8 +371,11 @@ class NexusModImportService : Service() {
             }
             if (nexusUser?.isPremium == false) {
                 val message = getString(R.string.nexus_resume_requires_website_authorization)
-                downloadsNeedingLinks.forEach { install ->
-                    dao.upsertInstall(NexusImportState.pauseForWebsiteAuthorization(install, message))
+                val pausedInstalls = downloadsNeedingLinks.map { install ->
+                    NexusImportState.pauseForWebsiteAuthorization(install, message)
+                }
+                if (pausedInstalls.isNotEmpty()) {
+                    dao.upsertInstalls(pausedInstalls)
                 }
                 Timber.i("Paused free-account Nexus imports until the user authorizes each file on the website")
             }
@@ -380,23 +386,28 @@ class NexusModImportService : Service() {
             } else {
                 emptyList()
             }
-            resumable.forEach { install ->
-                val gameDomain = install.nexusGameDomain
-                val modId = install.nexusModId
-                val fileId = install.nexusFileId
-                if (gameDomain.isNullOrBlank() || modId == null || fileId == null) {
-                    dao.upsertInstall(
+            val (invalidInstalls, validInstalls) = resumable.partition { install ->
+                install.nexusGameDomain.isNullOrBlank() || install.nexusModId == null || install.nexusFileId == null
+            }
+            if (invalidInstalls.isNotEmpty()) {
+                val now = System.currentTimeMillis()
+                dao.upsertInstalls(
+                    invalidInstalls.map { install ->
                         install.copy(
                             status = ModInstallStatus.ERROR.name,
-                            updatedAt = System.currentTimeMillis(),
+                            updatedAt = now,
                             metadataJson = NexusImportState.errorMetadata(
                                 summary = install.metadataSummary(),
                                 error = getString(R.string.nexus_invalid_source_metadata),
                             ),
-                        ),
-                    )
-                    return@forEach
-                }
+                        )
+                    },
+                )
+            }
+            validInstalls.forEach { install ->
+                val gameDomain = checkNotNull(install.nexusGameDomain)
+                val modId = checkNotNull(install.nexusModId)
+                val fileId = checkNotNull(install.nexusFileId)
                 updateNotification("${install.modName}: ${getString(R.string.nexus_resume)}")
                 try {
                     NexusModManager.importNexusFile(
@@ -759,8 +770,7 @@ class NexusModImportService : Service() {
         }
 
         private suspend fun queryResumableImports(dao: ModDao): List<ModInstall> =
-            NexusModManager.resumableImportStatuses
-                .flatMap { status -> dao.getInstallsByStatus(status) }
+            dao.getInstallsByStatuses(NexusModManager.resumableImportStatuses)
                 .distinctBy { it.installId }
                 .filter { ModDownloadRegistry.get(it.installId) == null }
 
@@ -788,9 +798,12 @@ class NexusModImportService : Service() {
             installs: List<ModInstall>,
         ) {
             val message = context.getString(R.string.nexus_integration_temporarily_unavailable)
-            installs.forEach { install ->
-                val paused = NexusImportState.pauseWhileOnlineAccessUnavailable(install, message)
-                if (paused != install) dao.upsertInstall(paused)
+            val pausedInstalls = installs.mapNotNull { install ->
+                NexusImportState.pauseWhileOnlineAccessUnavailable(install, message)
+                    .takeIf { paused -> paused != install }
+            }
+            if (pausedInstalls.isNotEmpty()) {
+                dao.upsertInstalls(pausedInstalls)
             }
         }
 

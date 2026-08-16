@@ -6,6 +6,8 @@ import androidx.test.core.app.ApplicationProvider
 import app.gamenative.data.ModInstall
 import app.gamenative.data.ModInstallSource
 import app.gamenative.data.ModInstallStatus
+import app.gamenative.data.ModOverwriteManifest
+import app.gamenative.data.ModPlacementRecipe
 import app.gamenative.data.ModProfile
 import app.gamenative.data.ModProfileInstallState
 import app.gamenative.db.PluviaDatabase
@@ -93,6 +95,33 @@ class ModDaoLocalImportTest {
 
         assertEquals(0, dao.updateInstall(deleted))
         assertNull(dao.getInstall(deleted.installId))
+    }
+
+    @Test
+    fun batchRecipeAndManifestReads_supportMoreThanSQLiteBindLimit() = runBlocking {
+        val installs = (0..SQLITE_MAX_VARS).map { index ->
+            localInstall("batch_$index", ModInstallStatus.READY)
+        }
+        dao.upsertInstalls(installs)
+        dao.insertRecipes(installs.map { ModPlacementRecipe(installId = it.installId) })
+        dao.insertOverwriteManifests(
+            installs.map { install ->
+                ModOverwriteManifest(
+                    installId = install.installId,
+                    targetPath = "target/${install.installId}",
+                    backupPath = "backup/${install.installId}",
+                )
+            },
+        )
+
+        val installIds = installs.map { it.installId }
+        val recipes = dao.getRecipesForInstalls(installIds)
+        val manifests = dao.getOverwriteManifestsForInstalls(installIds)
+
+        assertEquals(installs.size, recipes.size)
+        assertEquals(installs.size, manifests.size)
+        assertEquals(1, recipes.getValue(installs.last().installId).size)
+        assertEquals(1, manifests.getValue(installs.last().installId).size)
     }
 
     private fun localInstall(installId: String, status: ModInstallStatus) = ModInstall(

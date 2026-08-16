@@ -955,6 +955,8 @@ object NexusModManager {
         val dao = dao(context)
         val installs = dao.getInstallsForApp(appId)
         val installIds = installs.map { it.installId }.toSet()
+        val recipesByInstall = dao.getRecipesForInstalls(installIds)
+        val manifestsByInstall = dao.getOverwriteManifestsForInstalls(installIds)
         val backupRoot = backupRoot(context, appId)
         val issues = mutableListOf<ModHealthIssue>()
         var missingBackupCount = 0
@@ -975,8 +977,8 @@ object NexusModManager {
         installs.forEach { install ->
             val status = runCatching { ModInstallStatus.valueOf(install.status) }.getOrNull()
             val extracted = File(install.extractedPath)
-            val recipes = dao.getRecipesForInstall(install.installId)
-            val manifests = dao.getOverwriteManifests(install.installId)
+            val recipes = recipesByInstall[install.installId].orEmpty()
+            val manifests = manifestsByInstall[install.installId].orEmpty()
 
             if (status == null) {
                 add(ModHealthSeverity.ERROR, "Unknown install status", install.status, install)

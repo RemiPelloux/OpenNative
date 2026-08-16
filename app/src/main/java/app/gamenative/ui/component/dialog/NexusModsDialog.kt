@@ -974,9 +974,7 @@ fun NexusModsDialog(
                 val enabledStateByInstallId = states.associate { it.installId to it.enabled }
                 val usableInstalls = installs.filter { it.canPlaceFiles() && isEnabledInProfile(it, enabledStateByInstallId) }
                 val priorities = states.associate { it.installId to it.priority }
-                val recipesByInstallId = usableInstalls.associate { install ->
-                    install.installId to dao.getRecipesForInstall(install.installId)
-                }
+                val recipesByInstallId = dao.getRecipesForInstalls(usableInstalls.map { it.installId })
                 val conflicts = ModConflictAnalyzer.analyze(
                     installs = usableInstalls,
                     recipesByInstallId = recipesByInstallId,
@@ -1048,13 +1046,15 @@ fun NexusModsDialog(
                     active = false,
                 )
                 dao.upsertProfile(profile)
-                dao.getProfileInstallStates(libraryItem.appId, active.profileId).forEach { state ->
-                    dao.upsertProfileInstallState(
-                        state.copy(
-                            profileId = profile.profileId,
-                            updatedAt = System.currentTimeMillis(),
-                        ),
+                val now = System.currentTimeMillis()
+                val clonedStates = dao.getProfileInstallStates(libraryItem.appId, active.profileId).map { state ->
+                    state.copy(
+                        profileId = profile.profileId,
+                        updatedAt = now,
                     )
+                }
+                if (clonedStates.isNotEmpty()) {
+                    dao.upsertProfileInstallStates(clonedStates)
                 }
                 dao.activateProfile(libraryItem.appId, profile.profileId)
                 pendingProfileNameEdit = null

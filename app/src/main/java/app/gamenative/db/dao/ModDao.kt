@@ -55,6 +55,9 @@ interface ModDao {
     @Upsert
     suspend fun upsertInstall(install: ModInstall)
 
+    @Upsert
+    suspend fun upsertInstalls(installs: List<ModInstall>)
+
     @Update
     suspend fun updateInstall(install: ModInstall): Int
 
@@ -72,6 +75,16 @@ interface ModDao {
         status: String,
         updatedAt: Long = System.currentTimeMillis(),
     )
+
+    @Query("UPDATE mod_install SET status = :status, updated_at = :updatedAt WHERE install_id IN (:installIds)")
+    suspend fun updateInstallStatuses(
+        installIds: List<String>,
+        status: String,
+        updatedAt: Long = System.currentTimeMillis(),
+    )
+
+    @Query("SELECT * FROM mod_install WHERE status IN (:statuses) ORDER BY updated_at")
+    suspend fun getInstallsByStatuses(statuses: Set<String>): List<ModInstall>
 
     @Query("DELETE FROM mod_install WHERE install_id = :installId")
     suspend fun deleteInstall(installId: String)
@@ -156,6 +169,21 @@ interface ModDao {
     @Query("SELECT * FROM mod_placement_recipe WHERE install_id = :installId ORDER BY recipe_id")
     suspend fun getRecipesForInstall(installId: String): List<ModPlacementRecipe>
 
+    @Query("SELECT * FROM mod_placement_recipe WHERE install_id IN (:installIds) ORDER BY install_id, recipe_id")
+    suspend fun _getRecipesForInstalls(installIds: List<String>): List<ModPlacementRecipe>
+
+    @Transaction
+    suspend fun getRecipesForInstalls(installIds: Collection<String>): Map<String, List<ModPlacementRecipe>> {
+        if (installIds.isEmpty()) return emptyMap()
+        val recipesByInstall = LinkedHashMap<String, MutableList<ModPlacementRecipe>>()
+        installIds.toList().chunked(SQLITE_MAX_VARS).forEach { chunk ->
+            _getRecipesForInstalls(chunk).forEach { recipe ->
+                recipesByInstall.getOrPut(recipe.installId) { mutableListOf() }.add(recipe)
+            }
+        }
+        return recipesByInstall
+    }
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecipes(recipes: List<ModPlacementRecipe>)
 
@@ -172,6 +200,21 @@ interface ModDao {
 
     @Query("SELECT * FROM mod_overwrite_manifest WHERE install_id = :installId ORDER BY target_path")
     suspend fun getOverwriteManifests(installId: String): List<ModOverwriteManifest>
+
+    @Query("SELECT * FROM mod_overwrite_manifest WHERE install_id IN (:installIds) ORDER BY install_id, target_path")
+    suspend fun _getOverwriteManifestsForInstalls(installIds: List<String>): List<ModOverwriteManifest>
+
+    @Transaction
+    suspend fun getOverwriteManifestsForInstalls(installIds: Collection<String>): Map<String, List<ModOverwriteManifest>> {
+        if (installIds.isEmpty()) return emptyMap()
+        val manifestsByInstall = LinkedHashMap<String, MutableList<ModOverwriteManifest>>()
+        installIds.toList().chunked(SQLITE_MAX_VARS).forEach { chunk ->
+            _getOverwriteManifestsForInstalls(chunk).forEach { manifest ->
+                manifestsByInstall.getOrPut(manifest.installId) { mutableListOf() }.add(manifest)
+            }
+        }
+        return manifestsByInstall
+    }
 
     @Query(
         """

@@ -14,6 +14,9 @@ interface SteamUnlockedBranchDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(branch: SteamUnlockedBranch)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(branches: List<SteamUnlockedBranch>)
+
     @Query("DELETE FROM steam_unlocked_branch WHERE appId = :appId AND branchName = :branchName")
     suspend fun delete(appId: Int, branchName: String)
 
