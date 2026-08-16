@@ -12,6 +12,7 @@ import android.graphics.RectF
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Icon
 import android.os.Build
+import app.gamenative.BuildConfig
 import app.gamenative.MainActivity
 import app.gamenative.R
 import app.gamenative.data.GameSource
@@ -89,7 +90,7 @@ internal suspend fun createPinnedShortcut(context: Context, gameId: Int, label: 
     val appContext = context.applicationContext
     val shortcutManager = appContext.getSystemService(ShortcutManager::class.java)
 
-    val intent = Intent("app.gamenative.LAUNCH_GAME").apply {
+    val intent = Intent("${BuildConfig.APPLICATION_ID}.LAUNCH_GAME").apply {
         setClass(appContext, MainActivity::class.java)
         putExtra("app_id", gameId)
         putExtra("game_source", gameSource.name)

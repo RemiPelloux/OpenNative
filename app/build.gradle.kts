@@ -56,7 +56,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "app.gamenative"
+        applicationId = "com.remipelloux.gamenativecustom"
 
         minSdk = 26
 
@@ -65,7 +65,7 @@ android {
         buildConfigField("boolean", "MODERN_XR", "false")
 
         versionCode = 21
-        versionName = "1.1.1"
+        versionName = "1.1.1-custom-master"
 
         buildConfigField("boolean", "GOLD", "false")
         fun secret(name: String) =

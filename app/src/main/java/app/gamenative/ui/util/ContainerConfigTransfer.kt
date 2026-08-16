@@ -30,7 +30,11 @@ object ContainerConfigTransfer {
             val jsonText =
                 withContext(Dispatchers.IO) {
                     val container = ContainerUtils.getOrCreateContainer(context, appId)
-                    JSONObject(container.containerJson).toString(2)
+                    PortableContainerProfile.export(
+                        data = ContainerUtils.toContainerData(container),
+                        fpsLimiterEnabled = container.getExtra("fpsLimiterEnabled", "true").toBooleanStrictOrNull() ?: true,
+                        fpsLimiterTarget = container.getExtra("fpsLimiterTarget", "60").toIntOrNull() ?: 60,
+                    ).toString(2)
                 }
 
             withContext(Dispatchers.IO) {
@@ -193,8 +197,25 @@ object ContainerConfigTransfer {
             withContext(Dispatchers.IO) {
                 val container = ContainerUtils.getOrCreateContainer(context, appId)
                 val currentData = ContainerUtils.toContainerData(container)
-                val updatedData = ContainerUtils.applyBestConfigMapToContainerData(currentData, bestConfigMap)
+                val mappedData = ContainerUtils.applyBestConfigMapToContainerData(currentData, bestConfigMap)
+                val originalJson = JSONObject(jsonText)
+                val updatedData = if (PortableContainerProfile.isPortable(originalJson)) {
+                    PortableContainerProfile.apply(mappedData, originalJson)
+                } else {
+                    mappedData
+                }
                 ContainerUtils.applyToContainer(context, container, updatedData)
+                if (PortableContainerProfile.isPortable(originalJson)) {
+                    container.putExtra(
+                        "fpsLimiterEnabled",
+                        originalJson.optBoolean("fpsLimiterEnabled", true),
+                    )
+                    container.putExtra(
+                        "fpsLimiterTarget",
+                        originalJson.optInt("fpsLimiterTarget", 60).coerceAtLeast(5),
+                    )
+                    container.saveData()
+                }
             }
 
             SnackbarManager.show(
@@ -224,4 +245,3 @@ object ContainerConfigTransfer {
         }
     }
 }
-

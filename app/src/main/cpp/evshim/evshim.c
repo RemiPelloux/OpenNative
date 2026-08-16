@@ -15,7 +15,7 @@
 #include <linux/futex.h>
 #include <sys/syscall.h>
 #include <jni.h>
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <android/log.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -77,13 +77,45 @@ static SDL_JoystickID vjoy_instances[MAX_GAMEPADS];
 static size_t g_shm_map_size = 0;
 static int g_is_wine = 0;
 
+static int build_android_files_dir(char *out, size_t size)
+{
+    char process_name[256];
+    int fd = open("/proc/self/cmdline", O_RDONLY);
+    if (fd < 0) {
+        return -1;
+    }
+
+    ssize_t count = read(fd, process_name, sizeof(process_name) - 1);
+    close(fd);
+    if (count <= 0) {
+        return -1;
+    }
+
+    process_name[count] = '\0';
+    char *suffix = strchr(process_name, ':');
+    if (suffix) {
+        *suffix = '\0';
+    }
+    if (!*process_name || strchr(process_name, '/')) {
+        return -1;
+    }
+
+    int written = snprintf(out, size, "/data/user/0/%s/files", process_name);
+    return written > 0 && (size_t)written < size ? 0 : -1;
+}
+
 static void build_gamepad_dir(char *out, size_t size)
 {
     const char *base = getenv("EVSHIM_BASE_PATH");
+    char android_files_dir[PATH_MAX];
 
-    // fallback
     if (!base || !*base) {
-        base = "/data/data/app.gamenative/files";
+        if (build_android_files_dir(android_files_dir, sizeof(android_files_dir)) < 0) {
+            LOGE("evshim: EVSHIM_BASE_PATH is missing and Android package detection failed\n");
+            out[0] = '\0';
+            return;
+        }
+        base = android_files_dir;
     }
 
     snprintf(out, size, "%s/gamepad_shm", base);
@@ -117,6 +149,17 @@ static void setup_shm(int players)
 
     char gamepad_dir[PATH_MAX];
     build_gamepad_dir(gamepad_dir, sizeof(gamepad_dir));
+    if (!gamepad_dir[0]) {
+        return;
+    }
+
+    if (g_debug_enabled) {
+        if (g_is_wine) {
+            LOGD("evshim: using shared memory directory '%s'\n", gamepad_dir);
+        } else {
+            ALOGD("evshim: using shared memory directory '%s'", gamepad_dir);
+        }
+    }
 
     if (mkdir_gameshm(gamepad_dir) < 0) {
         LOGE("evshim: failed to create/check dir '%s': %s\n",
@@ -146,16 +189,22 @@ static void setup_shm(int players)
 
         shm[i] = mmap(NULL, g_shm_map_size,
                       PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-        struct stat st;
-        fstat(fd, &st);
-        ALOGI("evshim: java P%d mmap'd inode=%lu dev=%lu addr=%p\n",
-             i, (unsigned long)st.st_ino,
-             (unsigned long)st.st_dev,
-             (void *)shm[i]);
-        LOGI("evshim: P%d mmap'd inode=%lu dev=%lu addr=%p\n",
-             i, (unsigned long)st.st_ino,
-             (unsigned long)st.st_dev,
-             (void *)shm[i]);
+        if (g_debug_enabled) {
+            struct stat st;
+            if (fstat(fd, &st) == 0) {
+                if (g_is_wine) {
+                    LOGD("evshim: P%d mmap'd inode=%lu dev=%lu addr=%p\n",
+                         i, (unsigned long)st.st_ino,
+                         (unsigned long)st.st_dev,
+                         (void *)shm[i]);
+                } else {
+                    ALOGD("evshim: java P%d mmap'd inode=%lu dev=%lu addr=%p",
+                          i, (unsigned long)st.st_ino,
+                          (unsigned long)st.st_dev,
+                          (void *)shm[i]);
+                }
+            }
+        }
         close(fd);
 
         if (shm[i] == MAP_FAILED) {
@@ -165,7 +214,7 @@ static void setup_shm(int players)
         }
 
         if (!g_is_wine) {
-            ALOGI("evshim: resetting controller state");
+            ALOGD("evshim: resetting controller state");
             memset(shm[i], 0, sizeof(struct gamepad_io));
         }
     }
@@ -261,7 +310,7 @@ static int attach_vjoy(int idx)
     }
 
     vjoy_instances[idx] = p_SDL_JoystickInstanceID(vjoy_handles[idx]);
-    LOGI("evshim: P%d virtual joystick id=%d inst=%d connected\n", idx, vjoy_ids[idx], vjoy_instances[idx]);
+    LOGD("evshim: P%d virtual joystick id=%d inst=%d connected\n", idx, vjoy_ids[idx], vjoy_instances[idx]);
     return 0;
 }
 
@@ -325,7 +374,7 @@ static void *vjoy_updater(void *arg)
     int idx = (int)(intptr_t)arg;
     struct gamepad_io *s = shm[idx];
 
-    LOGI("evshim: vjoy_updater P%d running (PID %d)\n", idx, getpid());
+    LOGD("evshim: vjoy_updater P%d running (PID %d)\n", idx, getpid());
 
     uint32_t last_seq = atomic_load_explicit(&s->seq, memory_order_acquire);
     int last_connected = atomic_load_explicit(&s->connected, memory_order_acquire) != 0;
@@ -396,7 +445,7 @@ static void initialize_wine(int players)
 
     SDL_version v;
     p_SDL_GetVersion(&v);
-    LOGI("evshim: SDL %d.%d.%d bound\n", v.major, v.minor, v.patch);
+    LOGD("evshim: SDL %d.%d.%d bound\n", v.major, v.minor, v.patch);
 
     for (int i = 0; i < players; i++) {
         if (!shm[i]) continue;
@@ -417,6 +466,7 @@ static void initialize_all_pads(void)
     int players = g_is_wine ? 1 : MAX_GAMEPADS;
     const char *ep = getenv("EVSHIM_MAX_PLAYERS");
     if (ep) players = atoi(ep);
+    if (players < 1) players = 1;
     if (players > MAX_GAMEPADS) players = MAX_GAMEPADS;
     for (int i = 0; i < MAX_GAMEPADS; i++) {
         vjoy_ids[i] = -1;
@@ -426,10 +476,10 @@ static void initialize_all_pads(void)
     setup_shm(players);
 
     if (g_is_wine) {
-        LOGI("evshim: Wine process init (%d player(s))\n", players);
+        LOGD("evshim: Wine process init (%d player(s))\n", players);
         initialize_wine(players);
     } else {
-        ALOGI("evshim: Java process init (%d player(s))\n", players);
+        ALOGD("evshim: Java process init (%d player(s))\n", players);
     }
 }
 

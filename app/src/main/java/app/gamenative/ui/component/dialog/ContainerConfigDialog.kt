@@ -237,6 +237,7 @@ private fun rememberContainerConfigDialogStaticData(): ContainerConfigDialogStat
             stringResource(R.string.external_display_mode_touchpad),
             stringResource(R.string.external_display_mode_keyboard),
             stringResource(R.string.external_display_mode_hybrid),
+            stringResource(R.string.external_display_mode_cockpit),
         ),
         winCompOpts = stringArrayResource(R.array.win_component_entries).toList(),
         box64Versions = stringArrayResource(R.array.box64_version_entries).toList(),
@@ -949,6 +950,7 @@ fun ContainerConfigDialog(
                 Container.EXTERNAL_DISPLAY_MODE_TOUCHPAD -> 1
                 Container.EXTERNAL_DISPLAY_MODE_KEYBOARD -> 2
                 Container.EXTERNAL_DISPLAY_MODE_HYBRID -> 3
+                Container.EXTERNAL_DISPLAY_MODE_COCKPIT -> 4
                 else -> 0
             }
             mutableIntStateOf(index)

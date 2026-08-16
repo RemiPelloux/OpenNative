@@ -34,6 +34,9 @@ interface GOGGameDao {
     @Query("SELECT * FROM gog_games WHERE id = :gameId")
     suspend fun getById(gameId: String): GOGGame?
 
+    @Query("SELECT * FROM gog_games WHERE id IN (:gameIds)")
+    suspend fun getGamesByIds(gameIds: List<String>): List<GOGGame>
+
     @Query("SELECT * FROM gog_games WHERE exclude = 0 ORDER BY title ASC")
     fun getAll(): Flow<List<GOGGame>>
 
@@ -68,28 +71,36 @@ interface GOGGameDao {
     @Query("UPDATE gog_games SET vertical_cover_url = :url WHERE id = :gameId")
     suspend fun updateVerticalCoverUrl(gameId: String, url: String)
 
+    @Query(
+        "UPDATE gog_games " +
+            "SET install_path = :newPrefix || substr(install_path, length(:oldPrefix) + 1) " +
+            "WHERE install_path LIKE :oldPrefix || '%'",
+    )
+    suspend fun replaceInstallPathPrefix(oldPrefix: String, newPrefix: String): Int
+
     /**
      * Upsert GOG games while preserving install status and paths
      * This is useful when refreshing the library from GOG API
      */
     @Transaction
     suspend fun upsertPreservingInstallStatus(games: List<GOGGame>) {
-        games.forEach { newGame ->
-            val existingGame = getById(newGame.id)
+        if (games.isEmpty()) return
+
+        val existingById = getGamesByIds(games.map { it.id }).associateBy { it.id }
+        val gamesToInsert = games.map { newGame ->
+            val existingGame = existingById[newGame.id]
             if (existingGame != null) {
-                // Preserve installation status, path, and size from existing game
-                val gameToInsert = newGame.copy(
+                newGame.copy(
                     isInstalled = existingGame.isInstalled,
                     installPath = existingGame.installPath,
                     installSize = existingGame.installSize,
                     lastPlayed = existingGame.lastPlayed,
                     playTime = existingGame.playTime,
                 )
-                insert(gameToInsert)
             } else {
-                // New game, insert as-is
-                insert(newGame)
+                newGame
             }
         }
+        insertAll(gamesToInsert)
     }
 }

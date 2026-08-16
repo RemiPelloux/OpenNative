@@ -72,10 +72,8 @@ void ASurfaceRendererContext::oneShot(std::function<void(void*)> fill) {
 CallbackTarget::~CallbackTarget() {
     if (globalRef && vm) {
         JNIEnv* env = nullptr;
-        bool attached = false;
         if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_EDETACHED) {
             vm->AttachCurrentThreadAsDaemon(reinterpret_cast<JNIEnv**>(&env), nullptr);
-            attached = true;
         }
         if (env) env->DeleteGlobalRef(globalRef);
     }
@@ -367,78 +365,67 @@ void ASurfaceRendererContext::setWindowBuffer(JNIEnv* env, int64_t contentId, AH
             return;
         }
 
-        // Post the conversion to BlitConverter's worker thread and block until the release fence is ready
-        int conversionFenceFd = convertBufferGPU(sourceAhb, destinationSlot->buffer, sourceAcquireFenceFd, destinationAcquireFenceFd);
-
-        // Both input FDs consumed by convertBufferGPU on every path.
-        sourceAcquireFenceFd = -1;
-        destinationAcquireFenceFd = -1;
-
-        if (conversionFenceFd < 0) {
-            LOGE("BGRA→RGBA conversion failed");
-            recycleConvertedBuffer(convertedPoolState, destinationSlot, -1);
-            returnSourceFence(env, ahbImage, sourceSlot, -1);
-            return;
-        }
-
-        // Dup the release fence for the source swapchain return.
-        const int sourceReleaseFenceFd = fcntl(conversionFenceFd, F_DUPFD_CLOEXEC, 0);
-        if (sourceReleaseFenceFd >= 0) {
-            returnSourceFence(env, ahbImage, sourceSlot, sourceReleaseFenceFd);
-        } else {
-            LOGW("FD exhaustion, waiting for conversion");
-            // FD exhaustion fallback: wait for conversion so the source can be returned without a fence
-            pollfd descriptor{};
-            descriptor.fd = conversionFenceFd;
-            descriptor.events = POLLIN;
-            int result;
-            do { result = poll(&descriptor, 1, -1); } while (result < 0 && errno == EINTR);
-            if (result < 0) LOGE("poll(conversion fence) failed: %s", strerror(errno));
-            returnSourceFence(env, ahbImage, sourceSlot, -1);
-        }
-
-        // Swap the current slot under lock, verifying the SC is still valid.
-        ConvertedBufferSlot *previousSlot = nullptr;
-        {
-            std::lock_guard<std::mutex> lock(windowScMutex);
-            const auto it = windowScMap.find(contentId);
-            if (it == windowScMap.end() ||
-                it->second != surfaceControl ||
-                !acceptingConvertedFrames.load(std::memory_order_relaxed)) {
+        jobject ahbImageGlobal = nullptr;
+        if (ahbImage) {
+            if (!javaVm) {
                 recycleConvertedBuffer(convertedPoolState, destinationSlot,
-                                       conversionFenceFd);
+                                       destinationAcquireFenceFd);
+                returnSourceFence(env, ahbImage, sourceSlot,
+                                  sourceAcquireFenceFd);
                 return;
             }
-            const auto cur = currentConvertedSlotMap.find(contentId);
-            if (cur != currentConvertedSlotMap.end()) previousSlot = cur->second;
-            currentConvertedSlotMap[contentId] = destinationSlot;
+            ahbImageGlobal = env->NewGlobalRef(ahbImage);
+            if (!ahbImageGlobal) {
+                if (env->ExceptionCheck()) env->ExceptionClear();
+                recycleConvertedBuffer(convertedPoolState, destinationSlot,
+                                       destinationAcquireFenceFd);
+                returnSourceFence(env, ahbImage, sourceSlot,
+                                  sourceAcquireFenceFd);
+                return;
+            }
         }
 
-        void *transaction = ST_CREATE();
-        if (!transaction) {
-            {
-                std::lock_guard<std::mutex> lock(windowScMutex);
-                currentConvertedSlotMap[contentId] = previousSlot;
+        const auto state = convertedPoolState;
+        bool poolStopping = false;
+        {
+            std::lock_guard<std::mutex> lock(state->mutex);
+            poolStopping = state->stopping;
+            if (!poolStopping) {
+                ++state->pendingCallbacks;
             }
-            recycleConvertedBuffer(convertedPoolState, destinationSlot,
-                                   conversionFenceFd);
+        }
+        if (poolStopping) {
+            if (ahbImageGlobal) env->DeleteGlobalRef(ahbImageGlobal);
+            recycleConvertedBuffer(state, destinationSlot,
+                                   destinationAcquireFenceFd);
+            returnSourceFence(env, ahbImage, sourceSlot,
+                              sourceAcquireFenceFd);
             return;
         }
 
-        ST_SETBUF(transaction, surfaceControl, destinationSlot->buffer, conversionFenceFd);
-        ST_SET_TRANSPARENCY(transaction, surfaceControl, 2);
-
-        std::vector<PendingSurfaceRelease> releases;
-        if (previousSlot) {
-            releases.push_back(PendingSurfaceRelease{surfaceControl, previousSlot, false});
-        }
-
-        if (!attachTransactionCompleteCallback(transaction, std::move(releases), windowId, serial)) {
-            LOGE("Could not attach SurfaceControl OnComplete callback");
-        }
-
-        ST_APPLY(transaction);
-        ST_DELETE(transaction);
+        // The JNI call may release its local AHardwareBuffer reference as soon
+        // as this function returns, so keep the source alive through the worker.
+        AHardwareBuffer_acquire(sourceAhb);
+        convertBufferGPUAsync(
+                sourceAhb,
+                destinationSlot->buffer,
+                sourceAcquireFenceFd,
+                destinationAcquireFenceFd,
+                [this, state, contentId, surfaceControl, destinationSlot,
+                 windowId, serial, ahbImageGlobal, sourceSlot, sourceAhb](
+                        int conversionFenceFd) {
+                    AHardwareBuffer_release(sourceAhb);
+                    onBufferConverted(
+                            contentId,
+                            surfaceControl,
+                            destinationSlot,
+                            conversionFenceFd,
+                            windowId,
+                            serial,
+                            ahbImageGlobal,
+                            sourceSlot,
+                            state);
+                });
     } else {
         // Return the source fence back to the source
         returnSourceFence(env, ahbImage, sourceSlot, sourceAcquireFenceFd);
@@ -456,6 +443,131 @@ void ASurfaceRendererContext::setWindowBuffer(JNIEnv* env, int64_t contentId, AH
         ST_APPLY(transaction);
         ST_DELETE(transaction);
     }
+}
+
+void ASurfaceRendererContext::finishConvertedWork(
+        const std::shared_ptr<ConvertedPoolState>& state) {
+    if (!state) return;
+    {
+        std::lock_guard<std::mutex> lock(state->mutex);
+        if (state->pendingCallbacks > 0) --state->pendingCallbacks;
+    }
+    state->condition.notify_all();
+}
+
+void ASurfaceRendererContext::onBufferConverted(
+        int64_t contentId,
+        void* expectedSurfaceControl,
+        ConvertedBufferSlot* destinationSlot,
+        int conversionFenceFd,
+        int64_t windowId,
+        int64_t serial,
+        jobject ahbImageGlobal,
+        int sourceSlot,
+        const std::shared_ptr<ConvertedPoolState>& state) {
+    JNIEnv* callbackEnv = nullptr;
+    if (ahbImageGlobal && javaVm) {
+        const jint status = javaVm->GetEnv(
+                reinterpret_cast<void**>(&callbackEnv), JNI_VERSION_1_6);
+        if (status == JNI_EDETACHED) {
+            javaVm->AttachCurrentThreadAsDaemon(
+                    reinterpret_cast<JNIEnv**>(&callbackEnv), nullptr);
+        }
+    }
+
+    const auto finish = [&] {
+        if (ahbImageGlobal && callbackEnv) {
+            callbackEnv->DeleteGlobalRef(ahbImageGlobal);
+        }
+        finishConvertedWork(state);
+    };
+
+    if (conversionFenceFd < 0) {
+        LOGE("BGRA→RGBA conversion failed");
+        recycleConvertedBuffer(state, destinationSlot, -1);
+        returnSourceFence(callbackEnv, ahbImageGlobal, sourceSlot, -1);
+        finish();
+        return;
+    }
+
+    const int sourceReleaseFenceFd =
+            fcntl(conversionFenceFd, F_DUPFD_CLOEXEC, 0);
+    if (sourceReleaseFenceFd >= 0) {
+        returnSourceFence(
+                callbackEnv, ahbImageGlobal, sourceSlot,
+                sourceReleaseFenceFd);
+    } else {
+        LOGW("FD exhaustion, waiting for conversion");
+        pollfd descriptor{};
+        descriptor.fd = conversionFenceFd;
+        descriptor.events = POLLIN;
+        int result;
+        do {
+            result = poll(&descriptor, 1, -1);
+        } while (result < 0 && errno == EINTR);
+        if (result < 0) {
+            LOGE("poll(conversion fence) failed: %s", strerror(errno));
+        }
+        returnSourceFence(callbackEnv, ahbImageGlobal, sourceSlot, -1);
+    }
+
+    ConvertedBufferSlot* previousSlot = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(windowScMutex);
+        const auto window = windowScMap.find(contentId);
+        if (window == windowScMap.end() ||
+            window->second != expectedSurfaceControl ||
+            !acceptingConvertedFrames.load(std::memory_order_relaxed)) {
+            recycleConvertedBuffer(state, destinationSlot, conversionFenceFd);
+            finish();
+            return;
+        }
+        const auto current = currentConvertedSlotMap.find(contentId);
+        if (current != currentConvertedSlotMap.end()) {
+            previousSlot = current->second;
+        }
+        currentConvertedSlotMap[contentId] = destinationSlot;
+    }
+
+    void* transaction = ST_CREATE();
+    if (!transaction) {
+        {
+            std::lock_guard<std::mutex> lock(windowScMutex);
+            const auto current = currentConvertedSlotMap.find(contentId);
+            if (current != currentConvertedSlotMap.end() &&
+                current->second == destinationSlot) {
+                if (previousSlot) {
+                    current->second = previousSlot;
+                } else {
+                    currentConvertedSlotMap.erase(current);
+                }
+            }
+        }
+        recycleConvertedBuffer(state, destinationSlot, conversionFenceFd);
+        finish();
+        return;
+    }
+
+    ST_SETBUF(
+            transaction,
+            expectedSurfaceControl,
+            destinationSlot->buffer,
+            conversionFenceFd);
+    ST_SET_TRANSPARENCY(transaction, expectedSurfaceControl, 2);
+
+    std::vector<PendingSurfaceRelease> releases;
+    if (previousSlot) {
+        releases.push_back(PendingSurfaceRelease{
+                expectedSurfaceControl, previousSlot, false});
+    }
+    if (!attachTransactionCompleteCallback(
+            transaction, std::move(releases), windowId, serial)) {
+        LOGE("Could not attach SurfaceControl OnComplete callback");
+    }
+
+    ST_APPLY(transaction);
+    ST_DELETE(transaction);
+    finish();
 }
 
 void ASurfaceRendererContext::loadSfCallbackApi() {
@@ -798,8 +910,12 @@ void ASurfaceRendererContext::destroyConvertedBufferPool() {
     {
         std::lock_guard<std::mutex> lock(state->mutex);
         if (state->pendingCallbacks != 0) {
-            LOGW("Destroying converted pool with %zu callbacks still pending",
+            // The callback owns a shared reference to state. Keep its raw slot
+            // pointers valid and let the state release the slots after the last
+            // callback drops that reference.
+            LOGW("Deferring converted pool destruction with %zu callbacks pending",
                  state->pendingCallbacks);
+            return;
         }
         slots.swap(state->slots);
     }
@@ -818,15 +934,24 @@ void ASurfaceRendererContext::destroyConvertedBufferPool() {
     }
 }
 
-int ASurfaceRendererContext::convertBufferGPU(AHardwareBuffer* source, AHardwareBuffer* destination, int sourceAcquireFenceFd, int destinationAcquireFenceFd) {
+void ASurfaceRendererContext::convertBufferGPUAsync(
+        AHardwareBuffer* source,
+        AHardwareBuffer* destination,
+        int sourceAcquireFenceFd,
+        int destinationAcquireFenceFd,
+        std::function<void(int)> completion) {
     if (!blitConverter) {
         if (sourceAcquireFenceFd >= 0)      close(sourceAcquireFenceFd);
         if (destinationAcquireFenceFd >= 0) close(destinationAcquireFenceFd);
-        return -1;
+        if (completion) completion(-1);
+        return;
     }
-    // Post and block until the worker thread has submitted the draw and produced the release fence
-    std::future<int> future = blitConverter->convertBGRAtoRGBA(source, destination, sourceAcquireFenceFd, destinationAcquireFenceFd);
-    return future.get();
+    blitConverter->convertBGRAtoRGBAAsync(
+            source,
+            destination,
+            sourceAcquireFenceFd,
+            destinationAcquireFenceFd,
+            std::move(completion));
 }
 
 ASurfaceRendererContext::ConvertedBufferSlot*

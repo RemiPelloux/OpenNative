@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">GameNative</string>
+    <string name="app_name">GameNative Custom</string>
     <string name="login_user">Connexion utilisateur</string>
     <string name="login_2fa">Authentification à deux facteurs</string>
     <string name="home">Accueil</string>
@@ -869,6 +869,17 @@
     <string name="external_display_mode_touchpad">Utiliser comme surface de pavé tactile</string>
     <string name="external_display_mode_keyboard">Utiliser comme clavier complet</string>
     <string name="external_display_mode_hybrid">Hybride (pavé tactile + bouton clavier)</string>
+    <string name="external_display_mode_cockpit">Cockpit performance (mesures + raccourcis)</string>
+    <string name="cockpit_title">COCKPIT PERFORMANCE</string>
+    <string name="cockpit_live">ACTIF</string>
+    <string name="cockpit_fps">FPS</string>
+    <string name="cockpit_frame_p95">FRAME P95</string>
+    <string name="cockpit_cpu_gpu">CPU / GPU</string>
+    <string name="cockpit_temperature">TEMPÉRATURE</string>
+    <string name="cockpit_quick_menu">Menu rapide</string>
+    <string name="cockpit_keyboard">Clavier</string>
+    <string name="cockpit_hud">HUD</string>
+    <string name="cockpit_touchpad">PAVÉ TACTILE</string>
     <string name="external_display_swap">Afficher le jeu sur l\'écran externe</string>
     <string name="external_display_swap_subtitle">Permuter les écrans pour que le jeu s\'affiche sur l\'écran externe et que cet appareil devienne la surface de contrôle</string>
     <string name="start_with_controls_hidden">Démarrer avec les contrôles à l\'écran masqués</string>

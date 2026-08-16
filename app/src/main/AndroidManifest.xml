@@ -78,7 +78,7 @@
                 <data android:scheme="nxm" />
             </intent-filter>
             <intent-filter>
-                <action android:name="app.gamenative.LAUNCH_GAME" />
+                <action android:name="${applicationId}.LAUNCH_GAME" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
 

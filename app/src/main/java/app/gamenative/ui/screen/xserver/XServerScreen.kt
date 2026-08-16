@@ -2372,7 +2372,11 @@ fun XServerScreen(
                 frameLayout.addView(icView)
             }
             val configuredExternalMode = ExternalDisplayInputController.fromConfig(container.externalDisplayMode)
-            val swapEnabled = container.isExternalDisplaySwap
+            // Cockpit always keeps the game on the primary display; swapping
+            // would replace the cockpit with the game surface.
+            val swapEnabled =
+                container.isExternalDisplaySwap &&
+                    configuredExternalMode != ExternalDisplayInputController.Mode.COCKPIT
 
             val overlay = SwapInputOverlayView(context, xServerView.getxServer()).apply {
                 visibility = View.GONE
@@ -2387,6 +2391,13 @@ fun XServerScreen(
                         context = context,
                         xServer = xServerView.getxServer(),
                         touchpadViewProvider = { PluviaApp.touchpadView },
+                        onOpenQuickMenu = { showQuickMenu = true },
+                        onTogglePerformanceHud = {
+                            val enabled = !isPerformanceHudEnabled
+                            isPerformanceHudEnabled = enabled
+                            PrefManager.showFps = enabled
+                            updatePerformanceHud(enabled)
+                        },
                     ).apply {
                         setMode(configuredExternalMode)
                         start()

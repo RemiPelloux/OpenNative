@@ -482,9 +482,9 @@ object ContainerStorageManager {
         }
 
         runCatching {
-            entryPoint.gogGameDao().getAllAsList()
+            entryPoint.gogGameDao().getInstalledGames()
                 .asSequence()
-                .filter { it.isInstalled && it.installPath.isNotBlank() }
+                .filter { it.installPath.isNotBlank() }
                 .mapNotNull { game ->
                     val installDir = File(game.installPath)
                     if (!installDir.exists()) return@mapNotNull null
@@ -505,9 +505,9 @@ object ContainerStorageManager {
         }
 
         runCatching {
-            entryPoint.epicGameDao().getAllAsList()
+            entryPoint.epicGameDao().getInstalledGames()
                 .asSequence()
-                .filter { it.isInstalled && it.installPath.isNotBlank() }
+                .filter { it.installPath.isNotBlank() }
                 .mapNotNull { game ->
                     val installDir = File(game.installPath)
                     if (!installDir.exists()) return@mapNotNull null
@@ -528,9 +528,9 @@ object ContainerStorageManager {
         }
 
         runCatching {
-            entryPoint.amazonGameDao().getAllAsList()
+            entryPoint.amazonGameDao().getInstalledGames()
                 .asSequence()
-                .filter { it.isInstalled && it.installPath.isNotBlank() }
+                .filter { it.installPath.isNotBlank() }
                 .mapNotNull { game ->
                     val installDir = File(game.installPath)
                     if (!installDir.exists()) return@mapNotNull null

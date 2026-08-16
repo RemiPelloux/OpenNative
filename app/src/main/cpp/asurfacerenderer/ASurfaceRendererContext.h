@@ -101,6 +101,7 @@ private:
         std::mutex              mutex;
         std::condition_variable condition;
         bool                    stopping         = false;
+        // Includes queued conversions and SurfaceFlinger completion callbacks.
         size_t                  pendingCallbacks = 0;
         std::vector<std::unique_ptr<ConvertedBufferSlot>> slots;
     };
@@ -189,10 +190,24 @@ private:
     void initGPUConverter();
     void cleanupGPUConverter();
 
-    int convertBufferGPU(AHardwareBuffer* source,
-                         AHardwareBuffer* destination,
-                         int sourceAcquireFenceFd,
-                         int destinationAcquireFenceFd);
+    void convertBufferGPUAsync(
+            AHardwareBuffer* source,
+            AHardwareBuffer* destination,
+            int sourceAcquireFenceFd,
+            int destinationAcquireFenceFd,
+            std::function<void(int)> completion);
+    void onBufferConverted(
+            int64_t contentId,
+            void* expectedSurfaceControl,
+            ConvertedBufferSlot* destinationSlot,
+            int conversionFenceFd,
+            int64_t windowId,
+            int64_t serial,
+            jobject ahbImageGlobal,
+            int sourceSlot,
+            const std::shared_ptr<ConvertedPoolState>& state);
+    static void finishConvertedWork(
+            const std::shared_ptr<ConvertedPoolState>& state);
     ConvertedBufferSlot* acquireConvertedBuffer(int64_t contentId,
                                                 uint32_t width,
                                                 uint32_t height,

@@ -264,6 +264,20 @@ public class ControllerManager {
     }
 
     /**
+     * Returns the number of guest controller slots that must be provisioned.
+     * Slots can be sparse, so this is based on the highest enabled slot rather
+     * than the number of enabled slots.
+     */
+    public int getProvisionedPlayerCount() {
+        for (int slot = MAX_SLOTS - 1; slot >= 0; slot--) {
+            if (enabledSlots[slot]) {
+                return slot + 1;
+            }
+        }
+        return 1;
+    }
+
+    /**
      * Assigns a physical device to a specific player slot.
      * This method handles un-assigning the device from any other slot it might have been in.
      * @param slotIndex The player slot to assign to (0-3).

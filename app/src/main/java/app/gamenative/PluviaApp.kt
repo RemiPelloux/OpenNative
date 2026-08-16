@@ -166,27 +166,15 @@ class PluviaApp : SplitCompatApplication() {
 
         runBlocking(Dispatchers.IO) {
             try {
-                val gogGames = gogGameDao.getAllAsList()
-                for (game in gogGames) {
-                    if (game.installPath.isNotEmpty() && game.installPath.contains(oldPrefix)) {
-                        val updated = game.copy(installPath = game.installPath.replace(oldPrefix, newPrefix))
-                        gogGameDao.update(updated)
-                    }
-                }
-                Timber.i("[Migration] Updated ${gogGames.count { it.installPath.contains(oldPrefix) }} GOG install paths")
+                val updatedCount = gogGameDao.replaceInstallPathPrefix(oldPrefix, newPrefix)
+                Timber.i("[Migration] Updated $updatedCount GOG install paths")
             } catch (e: Exception) {
                 Timber.e(e, "[Migration] Failed to update GOG DB paths")
             }
 
             try {
-                val amazonGames = amazonGameDao.getAllAsList()
-                for (game in amazonGames) {
-                    if (game.installPath.isNotEmpty() && game.installPath.contains(oldPrefix)) {
-                        val newPath = game.installPath.replace(oldPrefix, newPrefix)
-                        amazonGameDao.markAsInstalled(game.productId, newPath, game.installSize, game.versionId)
-                    }
-                }
-                Timber.i("[Migration] Updated ${amazonGames.count { it.installPath.contains(oldPrefix) }} Amazon install paths")
+                val updatedCount = amazonGameDao.replaceInstallPathPrefix(oldPrefix, newPrefix)
+                Timber.i("[Migration] Updated $updatedCount Amazon install paths")
             } catch (e: Exception) {
                 Timber.e(e, "[Migration] Failed to update Amazon DB paths")
             }

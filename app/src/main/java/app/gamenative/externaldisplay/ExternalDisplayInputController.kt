@@ -25,14 +25,17 @@ class ExternalDisplayInputController(
     private val context: Context,
     private val xServer: XServer,
     private val touchpadViewProvider: () -> TouchpadView?,
+    private val onOpenQuickMenu: () -> Unit = {},
+    private val onTogglePerformanceHud: () -> Unit = {},
 ) {
-    enum class Mode { OFF, TOUCHPAD, KEYBOARD, HYBRID }
+    enum class Mode { OFF, TOUCHPAD, KEYBOARD, HYBRID, COCKPIT }
 
     companion object {
         fun fromConfig(value: String?): Mode = when (value?.lowercase()) {
             Container.EXTERNAL_DISPLAY_MODE_TOUCHPAD -> Mode.TOUCHPAD
             Container.EXTERNAL_DISPLAY_MODE_KEYBOARD -> Mode.KEYBOARD
             Container.EXTERNAL_DISPLAY_MODE_HYBRID -> Mode.HYBRID
+            Container.EXTERNAL_DISPLAY_MODE_COCKPIT -> Mode.COCKPIT
             else -> Mode.OFF
         }
     }
@@ -98,6 +101,8 @@ class ExternalDisplayInputController(
                 mode = mode,
                 xServer = xServer,
                 touchpadViewProvider = touchpadViewProvider,
+                onOpenQuickMenu = onOpenQuickMenu,
+                onTogglePerformanceHud = onTogglePerformanceHud,
             )
             presentation?.show()
         } else {
@@ -127,6 +132,8 @@ private class ExternalInputPresentation(
     private var mode: ExternalDisplayInputController.Mode,
     private val xServer: XServer,
     private val touchpadViewProvider: () -> TouchpadView?,
+    private val onOpenQuickMenu: () -> Unit,
+    private val onTogglePerformanceHud: () -> Unit,
 ) : Presentation(context, display) {
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
@@ -200,6 +207,17 @@ private class ExternalInputPresentation(
                     touchpadViewProvider = touchpadViewProvider,
                 )
                 setContentView(hybrid)
+            }
+            ExternalDisplayInputController.Mode.COCKPIT -> {
+                setContentView(
+                    PerformanceCockpitView(
+                        context = context,
+                        xServer = xServer,
+                        touchpadViewProvider = touchpadViewProvider,
+                        onOpenQuickMenu = onOpenQuickMenu,
+                        onTogglePerformanceHud = onTogglePerformanceHud,
+                    ),
+                )
             }
             else -> {
                 setContentView(FrameLayout(context))

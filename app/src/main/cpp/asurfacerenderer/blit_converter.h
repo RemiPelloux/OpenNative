@@ -21,9 +21,9 @@
 // its lifetime. All EGL/GL operations are posted to that thread, so callers
 // may construct, use, and destroy this object from any thread.
 //
-// convertBGRAtoRGBA() returns a std::future<int> that resolves to a native
-// release-fence FD (>= 0) on success, or -1 on failure. The future is ready
-// once the GPU draw is submitted and the release fence has been dup'd.
+// convertBGRAtoRGBAAsync() invokes its completion on the EGL worker with a
+// native release-fence FD (>= 0), or -1 on failure. The completion runs once
+// the GPU draw is submitted and the release fence has been dup'd.
 //
 // Supported source layouts:
 //   1) format=R8G8B8A8_UNORM, producer wrote BGRA bytes: shader swaps R/B.
@@ -50,12 +50,16 @@ public:
     bool registerBuffer(AHardwareBuffer* buffer);
     void unregisterBuffer(AHardwareBuffer* buffer);
 
-    // Posts a BGRA→RGBA conversion. Returns a future for the release-fence FD.
-    // Both acquire FDs are consumed by the posted task regardless of outcome.
-    std::future<int> convertBGRAtoRGBA(AHardwareBuffer* source,
-                                       AHardwareBuffer* destinationRGBA,
-                                       int sourceAcquireFenceFd,
-                                       int destinationAcquireFenceFd = -1);
+    using ConversionComplete = std::function<void(int releaseFenceFd)>;
+
+    // Posts a BGRA→RGBA conversion without blocking the presentation thread.
+    // Both acquire FDs are consumed and completion is invoked exactly once,
+    // including when shutdown has already started.
+    void convertBGRAtoRGBAAsync(AHardwareBuffer* source,
+                                AHardwareBuffer* destinationRGBA,
+                                int sourceAcquireFenceFd,
+                                int destinationAcquireFenceFd,
+                                ConversionComplete completion);
 
     // Drains the queue and shuts the worker thread down.
     // Subsequent posts are rejected and their futures resolve to -1.

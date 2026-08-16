@@ -86,7 +86,7 @@ data class ContainerData(
     val gestureConfig: String = "",
     /** Serialised JSON shooter mode configuration (used when shooterMode is true) **/
     val shooterConfig: String = "",
-    /** External display input handling: off|touchpad|keyboard|hybrid **/
+    /** External display input handling: off|touchpad|keyboard|hybrid|cockpit **/
     val externalDisplayMode: String = Container.DEFAULT_EXTERNAL_DISPLAY_MODE,
     /** Swap game/input between internal and external displays **/
     val externalDisplaySwap: Boolean = false,

@@ -47,6 +47,13 @@ interface AmazonGameDao {
     @Query("UPDATE amazon_games SET download_size = :size WHERE product_id = :productId")
     suspend fun updateDownloadSize(productId: String, size: Long)
 
+    @Query(
+        "UPDATE amazon_games " +
+            "SET install_path = :newPrefix || substr(install_path, length(:oldPrefix) + 1) " +
+            "WHERE install_path LIKE :oldPrefix || '%'",
+    )
+    suspend fun replaceInstallPathPrefix(oldPrefix: String, newPrefix: String): Int
+
     // Only delete non-installed games from DB — preserves any currently installed games.
     @Query("DELETE FROM amazon_games WHERE is_installed = 0")
     suspend fun deleteAllNonInstalledGames()

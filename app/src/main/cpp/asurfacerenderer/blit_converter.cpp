@@ -310,31 +310,44 @@ void BlitConverter::unregisterBuffer(AHardwareBuffer* buffer) {
     future.get();
 }
 
-std::future<int> BlitConverter::convertBGRAtoRGBA(AHardwareBuffer* source, AHardwareBuffer* destination, int sourceAcquireFenceFd, int destinationAcquireFenceFd) {
-    auto promise = std::make_shared<std::promise<int>>();
-    std::future<int> future = promise->get_future();
-
+void BlitConverter::convertBGRAtoRGBAAsync(
+        AHardwareBuffer* source,
+        AHardwareBuffer* destination,
+        int sourceAcquireFenceFd,
+        int destinationAcquireFenceFd,
+        ConversionComplete completion) {
+    bool rejected = false;
     {
         std::lock_guard<std::mutex> lk(queueMutex_);
         if (stopping_) {
-            // Worker is gone; close fds and resolve immediately.
-            waitAndCloseFenceFd(sourceAcquireFenceFd);
-            waitAndCloseFenceFd(destinationAcquireFenceFd);
-            promise->set_value(-1);
-            return future;
+            rejected = true;
+        } else {
+            taskQueue_.push_back([
+                this,
+                source,
+                destination,
+                sourceAcquireFenceFd,
+                destinationAcquireFenceFd,
+                completion = std::move(completion)
+            ]() mutable {
+                const int result = doConvert(
+                        source,
+                        destination,
+                        sourceAcquireFenceFd,
+                        destinationAcquireFenceFd);
+                if (completion) completion(result);
+            });
         }
-
-        taskQueue_.push_back([this, source, destination, sourceAcquireFenceFd, destinationAcquireFenceFd, promise]() mutable {
-            int result = doConvert(
-                    source,
-                    destination,
-                    sourceAcquireFenceFd,
-                    destinationAcquireFenceFd);
-            promise->set_value(result);
-        });
     }
+
+    if (rejected) {
+        waitAndCloseFenceFd(sourceAcquireFenceFd);
+        waitAndCloseFenceFd(destinationAcquireFenceFd);
+        if (completion) completion(-1);
+        return;
+    }
+
     queueCv_.notify_one();
-    return future;
 }
 
 int BlitConverter::doConvert(AHardwareBuffer* source, AHardwareBuffer* destination, int sourceAcquireFenceFd, int destinationAcquireFenceFd) {

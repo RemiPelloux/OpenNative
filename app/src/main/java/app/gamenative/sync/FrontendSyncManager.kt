@@ -40,6 +40,11 @@ import java.util.EnumMap
  */
 object FrontendSyncManager {
 
+    private data class GameSnapshot(
+        val name: String,
+        val isInstalled: Boolean,
+    )
+
     @EntryPoint
     @InstallIn(SingletonComponent::class)
     interface FrontendSyncEntryPoint {
@@ -167,16 +172,15 @@ object FrontendSyncManager {
         val dir = PrefManager.getFrontendSyncDir(source)
         if (dir.isEmpty()) return
 
-        val gameName = lookupGameName(appId, source) ?: run {
+        val game = lookupGameSnapshot(appId, source) ?: run {
             Timber.w("FrontendSyncManager: no game name for appId=%d source=%s", appId, source)
             return
         }
 
-        val isInstalled = isGameInstalled(appId, source)
-        val file = File(dir, "${sanitizeFileName(gameName)}${extensionFor(source)}")
+        val file = File(dir, "${sanitizeFileName(game.name)}${extensionFor(source)}")
 
         try {
-            if (isInstalled) {
+            if (game.isInstalled) {
                 file.parentFile?.mkdirs()
                 file.writeText(appId.toString(), Charsets.UTF_8)
             } else {
@@ -224,18 +228,13 @@ object FrontendSyncManager {
         }
     }
 
-    private suspend fun lookupGameName(appId: Int, source: GameSource): String? = when (source) {
-        GameSource.STEAM, GameSource.CUSTOM_GAME -> steamAppDao.findApp(appId)?.name
-        GameSource.EPIC -> epicGameDao.getById(appId)?.title
-        GameSource.GOG -> gogGameDao.getById(appId.toString())?.title
-        GameSource.AMAZON -> amazonGameDao.getByAppId(appId)?.title
-    }
-
-    private suspend fun isGameInstalled(appId: Int, source: GameSource): Boolean = when (source) {
-        GameSource.STEAM, GameSource.CUSTOM_GAME -> SteamService.isAppInstalled(appId)
-        GameSource.EPIC -> epicGameDao.getById(appId)?.isInstalled ?: false
-        GameSource.GOG -> gogGameDao.getById(appId.toString())?.isInstalled ?: false
-        GameSource.AMAZON -> amazonGameDao.getByAppId(appId)?.isInstalled ?: false
+    private suspend fun lookupGameSnapshot(appId: Int, source: GameSource): GameSnapshot? = when (source) {
+        GameSource.STEAM, GameSource.CUSTOM_GAME -> steamAppDao.findApp(appId)?.let { game ->
+            GameSnapshot(game.name, SteamService.isAppInstalled(appId))
+        }
+        GameSource.EPIC -> epicGameDao.getById(appId)?.let { GameSnapshot(it.title, it.isInstalled) }
+        GameSource.GOG -> gogGameDao.getById(appId.toString())?.let { GameSnapshot(it.title, it.isInstalled) }
+        GameSource.AMAZON -> amazonGameDao.getByAppId(appId)?.let { GameSnapshot(it.title, it.isInstalled) }
     }
 
     private val invalidFileChars = Regex("""[\\/:*?"<>|]""")

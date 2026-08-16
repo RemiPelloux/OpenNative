@@ -3,7 +3,9 @@ project(evshim C)
 
 set(CMAKE_C_STANDARD 11)
 
-set(SDL2_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/../third_party)
+if(NOT DEFINED SDL2_INCLUDE_DIR)
+    set(SDL2_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/../third_party)
+endif()
 
 add_library(evshim SHARED evshim.c)
 

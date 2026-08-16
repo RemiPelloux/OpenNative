@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">GameNative</string>
+    <string name="app_name">GameNative Custom</string>
     <string name="login_user">User Login</string>
     <string name="login_2fa">Two Factor</string>
     <string name="home">Home</string>
@@ -960,6 +960,17 @@
     <string name="external_display_mode_touchpad">Use as touchpad surface</string>
     <string name="external_display_mode_keyboard">Use as full keyboard</string>
     <string name="external_display_mode_hybrid">Hybrid (touchpad + keyboard button)</string>
+    <string name="external_display_mode_cockpit">Performance cockpit (metrics + shortcuts)</string>
+    <string name="cockpit_title">PERFORMANCE COCKPIT</string>
+    <string name="cockpit_live">LIVE</string>
+    <string name="cockpit_fps">FPS</string>
+    <string name="cockpit_frame_p95">P95 FRAME</string>
+    <string name="cockpit_cpu_gpu">CPU / GPU</string>
+    <string name="cockpit_temperature">TEMPERATURE</string>
+    <string name="cockpit_quick_menu">Quick menu</string>
+    <string name="cockpit_keyboard">Keyboard</string>
+    <string name="cockpit_hud">HUD</string>
+    <string name="cockpit_touchpad">TOUCHPAD</string>
     <string name="external_display_swap">Show Game on External Display</string>
     <string name="external_display_swap_subtitle">Swap screens so the game renders on the external display and this device becomes the controller surface</string>
     <string name="start_with_controls_hidden">Start With On-Screen Controls Hidden</string>

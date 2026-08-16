@@ -82,6 +82,7 @@ fun ControllerTabContent(state: ContainerConfigState, default: Boolean) {
                         1 -> Container.EXTERNAL_DISPLAY_MODE_TOUCHPAD
                         2 -> Container.EXTERNAL_DISPLAY_MODE_KEYBOARD
                         3 -> Container.EXTERNAL_DISPLAY_MODE_HYBRID
+                        4 -> Container.EXTERNAL_DISPLAY_MODE_COCKPIT
                         else -> Container.EXTERNAL_DISPLAY_MODE_OFF
                     },
                 )

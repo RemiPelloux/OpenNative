@@ -2,6 +2,7 @@ package app.gamenative.powercontrol.metrics
 
 import android.content.Context
 import android.hardware.display.DisplayManager
+import android.os.SystemClock
 import android.view.Display
 import app.gamenative.powercontrol.PowerBaselineScripts
 import app.gamenative.powercontrol.PowerManager
@@ -39,6 +40,7 @@ object PerformanceMetricsCollector {
 
     private val cpuSampler = CpuUsageSampler()
     private val gpuSampler = GpuUsageSampler()
+    private val cadence = MetricsSamplingCadence()
 
     private val frameScratch = LongArray(FrameTimeRing.capacity())
     private val deltaScratch = LongArray(FrameTimeRing.capacity())
@@ -46,6 +48,10 @@ object PerformanceMetricsCollector {
     private val sessionLog = JsonlSessionLog(TAG, "metrics-", MAX_LOG_BYTES, MAX_SESSION_FILES)
     private var sampleCount = 0L
     private var displayRefreshRate = DEFAULT_REFRESH_RATE
+    private var cachedCpu: CpuUsageReading? = null
+    private var cachedGpu: GpuUsageReading? = null
+    private var cachedCpuTempC: Int? = null
+    private var cachedGpuTempC: Int? = null
 
     @Volatile
     private var paused = false
@@ -61,6 +67,11 @@ object PerformanceMetricsCollector {
         displayRefreshRate = readDisplayRefreshRate(appContext)
         cpuSampler.reset()
         gpuSampler.reset()
+        cadence.reset()
+        cachedCpu = null
+        cachedGpu = null
+        cachedCpuTempC = null
+        cachedGpuTempC = null
         sampleCount = 0L
         paused = false
         FrameTimeRing.start()
@@ -106,6 +117,7 @@ object PerformanceMetricsCollector {
     fun pause() {
         if (!isRunning || paused) return
         paused = true
+        sessionLog.flush()
         Timber.tag(TAG).i("Collector paused")
     }
 
@@ -113,11 +125,13 @@ object PerformanceMetricsCollector {
         if (!isRunning || !paused) return
         cpuSampler.reset()
         gpuSampler.reset()
+        cadence.reset()
         paused = false
         Timber.tag(TAG).i("Collector resumed")
     }
 
     private fun sampleOnce() {
+        val decision = cadence.decide(SystemClock.elapsedRealtime())
         val now = System.nanoTime()
         val frameCount = FrameTimeRing.copySince(now - FRAME_WINDOW_MS * 1_000_000L, frameScratch)
         val frameStats = computeFrameWindowStats(
@@ -128,8 +142,14 @@ object PerformanceMetricsCollector {
             PowerManager.frameSampleStride,
         )
 
-        val cpu = cpuSampler.sample()
-        val gpu = gpuSampler.sample()
+        if (decision.sampleResources) {
+            cachedCpu = cpuSampler.sample()
+            cachedGpu = gpuSampler.sample()
+        }
+        if (decision.sampleThermals) {
+            cachedCpuTempC = SystemMetricsSources.readTemperatureC(SystemMetricsSources.cpuTempPaths())
+            cachedGpuTempC = SystemMetricsSources.readTemperatureC(SystemMetricsSources.gpuTempPaths())
+        }
 
         val snapshot = MetricsSnapshot(
             timestampMs = System.currentTimeMillis(),
@@ -139,15 +159,15 @@ object PerformanceMetricsCollector {
             frameTimeMaxMs = frameStats.maxMs,
             slowFrameCount = frameStats.slowFrameCount,
             totalFrameCount = frameStats.totalFrameCount,
-            cpuUsagePercent = cpu?.percent?.toFloat(),
-            cpuUsageSource = cpu?.source ?: CpuUsageSource.UNAVAILABLE,
-            gpuUsagePercent = gpu?.percent?.toFloat(),
-            cpuTempC = SystemMetricsSources.readTemperatureC(SystemMetricsSources.cpuTempPaths()),
-            gpuTempC = SystemMetricsSources.readTemperatureC(SystemMetricsSources.gpuTempPaths()),
+            cpuUsagePercent = cachedCpu?.percent?.toFloat(),
+            cpuUsageSource = cachedCpu?.source ?: CpuUsageSource.UNAVAILABLE,
+            gpuUsagePercent = cachedGpu?.percent?.toFloat(),
+            cpuTempC = cachedCpuTempC,
+            gpuTempC = cachedGpuTempC,
         )
 
         publish(snapshot)
-        appendLog(snapshot)
+        if (decision.writeLog) appendLog(snapshot)
 
         sampleCount++
         if (sampleCount % LOG_EVERY_N_SAMPLES == 0L) {
