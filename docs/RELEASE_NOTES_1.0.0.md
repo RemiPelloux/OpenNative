@@ -44,6 +44,12 @@ portable profiles and performance diagnostics for handhelds such as the AYN Thor
 - The Android ARM64 release build is installed as an in-place update so containers and saves remain intact.
 - Performance changes are not advertised as universal FPS gains without repeatable same-scene A/B data.
 
+## Artifact
+
+- `OpenNative-1.0.0-modern-arm64.apk`
+- SHA-256: `a79fc86bcca2b4653d41884d0dcd7b5ddb5fa78907dce558bb983b0697899b03`
+- Package: `com.remipelloux.gamenativecustom`, version code 29, Android ARM64.
+
 ## Known limitations
 
 - Compatibility remains game, Wine/Proton, translation-runtime and GPU-driver specific.
