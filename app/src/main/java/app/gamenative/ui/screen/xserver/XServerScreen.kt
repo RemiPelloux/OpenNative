@@ -146,6 +146,7 @@ import com.winlator.core.DefaultVersion
 import com.winlator.core.FileUtils
 import com.winlator.core.GPUHelper
 import com.winlator.core.GPUInformation
+import com.winlator.core.GuestMemoryBudget
 import com.winlator.core.KeyValueSet
 import com.winlator.core.OnExtractFileListener
 import com.winlator.core.ProcessHelper
@@ -383,7 +384,16 @@ fun XServerScreen(
     }
 
     val container = remember(appId) {
-        ContainerUtils.getContainer(context, appId)
+        runCatching { ContainerUtils.getContainer(context, appId) }
+            .onFailure { Timber.e(it, "Container is unavailable for %s", appId) }
+            .getOrNull()
+    }
+    if (container == null) {
+        LaunchedEffect(appId) {
+            onGameLaunchError?.invoke("The OpenNative container for this game is unavailable.")
+            navigateBack()
+        }
+        return
     }
     val activity = remember(context) { BrightnessManager.findActivity(context) }
 
@@ -5688,8 +5698,11 @@ private suspend fun extractGraphicsDriverFiles(
             envVars.put("WRAPPER_VENDOR_ID", GPUInformation.getVendorIdFromGPUName(context, gpuName))
         }
 
-        val maxDeviceMemory: String? = graphicsDriverConfig.get("maxDeviceMemory", "0")
-        if (maxDeviceMemory != null && maxDeviceMemory.toInt() > 0)
+        val maxDeviceMemory = GuestMemoryBudget.resolve(
+            context,
+            graphicsDriverConfig.get("maxDeviceMemory", "0"),
+        )
+        if (maxDeviceMemory.toIntOrNull()?.let { it > 0 } == true)
             envVars.put("WRAPPER_VMEM_MAX_SIZE", maxDeviceMemory)
 
         val presentMode = graphicsDriverConfig.get("presentMode")

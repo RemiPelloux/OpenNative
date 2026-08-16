@@ -17,14 +17,18 @@ public class DXVKHelper {
 
     public static void setEnvVars(Context context, KeyValueSet config, EnvVars envVars) {
         ImageFs imageFs = ImageFs.find(context);
-        envVars.put("DXVK_STATE_CACHE_PATH", "/data/data/app.gamenative/files/imagefs"+ImageFs.CACHE_PATH);
+        File stateCacheDir = new File(imageFs.cache_path, "dxvk");
+        if (!stateCacheDir.isDirectory() && !stateCacheDir.mkdirs()) {
+            android.util.Log.w("DXVKHelper", "Could not create DXVK state cache directory: " + stateCacheDir);
+        }
+        envVars.put("DXVK_STATE_CACHE_PATH", stateCacheDir.getAbsolutePath());
         envVars.put("DXVK_LOG_LEVEL", "none");
 
         File rootDir = ImageFs.find(context).getRootDir();
         File dxvkConfigFile = new File(imageFs.config_path+"/dxvk.conf");
 
         String content = "\"";
-        String maxDeviceMemory = config.get("maxDeviceMemory");
+        String maxDeviceMemory = GuestMemoryBudget.resolve(context, config.get("maxDeviceMemory"));
         if (!maxDeviceMemory.isEmpty() && !maxDeviceMemory.equals("0")) {
             content += "dxgi.maxDeviceMemory = "+maxDeviceMemory+"\n";
             content += "dxgi.maxSharedMemory = "+maxDeviceMemory+"\n";

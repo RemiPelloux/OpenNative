@@ -15,13 +15,15 @@ Optimization work must start with a measured bottleneck. A faster microbenchmark
 
 The current AYN Thor capture averaged 23.28 FPS with 68.46 ms median p95 frametime, 75.39% CPU, 31% GPU, 88 C peak CPU and 84 C peak GPU. The game used roughly 3.1-3.3 GB RSS while the device had about 600 MB available and more than 2.2 GB total swap in use.
 
-1. **Guest memory pressure:** unlimited DXVK and wrapper budgets let the session grow into heavy swap. The first controlled comparison is a 4096 MB device-memory budget with the existing 2048 MB Wine video-memory value.
+1. **Guest memory pressure:** unlimited DXVK and wrapper budgets let the session grow into heavy swap. OpenNative now supplies a 4096 MB device-memory budget on 9-14 GB Android devices when both settings are still unlimited, while preserving every explicit user limit.
 2. **CPU translation and thermals:** low average GPU utilization rules out simple GPU saturation. Profile FEX/Unreal worker activity and shader compilation while tracking throttling; do not force clocks as a substitute.
 3. **Conflicting affinity ownership:** the power profile previously ignored the WoW64 mask and could suppress the container mask even with game pinning disabled. OpenNative now treats affinity as opt-in and considers both masks.
 4. **Surface compatibility conversion:** `sfCompatMode` still requires BGRA-to-RGBA work per frame. Submission is asynchronous now, but native profiling must quantify the remaining conversion, JNI-reference and buffer-pool cost before changing it.
 5. **Repeated background work:** mod profile synchronization performed per-row reads/writes, and repeated library scans launched duplicate icon extraction jobs. These paths are now batched and deduplicated so UI activity does not compete with a running game.
 
 Shader work remains a separate A/B target: distinguish first-use DXVK pipeline creation from Unreal asset streaming and FEX translation. A warm-cache gain must not hide cold-cache stalls or rendering errors.
+
+The DXVK state cache now uses OpenNative's runtime-derived app data path instead of the obsolete upstream package path. The SurfaceFlinger compatibility renderer also reclaims converted-buffer pools when transient game windows retire, preventing window churn from retaining up to eight full-size buffers per old window.
 
 ## Acceptance
 

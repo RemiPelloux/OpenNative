@@ -601,6 +601,57 @@ void ASurfaceRendererContext::recycleConvertedBuffer(const std::shared_ptr<Conve
     state->condition.notify_all();
 }
 
+void ASurfaceRendererContext::retireConvertedBuffersForContent(
+        int64_t contentId) {
+    const auto state = convertedPoolState;
+    if (!state) return;
+
+    {
+        std::lock_guard<std::mutex> lock(state->mutex);
+        state->retiredContentIds.insert(contentId);
+    }
+    pruneRetiredConvertedBuffers();
+}
+
+void ASurfaceRendererContext::pruneRetiredConvertedBuffers() {
+    const auto state = convertedPoolState;
+    if (!state || !blitConverter) return;
+
+    std::vector<std::unique_ptr<ConvertedBufferSlot>> retiredSlots;
+    {
+        std::lock_guard<std::mutex> lock(state->mutex);
+        auto slot = state->slots.begin();
+        while (slot != state->slots.end()) {
+            if (!(*slot)->inUse &&
+                state->retiredContentIds.find((*slot)->contentId) !=
+                    state->retiredContentIds.end()) {
+                retiredSlots.push_back(std::move(*slot));
+                slot = state->slots.erase(slot);
+            } else {
+                ++slot;
+            }
+        }
+
+        auto retiredId = state->retiredContentIds.begin();
+        while (retiredId != state->retiredContentIds.end()) {
+            const bool stillReferenced = std::any_of(
+                    state->slots.begin(), state->slots.end(),
+                    [contentId = *retiredId](const auto& slot) {
+                        return slot->contentId == contentId;
+                    });
+            if (!stillReferenced) {
+                retiredId = state->retiredContentIds.erase(retiredId);
+            } else {
+                ++retiredId;
+            }
+        }
+    }
+
+    for (const auto& slot : retiredSlots) {
+        if (slot->buffer) blitConverter->unregisterBuffer(slot->buffer);
+    }
+}
+
 void ASurfaceRendererContext::transactionCompleteCallback(void* context, void* stats) {
     std::unique_ptr<TransactionCompleteCtx> callback(
             static_cast<TransactionCompleteCtx*>(context));
@@ -750,6 +801,11 @@ void ASurfaceRendererContext::registerWindowSC(int64_t contentId, const char* de
     void* surfaceControl = SC_CREATE(window, debugName ? debugName : "(x11_window)");
     if (!surfaceControl) return;
 
+    if (convertedPoolState) {
+        std::lock_guard<std::mutex> lock(convertedPoolState->mutex);
+        convertedPoolState->retiredContentIds.erase(contentId);
+    }
+
     void*                oldSurfaceControl = nullptr;
     ConvertedBufferSlot* oldCurrentSlot    = nullptr;
     {
@@ -782,6 +838,7 @@ void ASurfaceRendererContext::unregisterWindowSC(int64_t contentId) {
             currentConvertedSlotMap.erase(slotIt);
         }
     }
+    retireConvertedBuffersForContent(contentId);
     if (surfaceControl) retireSurfaceControl(surfaceControl, currentSlot);
 }
 
@@ -959,6 +1016,7 @@ ASurfaceRendererContext::acquireConvertedBuffer(int64_t contentId, uint32_t widt
     destinationAcquireFenceFd = -1;
     const auto state = convertedPoolState;
     if (!state || !blitConverter) return nullptr;
+    pruneRetiredConvertedBuffers();
 
     auto findReusable = [&]() -> ConvertedBufferSlot* {
         for (const auto& slot : state->slots) {

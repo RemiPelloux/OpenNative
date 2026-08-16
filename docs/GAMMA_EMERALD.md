@@ -21,7 +21,9 @@ This is the current conservative AYN Thor baseline. It targets stable play and m
 | WoW64/FEX CPU list | 4-7 |
 | OpenNative game pinning | Disabled |
 
-Keep `WINEESYNC=1`, the Mesa shader cache enabled, and a 30 FPS wrapper cap. Set both `maxDeviceMemory` fields to `4096` instead of leaving guest-visible memory unlimited. The game reached more than 3 GB RSS and 1.6 GB swap with unlimited budgets on the 12 GB Thor, while Android had only about 600 MB available. Do not combine several experimental environment variables at once: duplicate frame caps or conflicting present modes make diagnosis harder.
+Keep `WINEESYNC=1`, the Mesa shader cache enabled, and a 30 FPS wrapper cap. OpenNative now resolves unlimited DXVK and wrapper memory settings to 4096 MB on 9-14 GB devices, including the 12 GB Thor; explicit user limits are never replaced. The game reached more than 3 GB RSS and 1.6 GB swap with unlimited budgets, while Android had only about 600 MB available. Do not combine several experimental environment variables at once: duplicate frame caps or conflicting present modes make diagnosis harder.
+
+OpenNative also builds the DXVK state-cache path from its real application data directory. Older builds still pointed at the upstream package path, so shader state could fail to persist and battle effects could repeatedly trigger expensive pipeline work.
 
 The native and WoW64 masks above are container settings, not a request for OpenNative to force CPU affinity. OpenNative's power-control game pinning should stay disabled for this profile so FEX receives the configured WoW64 mask and Android remains free to schedule the host threads.
 

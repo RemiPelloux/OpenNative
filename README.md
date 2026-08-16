@@ -27,6 +27,7 @@ This project does not include games. Use it only with software and store account
 - **Fewer database round trips:** GOG upserts, storage migrations and frontend synchronization use batch reads or set-based updates instead of row-by-row N+1 access.
 - **Gamma Emerald validation:** a stable 720p/30 FPS baseline with controller input and an optional low-cost shadow profile is documented separately.
 - **Measured Thor tuning:** affinity is opt-in, native and WoW64 masks are respected, repeated mod writes are batched, and duplicate custom-game icon work is suppressed during library refreshes.
+- **UE shader and memory stability:** DXVK caches now follow OpenNative's real package path, unlimited profiles receive a conservative device-aware guest-memory budget on 6-14 GB devices, and retired SurfaceFlinger buffers are reclaimed.
 
 These changes have automated coverage and device smoke testing. They are not presented as a universal FPS uplift: performance claims require controlled before/after captures on the same game, scene, driver and thermal state.
 

@@ -104,6 +104,7 @@ private:
         // Includes queued conversions and SurfaceFlinger completion callbacks.
         size_t                  pendingCallbacks = 0;
         std::vector<std::unique_ptr<ConvertedBufferSlot>> slots;
+        std::unordered_set<int64_t> retiredContentIds;
     };
 
     // ---- SurfaceFlinger callbacks -------------------------------------------
@@ -216,6 +217,8 @@ private:
             const std::shared_ptr<ConvertedPoolState>& state,
             ConvertedBufferSlot* slot,
             int releaseFenceFd);
+    void retireConvertedBuffersForContent(int64_t contentId);
+    void pruneRetiredConvertedBuffers();
 
     void destroyConvertedBufferPool();
     bool waitForConvertedCallbacks(std::chrono::milliseconds timeout);
