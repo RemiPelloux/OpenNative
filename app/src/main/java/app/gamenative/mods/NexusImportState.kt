@@ -251,9 +251,9 @@ internal object NexusImportState {
             NexusApiErrorReason.FORBIDDEN -> "Nexus denied access to this resource for the current account."
             NexusApiErrorReason.ADULT_CONTENT_BLOCKED -> adultContentBlockedMessage ?: error.message ?: fallback
             NexusApiErrorReason.DOWNLOAD_AUTHORIZATION_REQUIRED ->
-                "Free Nexus accounts must authorize this file on the Nexus Mods website before GameNative can download it."
+                "Free Nexus accounts must authorize this file on the Nexus Mods website before OpenNative can download it."
             NexusApiErrorReason.DOWNLOAD_AUTHORIZATION_INVALID ->
-                "Nexus rejected the website download authorization. Make sure the browser and GameNative use the same Nexus account, then try again."
+                "Nexus rejected the website download authorization. Make sure the browser and OpenNative use the same Nexus account, then try again."
             NexusApiErrorReason.DOWNLOAD_AUTHORIZATION_EXPIRED ->
                 expiredAuthorizationMessage
                     ?: error.message

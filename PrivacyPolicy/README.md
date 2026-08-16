@@ -1,5 +1,20 @@
-# Privacy Policy for GameNative
+# OpenNative Privacy Notes
 <sub>Last Updated: July 12, 2026</sub>
+
+OpenNative is an independent GameNative fork and does not currently operate
+its own cloud service. The repository does not contain a PostHog API key, so
+official OpenNative builds do not initialize that optional analytics client.
+Inherited store, compatibility, recommendation and component-download
+features can still contact their respective store providers or
+GameNative-operated endpoints when used. The upstream policy preserved below
+describes those inherited behaviors; OpenNative does not speak for or control
+the upstream service operator.
+
+OpenNative adds local performance metrics, a dual-screen cockpit and portable
+container profiles. These remain on the device unless the user explicitly
+exports and shares them. Portable exports exclude device-local drive paths.
+
+## Inherited GameNative policy
 
 GameNative is an unofficial client application that lets you access your libraries from supported PC game stores and play your owned games on your device.
 

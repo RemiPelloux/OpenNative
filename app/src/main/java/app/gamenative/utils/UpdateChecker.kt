@@ -28,6 +28,10 @@ object UpdateChecker {
         .build()
 
     suspend fun checkForUpdate(context: Context): UpdateInfo? = withContext(Dispatchers.IO) {
+        if (!BuildConfig.SELF_UPDATE_ENABLED) {
+            return@withContext null
+        }
+
         try {
             val url = "${Constants.Misc.UPDATE_CHECK_URL}?versionCode=${BuildConfig.VERSION_CODE}&versionName=${BuildConfig.VERSION_NAME}"
             val request = Request.Builder()
@@ -52,4 +56,3 @@ object UpdateChecker {
         return@withContext null
     }
 }
-

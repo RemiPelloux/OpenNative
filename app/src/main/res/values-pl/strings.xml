@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">GameNative</string>
+    <string name="app_name">OpenNative</string>
     <string name="login_user">Logowanie</string>
     <string name="login_2fa">Weryfikacja dwuetapowa</string>
     <string name="home">Start</string>
@@ -601,7 +601,7 @@
     <string name="custom_game_importing">Importowanie gry…</string>
     <string name="custom_game_import_success">Grę zaimportowano</string>
     <string name="custom_game_import_failed">Import nie powiódł się</string>
-    <string name="custom_game_import_dialog_message">Wybierz folder zawierający grę. Zostanie ona zaimportowana do pamięci GameNative, aby mogła działać bez żadnych uprawnień do pamięci. Duże gry mogą zająć kilka minut.</string>
+    <string name="custom_game_import_dialog_message">Wybierz folder zawierający grę. Zostanie ona zaimportowana do pamięci OpenNative, aby mogła działać bez żadnych uprawnień do pamięci. Duże gry mogą zająć kilka minut.</string>
     <string name="custom_game_import_remove_original">Usuń oryginał po imporcie</string>
     <string name="add_custom_game_dont_show_again">Nie pokazuj tego ponownie</string>
     <string name="base_app_shortcut_created">Utworzono skrót</string>
@@ -991,9 +991,9 @@
     <string name="settings_info_source_title">Kod źródłowy</string>
     <string name="settings_info_source_subtitle">Zobacz kod źródłowy tego projektu</string>
     <string name="settings_info_libraries_title">Użyte biblioteki</string>
-    <string name="settings_info_libraries_subtitle">Zobacz, jakie technologie umożliwiają działanie GameNative</string>
+    <string name="settings_info_libraries_subtitle">Zobacz, jakie technologie umożliwiają działanie OpenNative</string>
     <string name="settings_info_privacy_title">Polityka prywatności</string>
-    <string name="settings_info_privacy_subtitle">Otwiera link do polityki prywatności GameNative</string>
+    <string name="settings_info_privacy_subtitle">Otwiera link do polityki prywatności OpenNative</string>
     <string name="settings_info_usage_analytics_title">Analityka użytkowania</string>
     <string name="settings_info_usage_analytics_subtitle">Nigdy nie śledzimy danych osobowych. Wyłączenie tego zatrzymuje nieistotne analizy, jednak podstawowe dane o wydajności gier są nadal zbierane jako uzasadniony interes w celu poprawy kompatybilności.</string>
 
@@ -1023,7 +1023,7 @@
     <string name="settings_downloads_title">Pobieranie</string>
 
     <!-- Login Screen -->
-    <string name="login_app_name">GameNative</string>
+    <string name="login_app_name">OpenNative</string>
     <string name="login_privacy_policy">Polityka prywatności</string>
     <string name="login_welcome_back">Witaj ponownie</string>
     <string name="login_subtitle">Zaloguj się, aby uzyskać dostęp do biblioteki Steam</string>
@@ -1103,11 +1103,11 @@
     <!-- PluviaMain: Crash & Support -->
     <string name="main_recent_crash_title">Ostatnia awaria</string>
     <string name="main_recent_crash_message">Przykro nam!\nDobrze byłoby wiedzieć o ostatnim problemie, który wystąpił.\nMożesz zobaczyć i wyeksportować log ostatniej awarii w ustawieniach aplikacji i dołączyć go jako zgłoszenie w repozytorium projektu na Githubie.\nLink do repozytorium Github znajduje się również w ustawieniach!</string>
-    <string name="main_thank_you_title">Dziękujemy za korzystanie z GameNative!</string>
+    <string name="main_thank_you_title">Dziękujemy za korzystanie z OpenNative!</string>
     <string name="main_thank_you_message">Wspieraj otwarty gaming na PC na Androidzie, udostępniając aplikację znajomym lub zostając członkiem na Ko-fi.</string>
     <string name="main_join_kofi">Dołącz na Ko-fi</string>
     <string name="main_share">Udostępnij</string>
-    <string name="main_share_text">Sprawdź GameNative - graj w gry Steam z PC na Androidzie, z pełnym wsparciem zapisów w chmurze!\nhttps://gamenative.app\nDołącz do społeczności: https://discord.gg/2hKv4VfZfE</string>
+    <string name="main_share_text">Sprawdź OpenNative - graj w gry Steam z PC na Androidzie, z pełnym wsparciem zapisów w chmurze!\nhttps://gamenative.app\nDołącz do społeczności: https://discord.gg/2hKv4VfZfE</string>
     <string name="main_discord_support_title">Czy gra zadziałała?</string>
     <string name="main_discord_support_message">Dołącz do Discorda, aby uzyskać pomoc w naprawie gry lub poprawie wydajności.</string>
     <string name="main_open_discord">Otwórz Discord</string>
@@ -1388,7 +1388,7 @@
     <string name="wine_proton_install_failed">Nie udało się zainstalować: %s</string>
     <string name="wine_proton_install_error">Błąd instalacji: %s</string>
     <string name="wine_proton_install_success">%1$s %2$s zainstalowano pomyślnie</string>
-    <string name="wine_proton_glibc_incompatible">Ta wersja Wine/Proton wymaga kontenerów GLIBC i nie jest kompatybilna z GameNative. Proszę używać tylko wersji ARM64/bionic.</string>
+    <string name="wine_proton_glibc_incompatible">Ta wersja Wine/Proton wymaga kontenerów GLIBC i nie jest kompatybilna z OpenNative. Proszę używać tylko wersji ARM64/bionic.</string>
     <string name="wine_proton_containers_in_use">Kontenery używające tej wersji:</string>
     <string name="wine_proton_no_containers_warning">Żadne kontenery nie używają obecnie tej wersji.</string>
     <string name="wine_proton_containers_will_break">Te kontenery przestaną działać, jeśli będziesz kontynuować:</string>
@@ -1493,7 +1493,7 @@
     <string name="review_mostly_negative">W większości negatywne</string>
     <string name="review_overwhelmingly_negative">Przytłaczająco negatywne</string>
     <string name="settings_interface_show_recommendations_title">Pokaż rekomendacje gier</string>
-    <string name="settings_interface_show_recommendations_subtitle">Pokazuje spersonalizowane rekomendacje. Pozostawienie tej opcji włączonej wspiera GameNative.</string>
+    <string name="settings_interface_show_recommendations_subtitle">Pokazuje spersonalizowane rekomendacje. Pozostawienie tej opcji włączonej wspiera OpenNative.</string>
      <string name="steam_save_export_success">Zapisy wyeksportowane</string>
      <string name="steam_save_export_no_saves_found">Nie znaleziono plików zapisów</string>
      <string name="steam_save_export_failed">Nie udało się wyeksportować zapisów: %s</string>
@@ -1636,16 +1636,16 @@
     <string name="nexus_filter_placement">Umieszczenie</string>
     <string name="nexus_filter_manual">Ręczne</string>
     <string name="nexus_filter_unsupported">Nieobsługiwane</string>
-    <string name="nexus_integration_temporarily_unavailable">Obsługa Nexus Mods została tymczasowo wyłączona na czas rejestracji GameNative w Nexus Mods. Nadal możesz zarządzać już zainstalowanymi modami.</string>
-    <string name="nexus_invalid_nxm_callback">Ta autoryzacja Nexus jest nieprawidłowa, wygasła, została już użyta albo nie odpowiada już aktywnemu żądaniu GameNative. Ponownie rozpocznij pobieranie na ekranie „Zarządzaj modami Nexus”.</string>
+    <string name="nexus_integration_temporarily_unavailable">Obsługa Nexus Mods została tymczasowo wyłączona na czas rejestracji OpenNative w Nexus Mods. Nadal możesz zarządzać już zainstalowanymi modami.</string>
+    <string name="nexus_invalid_nxm_callback">Ta autoryzacja Nexus jest nieprawidłowa, wygasła, została już użyta albo nie odpowiada już aktywnemu żądaniu OpenNative. Ponownie rozpocznij pobieranie na ekranie „Zarządzaj modami Nexus”.</string>
     <string name="nexus_nxm_callback_received">Otrzymano autoryzację pobierania z Nexus. Wróć do ekranu „Zarządzaj modami Nexus”, jeśli pobieranie nie zostanie automatycznie wznowione.</string>
-    <string name="nexus_authorize_in_browser">Nexus wymaga potwierdzenia w witrynie dla tego konta. W przeglądarce wybierz Download with Manager, a następnie Slow Download; GameNative automatycznie wznowi pobieranie.</string>
+    <string name="nexus_authorize_in_browser">Nexus wymaga potwierdzenia w witrynie dla tego konta. W przeglądarce wybierz Download with Manager, a następnie Slow Download; OpenNative automatycznie wznowi pobieranie.</string>
     <string name="nexus_open_browser_failed">Nie udało się otworzyć Nexus Mods w przeglądarce.</string>
     <string name="nexus_authorization_timed_out">Upłynął limit czasu autoryzacji w witrynie Nexus. Ponów próbę pobrania pliku i dokończ Download with Manager w przeglądarce.</string>
     <string name="nexus_authorization_expired">Autoryzacja pobierania w witrynie Nexus wygasła. Otwórz Nexus Mods i ponownie autoryzuj plik.</string>
-    <string name="nexus_authorization_already_pending">GameNative już czeka, aż Nexus autoryzuje ten plik. Dokończ monit pobierania w przeglądarce albo anuluj i spróbuj ponownie.</string>
-    <string name="nexus_authorized_file_received">Nexus autoryzował ten plik. Dotknij go, aby rozpocząć pobieranie w GameNative.</string>
-    <string name="nexus_authorization_wrong_account">Autoryzacja w witrynie Nexus należy do innego konta. Zaloguj się na to samo konto Nexus zarówno w przeglądarce, jak i w GameNative.</string>
+    <string name="nexus_authorization_already_pending">OpenNative już czeka, aż Nexus autoryzuje ten plik. Dokończ monit pobierania w przeglądarce albo anuluj i spróbuj ponownie.</string>
+    <string name="nexus_authorized_file_received">Nexus autoryzował ten plik. Dotknij go, aby rozpocząć pobieranie w OpenNative.</string>
+    <string name="nexus_authorization_wrong_account">Autoryzacja w witrynie Nexus należy do innego konta. Zaloguj się na to samo konto Nexus zarówno w przeglądarce, jak i w OpenNative.</string>
     <string name="nexus_waiting_for_nexus">Oczekiwanie na autoryzację w witrynie Nexus</string>
     <string name="nexus_resume_requires_website_authorization">Pobieranie zostało przerwane. Dotknij Wznów, aby ponownie autoryzować plik w witrynie Nexus Mods.</string>
     <string name="nexus_waiting_for_website_authorization">Kolekcja %1$d z %2$d: autoryzuj %3$s w Nexus Mods</string>
@@ -1883,10 +1883,10 @@
     <string name="nexus_no_issues_found">Nie znaleziono żadnych problemów</string>
     <string name="nexus_no_issues_description">Tutaj pojawią się ostrzeżenia o konfliktach i wtyczkach.</string>
     <string name="nexus_overwrite_existing_title">Nadpisać istniejące pliki?</string>
-    <string name="nexus_overwrite_existing_message">GameNative utworzy kopię zapasową istniejących plików przed ich zastąpieniem.</string>
+    <string name="nexus_overwrite_existing_message">OpenNative utworzy kopię zapasową istniejących plików przed ich zastąpieniem.</string>
     <string name="nexus_backup_overwrite">Utwórz kopię zapasową i nadpisz</string>
     <string name="nexus_apply_mod_order_title">Zastosować kolejność modów?</string>
-    <string name="nexus_apply_mod_order_message">GameNative zastosuje włączone modyfikacje od najniższego do najwyższego priorytetu i utworzy kopię zapasową zastąpionych plików.</string>
+    <string name="nexus_apply_mod_order_message">OpenNative zastosuje włączone modyfikacje od najniższego do najwyższego priorytetu i utworzy kopię zapasową zastąpionych plików.</string>
     <string name="nexus_backup_apply">Utwórz kopię zapasową i zastosuj</string>
     <string name="nexus_freed_size">Zwolniony %1$s</string>
     <string name="nexus_storage_cleanup_failed">Czyszczenie pamięci nie powiodło się</string>
@@ -2135,7 +2135,7 @@
     <string name="local_mod_folder_counts">%1$s, %2$s</string>
     <string name="local_mod_name">Nazwa moda</string>
     <string name="local_mod_version_optional">Wersja (opcjonalna)</string>
-    <string name="local_mod_snapshot_notice">GameNative kopiuje prywatną migawkę i traktuje ją jako niezaufaną zawartość. Pliki wykonywalne i skrypty instalacyjne nigdy nie są uruchamiane podczas importu.</string>
+    <string name="local_mod_snapshot_notice">OpenNative kopiuje prywatną migawkę i traktuje ją jako niezaufaną zawartość. Pliki wykonywalne i skrypty instalacyjne nigdy nie są uruchamiane podczas importu.</string>
     <string name="local_mod_import">Importuj mod</string>
     <string name="local_mod_archive_source">Archiwum lokalne</string>
     <string name="local_mod_files_source">Pliki lokalne</string>
@@ -2145,8 +2145,8 @@
     <string name="local_mod_imported">Zaimportowano mod lokalny</string>
     <string name="local_mod_duplicate">Ta zawartość jest już zarządzana jako %1$s. Otwarto istniejący mod.</string>
     <string name="local_mod_name_required">Wprowadź nazwę tego moda.</string>
-    <string name="local_mod_unreadable">GameNative nie mógł odczytać wybranej zawartości.</string>
-    <string name="local_mod_unreadable_file">GameNative nie mógł odczytać %1$s.</string>
+    <string name="local_mod_unreadable">OpenNative nie mógł odczytać wybranej zawartości.</string>
+    <string name="local_mod_unreadable_file">OpenNative nie mógł odczytać %1$s.</string>
     <string name="local_mod_empty">Wybrany plik jest pusty.</string>
     <string name="local_mod_empty_folder">Wybrany folder nie zawiera żadnych plików.</string>
     <string name="local_mod_invalid_archive">Nie można bezpiecznie odczytać wybranego archiwum. Może być uszkodzone, zaszyfrowane, wieloczęściowe, nieobsługiwane lub zawierać niebezpieczne ścieżki.</string>
@@ -2172,7 +2172,7 @@
     <string name="local_mod_import_status_copying">Kopiowanie</string>
     <string name="local_mod_copied_progress">Skopiowano %1$s z %2$s</string>
     <string name="nexus_invalid_source_metadata">Ten zarządzany mod ma niepełne informacje o źródle i nie można ponowić operacji.</string>
-    <string name="nexus_archive_memory_error">Archiwum wymaga więcej pamięci, niż pozwala Android. Spróbuj ponownie po aktualizacji GameNative lub wybierz mniejszy plik.</string>
+    <string name="nexus_archive_memory_error">Archiwum wymaga więcej pamięci, niż pozwala Android. Spróbuj ponownie po aktualizacji OpenNative lub wybierz mniejszy plik.</string>
     <!-- Bionic FG (AI) Frame Generation -->
     <string name="steam_invite_tab_title">Zaproś</string>
     <string name="steam_invite_header">Znajomi: %1$d</string>

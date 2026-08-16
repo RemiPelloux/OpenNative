@@ -1,5 +1,14 @@
 # Third-Party Notices
 
+## OpenNative downstream notice
+
+OpenNative is an independent fork of GameNative. The original notices below
+are preserved because the fork still contains upstream source, assets and
+prebuilt components. "GameNative" in those notices refers to the upstream
+project and copyright holders; it must not be interpreted as OpenNative
+claiming ownership of their work. Review every component's terms before
+redistributing an OpenNative APK.
+
 This file contains notices for third-party assets and libraries used in this project.
 
 ---

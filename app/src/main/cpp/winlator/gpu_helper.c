@@ -105,9 +105,9 @@ Java_com_winlator_core_GPUHelper_vkGetDeviceExtensions(JNIEnv *env, jclass clazz
     VkApplicationInfo app_info;
     memset(&app_info, 0, sizeof(app_info));
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app_info.pApplicationName = "GameNative";
+    app_info.pApplicationName = "OpenNative";
     app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    app_info.pEngineName = "GameNative";
+    app_info.pEngineName = "OpenNative";
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.apiVersion = instanceApiVersion;  // Use detected version
 
@@ -401,4 +401,3 @@ cleanup:
     }
     return result;
 }
-

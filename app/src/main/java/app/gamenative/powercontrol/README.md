@@ -1,8 +1,8 @@
-# Performance Control Architecture for GameNative
+# Performance Control Architecture for OpenNative
 
 ## Overview
 
-GameNative's performance control system provides CPU and GPU tuning capabilities for Android gaming devices. It supports multiple device types through an extensible driver architecture, including PServer-based devices (AYN Odin, Retroid Pocket) and Samsung Galaxy devices via the Samsung Performance SDK. The system allows users to adjust CPU governors, frequency scaling, and GPU performance levels to optimize game performance. Additionally, it features an **automatic performance tuning system** that uses PID controllers to dynamically adjust CPU/GPU settings based on target FPS and real-time utilization metrics, maintaining optimal performance while minimizing resource consumption.
+OpenNative's inherited performance control system provides CPU and GPU tuning capabilities for Android gaming devices. It supports multiple device types through an extensible driver architecture, including PServer-based devices (AYN Odin, Retroid Pocket) and Samsung Galaxy devices via the Samsung Performance SDK. The system allows users to adjust CPU governors, frequency scaling, and GPU performance levels to optimize game performance. Additionally, it features an **automatic performance tuning system** that uses PID controllers to dynamically adjust CPU/GPU settings based on target FPS and real-time utilization metrics, maintaining optimal performance while minimizing resource consumption.
 
 ## Architecture
 
@@ -262,7 +262,7 @@ driver.setCpuAffinityByCores(pid, perfCores)
 **Complete CPU Allocation (Snapdragon 8 Gen 2 Example):**
 
 ```
-CPU 0-2 (Efficiency @ 2.0 GHz):  GameNative app, Android system
+CPU 0-2 (Efficiency @ 2.0 GHz):  OpenNative app, Android system
 CPU 3 (Performance @ 2.8 GHz):    PulseAudio, wineserver, services.exe, game
 CPU 4-6 (Performance @ 2.8 GHz): wineserver, services.exe, game, winhandler
 CPU 7 (Prime @ 3.2 GHz):         game, winhandler (BOOST!)

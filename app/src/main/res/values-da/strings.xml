@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">GameNative</string>
+    <string name="app_name">OpenNative</string>
     <string name="login_user">Brugerlogin</string>
     <string name="login_2fa">Tofaktorgodkendelse</string>
     <string name="home">Hjem</string>
@@ -798,9 +798,9 @@
     <string name="settings_info_source_title">Kildekode</string>
     <string name="settings_info_source_subtitle">Se kildekoden til dette projekt</string>
     <string name="settings_info_libraries_title">Anvendte biblioteker</string>
-    <string name="settings_info_libraries_subtitle">Se hvilke teknologier der gør GameNative mulig</string>
+    <string name="settings_info_libraries_subtitle">Se hvilke teknologier der gør OpenNative mulig</string>
     <string name="settings_info_privacy_title">Privatlivspolitik</string>
-    <string name="settings_info_privacy_subtitle">Åbner et link til GameNatives privatlivspolitik</string>
+    <string name="settings_info_privacy_subtitle">Åbner et link til OpenNatives privatlivspolitik</string>
     <string name="settings_info_usage_analytics_title">Brugsanalyse</string>
     <string name="settings_info_usage_analytics_subtitle">Vi sporer aldrig personlige oplysninger. Deaktivering stopper ikke-essentiel analyse, men grundlæggende spilydelsesdata indsamles stadig som en berettiget interesse for at forbedre kompatibilitet.</string>
 
@@ -830,7 +830,7 @@
     <string name="settings_downloads_title">Downloads</string>
 
     <!-- TODO: Manual review - New strings for Login Screen -->
-    <string name="login_app_name">GameNative</string>
+    <string name="login_app_name">OpenNative</string>
     <string name="login_privacy_policy">Privatlivspolitik</string>
     <string name="login_welcome_back">Velkommen tilbage</string>
     <string name="login_subtitle">Log ind for at få adgang til dit Steam-bibliotek</string>
@@ -913,11 +913,11 @@
     <!-- TODO: Manual review - PluviaMain: Crash & Support -->
     <string name="main_recent_crash_title">Nylig crash</string>
     <string name="main_recent_crash_message">Beklager det!\nDet ville være dejligt at vide om det nylige problem, du har haft.\nDu kan se og eksportere den nyeste crash-log i appens indstillinger og vedhæfte den som et Github-problem i projektets repository.\nLink til Github-repo er også i indstillinger!</string>
-    <string name="main_thank_you_title">Tak for at bruge GameNative!</string>
+    <string name="main_thank_you_title">Tak for at bruge OpenNative!</string>
     <string name="main_thank_you_message">Støt open-source PC-gaming på Android ved at dele appen med dine venner eller ved at blive medlem på Ko-fi.</string>
     <string name="main_join_kofi">Tilmeld dig på Ko-fi</string>
     <string name="main_share">Del</string>
-    <string name="main_share_text">Prøv GameNative - spil dine PC Steam-spil på Android med fuld understøttelse af cloud-gemmer!\nhttps://gamenative.app\nTilmeld dig fællesskabet: https://discord.gg/2hKv4VfZfE</string>
+    <string name="main_share_text">Prøv OpenNative - spil dine PC Steam-spil på Android med fuld understøttelse af cloud-gemmer!\nhttps://gamenative.app\nTilmeld dig fællesskabet: https://discord.gg/2hKv4VfZfE</string>
     <string name="main_discord_support_title">Virkede spillet?</string>
     <string name="main_discord_support_message">Tilmeld dig Discord for at få support til at rette dit spil eller forbedre ydelsen.</string>
     <string name="main_open_discord">Åbn Discord</string>
@@ -1243,7 +1243,7 @@
     <string name="custom_game_importing">Importerer spil…</string>
     <string name="custom_game_import_success">Spil importeret</string>
     <string name="custom_game_import_failed">Import mislykkedes</string>
-    <string name="custom_game_import_dialog_message">Vælg mappen der indeholder spillet. Det importeres til GameNatives lager, så det kan køre uden nogen lagertilladelse. Store spil kan tage et par minutter.</string>
+    <string name="custom_game_import_dialog_message">Vælg mappen der indeholder spillet. Det importeres til OpenNatives lager, så det kan køre uden nogen lagertilladelse. Store spil kan tage et par minutter.</string>
     <string name="custom_game_import_remove_original">Fjern originalen efter import</string>
     <string name="add_custom_game_dont_show_again">Vis ikke denne dialog igen</string>
     <string name="base_app_shortcut_created">Genvej oprettet</string>
@@ -1365,7 +1365,7 @@
     <string name="review_mostly_negative">Overvejende negativ</string>
     <string name="review_overwhelmingly_negative">Overvældende negativ</string>
     <string name="settings_interface_show_recommendations_title">Vis spilanbefalinger</string>
-    <string name="settings_interface_show_recommendations_subtitle">Vis personlige anbefalinger. At holde dette slået til hjælper med at støtte GameNative.</string>
+    <string name="settings_interface_show_recommendations_subtitle">Vis personlige anbefalinger. At holde dette slået til hjælper med at støtte OpenNative.</string>
      <string name="steam_save_export_success">Gemte filer eksporteret</string>
      <string name="steam_save_export_no_saves_found">Ingen gemte filer fundet</string>
      <string name="steam_save_export_failed">Kunne ikke eksportere gemte filer: %s</string>
@@ -1508,16 +1508,16 @@
     <string name="nexus_filter_placement">Placering</string>
     <string name="nexus_filter_manual">Manuel</string>
     <string name="nexus_filter_unsupported">Ikke understøttet</string>
-    <string name="nexus_integration_temporarily_unavailable">Understøttelse af Nexus Mods er midlertidigt deaktiveret, mens GameNative bliver registreret hos Nexus Mods. Allerede installerede mods kan stadig administreres.</string>
-    <string name="nexus_invalid_nxm_callback">Denne Nexus-godkendelse er ugyldig, udløbet, allerede brugt eller svarer ikke længere til en aktiv GameNative-anmodning. Start downloadingen fra Administrer Nexus-mods igen.</string>
+    <string name="nexus_integration_temporarily_unavailable">Understøttelse af Nexus Mods er midlertidigt deaktiveret, mens OpenNative bliver registreret hos Nexus Mods. Allerede installerede mods kan stadig administreres.</string>
+    <string name="nexus_invalid_nxm_callback">Denne Nexus-godkendelse er ugyldig, udløbet, allerede brugt eller svarer ikke længere til en aktiv OpenNative-anmodning. Start downloadingen fra Administrer Nexus-mods igen.</string>
     <string name="nexus_nxm_callback_received">Godkendelse af Nexus-download modtaget. Gå tilbage til Administrer Nexus-mods, hvis downloadingen ikke genoptages automatisk.</string>
-    <string name="nexus_authorize_in_browser">Nexus kræver bekræftelse på webstedet for denne konto. Vælg Download with Manager og derefter Slow Download i browseren; GameNative genoptager automatisk.</string>
+    <string name="nexus_authorize_in_browser">Nexus kræver bekræftelse på webstedet for denne konto. Vælg Download with Manager og derefter Slow Download i browseren; OpenNative genoptager automatisk.</string>
     <string name="nexus_open_browser_failed">Nexus Mods kunne ikke åbnes i en browser.</string>
     <string name="nexus_authorization_timed_out">Godkendelsen på Nexus-webstedet fik timeout. Prøv filen igen, og fuldfør Download with Manager i browseren.</string>
     <string name="nexus_authorization_expired">Nexus-webstedets downloadgodkendelse er udløbet. Åbn Nexus Mods, og godkend filen igen.</string>
-    <string name="nexus_authorization_already_pending">GameNative venter allerede på, at Nexus godkender denne fil. Fuldfør downloadprompten i browseren, eller annuller og prøv igen.</string>
-    <string name="nexus_authorized_file_received">Nexus har godkendt denne fil. Tryk på den for at starte downloadingen i GameNative.</string>
-    <string name="nexus_authorization_wrong_account">Godkendelsen fra Nexus-webstedet tilhører en anden konto. Log ind på den samme Nexus-konto i browseren og GameNative.</string>
+    <string name="nexus_authorization_already_pending">OpenNative venter allerede på, at Nexus godkender denne fil. Fuldfør downloadprompten i browseren, eller annuller og prøv igen.</string>
+    <string name="nexus_authorized_file_received">Nexus har godkendt denne fil. Tryk på den for at starte downloadingen i OpenNative.</string>
+    <string name="nexus_authorization_wrong_account">Godkendelsen fra Nexus-webstedet tilhører en anden konto. Log ind på den samme Nexus-konto i browseren og OpenNative.</string>
     <string name="nexus_waiting_for_nexus">Venter på godkendelse på Nexus-webstedet</string>
     <string name="nexus_resume_requires_website_authorization">Denne download blev afbrudt. Tryk på Genoptag for at godkende filen igen på Nexus Mods-webstedet.</string>
     <string name="nexus_waiting_for_website_authorization">Samling %1$d af %2$d: Godkend %3$s på Nexus Mods</string>
@@ -1755,10 +1755,10 @@
     <string name="nexus_no_issues_found">Ingen problemer fundet</string>
     <string name="nexus_no_issues_description">Konflikter og plugin-advarsler vises her.</string>
     <string name="nexus_overwrite_existing_title">Overskrive eksisterende filer?</string>
-    <string name="nexus_overwrite_existing_message">GameNative sikkerhedskopierer eksisterende filer, før de erstattes.</string>
+    <string name="nexus_overwrite_existing_message">OpenNative sikkerhedskopierer eksisterende filer, før de erstattes.</string>
     <string name="nexus_backup_overwrite">Sikkerhedskopier og overskriv</string>
     <string name="nexus_apply_mod_order_title">Anvende mod-ordre?</string>
-    <string name="nexus_apply_mod_order_message">GameNative vil anvende aktiverede mods fra laveste til højeste prioritet og sikkerhedskopiere erstattede filer.</string>
+    <string name="nexus_apply_mod_order_message">OpenNative vil anvende aktiverede mods fra laveste til højeste prioritet og sikkerhedskopiere erstattede filer.</string>
     <string name="nexus_backup_apply">Sikkerhedskopier og anvend</string>
     <string name="nexus_freed_size">Frigivet %1$s</string>
     <string name="nexus_storage_cleanup_failed">Oprydning af lager mislykkedes</string>
@@ -2003,7 +2003,7 @@
     <string name="local_mod_folder_counts">%1$s, %2$s</string>
     <string name="local_mod_name">Modnavn</string>
     <string name="local_mod_version_optional">Version (valgfri)</string>
-    <string name="local_mod_snapshot_notice">GameNative kopierer et privat øjebliksbillede og behandler det som upålideligt indhold. Eksekverbare filer og installationsscripts køres aldrig under import.</string>
+    <string name="local_mod_snapshot_notice">OpenNative kopierer et privat øjebliksbillede og behandler det som upålideligt indhold. Eksekverbare filer og installationsscripts køres aldrig under import.</string>
     <string name="local_mod_import">Importér mod</string>
     <string name="local_mod_archive_source">Lokalt arkiv</string>
     <string name="local_mod_files_source">Lokale filer</string>
@@ -2013,8 +2013,8 @@
     <string name="local_mod_imported">Lokalt mod importeret</string>
     <string name="local_mod_duplicate">Dette indhold administreres allerede som %1$s. Det eksisterende mod blev åbnet.</string>
     <string name="local_mod_name_required">Indtast et navn til dette mod.</string>
-    <string name="local_mod_unreadable">GameNative kunne ikke læse det valgte indhold.</string>
-    <string name="local_mod_unreadable_file">GameNative kunne ikke læse %1$s.</string>
+    <string name="local_mod_unreadable">OpenNative kunne ikke læse det valgte indhold.</string>
+    <string name="local_mod_unreadable_file">OpenNative kunne ikke læse %1$s.</string>
     <string name="local_mod_empty">Den valgte fil er tom.</string>
     <string name="local_mod_empty_folder">Den valgte mappe indeholder ingen filer.</string>
     <string name="local_mod_invalid_archive">Det valgte arkiv kunne ikke læses sikkert. Det kan være beskadiget, krypteret, opdelt i flere dele, ikke understøttet eller indeholde usikre stier.</string>
@@ -2040,7 +2040,7 @@
     <string name="local_mod_import_status_copying">Kopierer</string>
     <string name="local_mod_copied_progress">Kopieret %1$s af %2$s</string>
     <string name="nexus_invalid_source_metadata">Dette administrerede mod har ufuldstændige kildeoplysninger og kan ikke prøves igen.</string>
-    <string name="nexus_archive_memory_error">Arkivet kræver mere hukommelse, end Android tillader. Prøv igen efter en opdatering af GameNative, eller vælg en mindre fil.</string>
+    <string name="nexus_archive_memory_error">Arkivet kræver mere hukommelse, end Android tillader. Prøv igen efter en opdatering af OpenNative, eller vælg en mindre fil.</string>
     <!-- Bionic FG (AI) Frame Generation -->
     <string name="steam_invite_tab_title">Inviter</string>
     <string name="steam_invite_header">%1$d venner</string>

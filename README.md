@@ -1,118 +1,120 @@
 <div align="center">
 
-# GameNative
+# OpenNative
 
-**Play the PC games you already own — from Steam, Epic and GOG — on your Android device, with cloud saves.**
+**Run the PC games you own on Android, with a performance-focused experience for gaming handhelds.**
 
-<a href="https://trendshift.io/repositories/14497" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14497" alt="utkarshdalal%2FGameNative | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+[![Release](https://img.shields.io/github/v/release/RemiPelloux/OpenNative?style=flat-square&logo=github)](https://github.com/RemiPelloux/OpenNative/releases)
+[![Build](https://img.shields.io/badge/Android-ARM64-3DDC84?style=flat-square&logo=android&logoColor=white)](#build-from-source)
+[![License](https://img.shields.io/badge/license-GPL--3.0-36C5F0?style=flat-square)](LICENSE)
+[![Upstream](https://img.shields.io/badge/based_on-GameNative-F4C542?style=flat-square)](https://github.com/utkarshdalal/GameNative)
 
-<a href="https://www.star-history.com/utkarshdalal/gamenative">
- <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=utkarshdalal/GameNative&theme=dark" />
-  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=utkarshdalal/GameNative" />
-  <img alt="Star History Rank" src="https://api.star-history.com/badge?repo=utkarshdalal/GameNative" />
- </picture>
-</a>
-
-[![GitHub Release](https://img.shields.io/github/v/release/utkarshdalal/GameNative?style=flat-square&logo=github&label=latest)](https://github.com/utkarshdalal/GameNative/releases/latest)
-[![GitHub stars](https://img.shields.io/github/stars/utkarshdalal/GameNative?style=flat-square&logo=github&color=ffd700)](https://github.com/utkarshdalal/GameNative/stargazers)
-[![Discord](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Fv9%2Finvites%2F2hKv4VfZfE%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&style=flat-square&logo=discord&logoColor=white&label=discord&color=5865F2&suffix=%20members)](https://discord.gg/2hKv4VfZfE)
-[![License](https://img.shields.io/badge/license-GPL%203.0-blue?style=flat-square)](https://github.com/utkarshdalal/GameNative/blob/master/LICENSE)
-[![Ko-fi](https://img.shields.io/badge/ko--fi-support-FF5E5B?style=flat-square&logo=ko-fi&logoColor=white)](https://ko-fi.com/gamenative)
-
-[**Download**](https://downloads.gamenative.app/releases/1.1.1/gamenative-v1.1.1.apk) · [**Discord**](https://discord.gg/2hKv4VfZfE) · [**Support on Ko-fi**](https://ko-fi.com/gamenative)
-
-<video src="https://github.com/user-attachments/assets/95b5397b-908a-44ef-a10a-dac7723580b0" autoplay loop muted playsinline width="100%"></video>
+[Features](#what-opennative-adds) · [Install](#install) · [Gamma Emerald](docs/GAMMA_EMERALD.md) · [Performance](docs/PERFORMANCE.md) · [Roadmap](ROADMAP.md)
 
 </div>
 
----
+OpenNative is an independent, experimental fork of [GameNative](https://github.com/utkarshdalal/GameNative). It keeps the original Android/Wine stack and store integrations while concentrating on frame pacing, lower background overhead, controller reliability, portable container profiles and dual-screen handhelds such as the AYN Thor.
 
-GameNative lets you run the PC games in your Steam, Epic and GOG libraries directly on Android — no streaming required. Your saves sync to the cloud, so you can stop on your PC and keep going on your phone.
+This project does not include games. Use it only with software and store accounts you are authorized to use.
 
-It's still early. Not every game runs yet, and some need tweaking to play well, but the community is constantly finding and sharing configs that work — and these get applied automatically. You can see if anyone has tried running your game successfully at https://gamenative.app/compatibility.
+## What OpenNative adds
 
-## What you get
+- **Non-blocking SurfaceFlinger compatibility path:** BGRA-to-RGBA conversion is queued asynchronously instead of blocking frame submission on `future.get()`.
+- **Lower telemetry overhead:** expensive sensors are sampled less often, hidden metrics do no work, and JSONL session logs are buffered instead of flushed every 500 ms.
+- **Dual-screen performance cockpit:** the game stays on the primary display while metrics and session shortcuts can use an Android secondary display.
+- **Portable container profiles:** versioned exports preserve relevant Wine, graphics, controller and display settings without embedding device-local paths.
+- **Controller runtime fixes:** only configured controller slots create guest-side workers; single-player containers no longer provision four players by default.
+- **Fewer database round trips:** GOG upserts, storage migrations and frontend synchronization use batch reads or set-based updates instead of row-by-row N+1 access.
+- **Gamma Emerald validation:** a stable 720p/30 FPS baseline with controller input and an optional low-cost shadow profile is documented separately.
 
-- Play games you actually own on Steam, Epic, GOG and Amazon
-- Cloud saves that carry over between your PC and your phone
-- Automatically applied known configs, so many games just work out of the box with no tweaking required
-- Controller and touch support, with a custom control editor and on-screen HUD
-- Steam DLC, workshop and branch support
-- Active support over Discord if you need help getting a game running
+These changes have automated coverage and device smoke testing. They are not presented as a universal FPS uplift: performance claims require controlled before/after captures on the same game, scene, driver and thermal state.
 
-## Demo
+## Compatibility
 
-[TechDweeb](https://www.youtube.com/@TechDweeb) walks through setting up GameNative on an Android handheld in a couple of minutes:
+| Target | Status |
+| --- | --- |
+| Android ARM64, API 29+ (`modern`) | Primary build |
+| AYN Thor Max, Android 13 | Device-tested |
+| Steam, Epic, GOG, Amazon and custom games | Inherited from GameNative; compatibility varies by title |
+| Android secondary displays | Cockpit with in-game drawer fallback |
+| Legacy 32-bit Android flavor | Buildable but not the current performance target |
 
-<div align="center">
+OpenNative deliberately keeps the existing application ID `com.remipelloux.gamenativecustom` and the historical public storage directory `GameNative`. This lets the release update the current test installation without orphaning its containers or Gamma Emerald profile. Kotlin/Java namespaces also remain `app.gamenative` to avoid a large, risk-only refactor.
 
-<a href="https://youtu.be/QqIChmAu2_A?si=Ha6xzTQXZA2H8HUN&t=53" target="_blank"><img src="https://github.com/user-attachments/assets/6957e3a1-34ac-41f5-b558-0f1868dbf3d4" alt="Youtube Video" /></a>
+## Install
 
-</div>
+The public repository currently ships source releases. A tested `modernRelease`
+APK is built for the AYN Thor development device, but is not attached publicly:
+the inherited bundle contains three upstream prebuilt shims marked proprietary
+and does not include a downstream redistribution grant. A public binary will
+require permission from their copyright holder or compatible replacements.
 
-## How to use
+Developers can build the source below where permitted. Install it over the
+current OpenNative test build; do not uninstall first if you need to preserve
+app-private containers. Always verify the application ID and signing
+certificate before an in-place update.
 
-1. Download the latest release [here](https://downloads.gamenative.app/releases//gamenative-v.apk)
-2. Install the APK on your Android device
-3. Log in to your Steam account
-4. Install your game
-5. Hit play and enjoy
+The fork disables GameNative's built-in APK updater so an upstream package cannot silently replace OpenNative. Updates are installed explicitly from this repository.
 
-## Support
+## Configure a custom game
 
-The fastest way to get help is the [Discord server](https://discord.gg/2hKv4VfZfE) — we're 35k+ strong and someone's usually around.
+1. Extract the game into a user-accessible folder.
+2. In **Library > Custom**, grant access with Android's folder picker.
+3. Open the game settings and select its actual `.exe`.
+4. Start with a conservative 1280x720 container, a 30 FPS cap and a compatibility-oriented Box64/FEX profile.
+5. Change one graphics option at a time and measure a repeatable scene.
 
-Please **don't** open issues on GitHub; they're closed automatically. Bring it to Discord instead.
+The tested Gamma Emerald recipe and shadow trade-offs are in [docs/GAMMA_EMERALD.md](docs/GAMMA_EMERALD.md).
 
-If you'd like to chip in, you can support the project on [Ko-fi](https://ko-fi.com/gamenative).
+## Build from source
+
+Requirements: JDK 17, Android SDK 36 and Android NDK `27.3.13750724`.
+
+```bash
+git clone https://github.com/RemiPelloux/OpenNative.git
+cd OpenNative
+./gradlew :app:assembleModernDebug
+./gradlew :app:assembleModernRelease
+```
+
+Optional API keys belong in `local.properties` or environment variables and must never be committed:
+
+```properties
+STEAMGRIDDB_API_KEY=your_key
+```
+
+The `modernRelease` build is minified and resource-shrunk. The first preview release intentionally keeps the existing local signing identity so it can update the Thor test installation; it is not a Play Store signing setup.
+
+## Test
+
+Run the focused JVM suite:
+
+```bash
+./gradlew \
+  :app:testModernDebugUnitTest \
+  --tests '*GOGGameDaoTest' \
+  --tests '*FrontendSyncManagerTest' \
+  --tests '*ControllerManagerTest' \
+  --tests '*MetricsSamplingCadenceTest' \
+  --tests '*JsonlSessionLogTest' \
+  --tests '*PortableContainerProfileTest' \
+  --tests '*ExternalDisplayInputControllerTest'
+```
+
+For performance work, follow [docs/PERFORMANCE.md](docs/PERFORMANCE.md). A change is promoted only when repeated measurements show a gain without a stability or thermal regression.
+
+## Privacy and services
+
+OpenNative inherits optional integrations and analytics code from GameNative. Store login, compatibility and component-download features may contact Steam, Epic, GOG, Amazon, Nexus Mods or GameNative-operated endpoints. Review [PrivacyPolicy/README.md](PrivacyPolicy/README.md) and the source before using online features. Never attach credentials, tokens, game files or app-private data to bug reports.
 
 ## Contributing
 
-Want to help out? Message us to get into the **#development** channel on [Discord](https://discord.gg/2hKv4VfZfE), or open a thread there. Things we're currently looking for help with live on our [Trello board](https://trello.com/b/vGRkFoAM/open-source-board).
+Issues and focused pull requests are welcome. Include the device, Android version, SoC/GPU, driver, game version, exact container profile, reproduction steps and logs with private paths removed. Performance pull requests must include before/after evidence.
 
-### Building
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the review and validation rules.
 
-Most of the time you don't need this — if you just want to play, grab the release above. This is for contributors.
+## Credits and license
 
-1. Build it like any normal Android Studio project. Ask on Discord if you get stuck.
-2. **SteamGridDB API key (optional):** to pull game artwork for custom games, add your key to `local.properties`:
-   ```properties
-   STEAMGRIDDB_API_KEY=your_api_key_here
-   ```
-   You can get one from your [SteamGridDB preferences](https://www.steamgriddb.com/profile/preferences). Without it everything still works — it just won't fetch images.
+OpenNative is based on GameNative by Utkarsh Dalal and its contributors, and in turn uses Wine, Proton, DXVK, VKD3D, Mesa, Box64, FEX and other projects. Original copyrights and history are preserved.
 
-## Analytics & privacy
-
-GameNative uses [PostHog](https://posthog.com) for anonymous analytics. No personal information is ever collected — no names, emails, IPs or device identifiers.
-
-**Always collected**, to improve game compatibility:
-- Game launch, close and exit events (game name, store, session length, average FPS, container config)
-- Game install, cancel and uninstall events
-
-This is how we figure out which games work, how well they run, and which configs to apply automatically for the next person. It can't identify you.
-
-**Optional**, and switchable under *Settings → Info → Usage Analytics*:
-- Feature usage (on-screen keyboard, controller, HUD, control editor)
-- Login success/failure events
-- Recommendation interactions
-- App lifecycle events (foreground/background)
-- Cloud sync events
-
-The full [Privacy Policy](PrivacyPolicy/README.md) has the details.
-
-## Supporters
-
-Thanks to our [Ko-fi sponsors](https://ko-fi.com/gamenative) and [GitHub sponsors](https://github.com/sponsors/utkarshdalal?preview=true), including [CodeRabbit](https://coderabbit.link/gnative).
-
-[![Star History Chart](https://api.star-history.com/svg?repos=utkarshdalal/GameNative&type=Date&theme=dark)](https://www.star-history.com/#utkarshdalal/GameNative&Date)
-
-## License
-
-[GPL 3.0](https://github.com/utkarshdalal/GameNative/blob/master/LICENSE).
-
-See [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES) for attributions, copyleft source offers, and notices about third-party and proprietary components bundled with the app.
-
----
-
-**Disclaimer:** This software is meant for playing games that you legally own. Don't use it for piracy or anything else illegal. The maintainer takes no responsibility for misuse.
+The application source remains licensed under [GPL-3.0](LICENSE). Bundled components can have different terms; read [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES) before redistributing an APK.

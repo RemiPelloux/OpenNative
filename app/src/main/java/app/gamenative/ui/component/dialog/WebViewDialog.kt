@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import app.gamenative.Constants
 import app.gamenative.ui.theme.PluviaTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,7 +38,7 @@ fun WebViewDialog(
     onDismissRequest: () -> Unit,
 ) {
     if (isVisible) {
-        var topBarTitle by rememberSaveable { mutableStateOf("GameNative Web View") }
+        var topBarTitle by rememberSaveable { mutableStateOf("OpenNative Web View") }
         val startingUrl by rememberSaveable(url) { mutableStateOf(url) }
         var webView: WebView? = remember { null } // WebView class.
         val webViewState = rememberSaveable { Bundle() } // WebView state for lifecycle events.
@@ -122,7 +123,7 @@ private fun Preview_WebView() {
     PluviaTheme {
         WebViewDialog(
             isVisible = true,
-            url = "https://github.com/utkarshdalal/GameNative",
+            url = Constants.Misc.GITHUB_LINK,
             onDismissRequest = {
                 println("WE CAN GO BACK!")
             },

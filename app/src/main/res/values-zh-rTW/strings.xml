@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">GameNative</string>
+    <string name="app_name">OpenNative</string>
     <string name="login_user">登入</string>
     <string name="login_2fa">雙重驗證</string>
     <string name="home">主頁</string>
@@ -583,7 +583,7 @@
     <string name="custom_game_importing">正在匯入遊戲…</string>
     <string name="custom_game_import_success">遊戲已匯入</string>
     <string name="custom_game_import_failed">匯入失敗</string>
-    <string name="custom_game_import_dialog_message">請選擇包含遊戲的資料夾。遊戲將被匯入到 GameNative 的儲存空間，無需任何儲存權限即可執行。大型遊戲可能需要幾分鐘。</string>
+    <string name="custom_game_import_dialog_message">請選擇包含遊戲的資料夾。遊戲將被匯入到 OpenNative 的儲存空間，無需任何儲存權限即可執行。大型遊戲可能需要幾分鐘。</string>
     <string name="custom_game_import_remove_original">匯入後刪除原始檔案</string>
     <string name="add_custom_game_dont_show_again">不再顯示</string>
     <string name="base_app_shortcut_created">已創建捷徑</string>
@@ -969,9 +969,9 @@
     <string name="settings_info_source_title">原始碼</string>
     <string name="settings_info_source_subtitle">檢視此專案的原始碼</string>
     <string name="settings_info_libraries_title">使用的函式庫</string>
-    <string name="settings_info_libraries_subtitle">了解哪些技術讓GameNative成為可能</string>
+    <string name="settings_info_libraries_subtitle">了解哪些技術讓OpenNative成為可能</string>
     <string name="settings_info_privacy_title">隱私權政策</string>
-    <string name="settings_info_privacy_subtitle">開啟連結至 GameNative 的隱私權政策</string>
+    <string name="settings_info_privacy_subtitle">開啟連結至 OpenNative 的隱私權政策</string>
     <string name="settings_info_usage_analytics_title">使用分析</string>
     <string name="settings_info_usage_analytics_subtitle">我們絕不追蹤個人資訊。關閉此選項將停止非必要的分析，但核心遊戲效能資料仍會作為合法權益繼續收集，以改善相容性。</string>
 
@@ -998,7 +998,7 @@
     <string name="settings_downloads_title">下載</string>
 
     <!-- Login Screen -->
-    <string name="login_app_name">GameNative</string>
+    <string name="login_app_name">OpenNative</string>
     <string name="login_privacy_policy">隱私權政策</string>
     <string name="login_welcome_back">歡迎回來</string>
     <string name="login_subtitle">登入以存取您的 Steam 遊戲庫</string>
@@ -1076,11 +1076,11 @@
     <!-- PluviaMain: Crash & Support -->
     <string name="main_recent_crash_title">最近應用程式當機</string>
     <string name="main_recent_crash_message">若能了解您最近遇到的問題, 將有助於我們改善應用程式.\n您可在應用程式設定中檢視並匯出最近的崩潰日誌, 將其附加至專案原始碼儲存庫的 Github Issue中\nGithub 原始碼儲存庫的連結亦位於設定頁面內</string>
-    <string name="main_thank_you_title">感謝您使用GameNative!</string>
+    <string name="main_thank_you_title">感謝您使用OpenNative!</string>
     <string name="main_thank_you_message">透過與朋友分享應用程式或在Ko-fi成為會員，支持Android平台的開源PC遊戲</string>
     <string name="main_join_kofi">加入Ko-fi</string>
     <string name="main_share">分享</string>
-    <string name="main_share_text">試試 GameNative - 在 Android 上暢玩您的 PC Steam 遊戲，完整支援雲端存檔！\nhttps://gamenative.app\n加入社群：https://discord.gg/2hKv4VfZfE</string>
+    <string name="main_share_text">試試 OpenNative - 在 Android 上暢玩您的 PC Steam 遊戲，完整支援雲端存檔！\nhttps://gamenative.app\n加入社群：https://discord.gg/2hKv4VfZfE</string>
     <string name="main_discord_support_title">遊戲運作正常嗎?</string>
     <string name="main_discord_support_message">加入 Discord 社群, 獲取遊戲修復與效能優化的支援</string>
     <string name="main_open_discord">開啟 Discord</string>
@@ -1359,7 +1359,7 @@
     <string name="wine_proton_install_failed">安裝失敗: %s</string>
     <string name="wine_proton_install_error">安裝錯誤: %s</string>
     <string name="wine_proton_install_success">%1$s %2$s 已安裝成功</string>
-    <string name="wine_proton_glibc_incompatible">此 Wine/Proton 版本需搭配 GLIBC 容器運行, 且不兼容 GameNative.
+    <string name="wine_proton_glibc_incompatible">此 Wine/Proton 版本需搭配 GLIBC 容器運行, 且不兼容 OpenNative.
         請使用 ARM64/bionic 版本.</string>
     <string name="wine_proton_containers_in_use">使用此版本的容器:</string>
     <string name="wine_proton_no_containers_warning">目前沒有容器使用此版本</string>
@@ -1466,7 +1466,7 @@
     <string name="review_mostly_negative">大多負評</string>
     <string name="review_overwhelmingly_negative">壓倒性負評</string>
     <string name="settings_interface_show_recommendations_title">顯示遊戲推薦</string>
-    <string name="settings_interface_show_recommendations_subtitle">顯示個人化推薦。保持開啟有助於支持 GameNative。</string>
+    <string name="settings_interface_show_recommendations_subtitle">顯示個人化推薦。保持開啟有助於支持 OpenNative。</string>
      <string name="steam_save_export_success">存檔已匯出</string>
      <string name="steam_save_export_no_saves_found">未找到存檔檔案</string>
      <string name="steam_save_export_failed">匯出存檔失敗：%s</string>
@@ -1647,16 +1647,16 @@
     <string name="nexus_filter_placement">放置</string>
     <string name="nexus_filter_manual">手動</string>
     <string name="nexus_filter_unsupported">不支援</string>
-    <string name="nexus_integration_temporarily_unavailable">在 GameNative 向 Nexus Mods 註冊期間，Nexus Mods 支援已暫時停用。仍可繼續管理已安裝的模組。</string>
-    <string name="nexus_invalid_nxm_callback">此 Nexus 授權無效、已過期、已使用，或不再符合有效的 GameNative 要求。請從「管理 Nexus 模組」重新開始下載。</string>
+    <string name="nexus_integration_temporarily_unavailable">在 OpenNative 向 Nexus Mods 註冊期間，Nexus Mods 支援已暫時停用。仍可繼續管理已安裝的模組。</string>
+    <string name="nexus_invalid_nxm_callback">此 Nexus 授權無效、已過期、已使用，或不再符合有效的 OpenNative 要求。請從「管理 Nexus 模組」重新開始下載。</string>
     <string name="nexus_nxm_callback_received">已收到 Nexus 下載授權。如果下載未自動繼續，請返回「管理 Nexus 模組」。</string>
-    <string name="nexus_authorize_in_browser">此帳號需要在 Nexus 網站上確認。請在瀏覽器中依序選擇「Download with Manager」和「Slow Download」，GameNative 將自動繼續。</string>
+    <string name="nexus_authorize_in_browser">此帳號需要在 Nexus 網站上確認。請在瀏覽器中依序選擇「Download with Manager」和「Slow Download」，OpenNative 將自動繼續。</string>
     <string name="nexus_open_browser_failed">無法在瀏覽器中開啟 Nexus Mods。</string>
     <string name="nexus_authorization_timed_out">Nexus 網站授權逾時。請重試此檔案，並在瀏覽器中完成「Download with Manager」操作。</string>
     <string name="nexus_authorization_expired">Nexus 網站下載授權已過期。請開啟 Nexus Mods 並重新授權該檔案。</string>
-    <string name="nexus_authorization_already_pending">GameNative 已在等待 Nexus 授權此檔案。請完成瀏覽器中的下載確認，或取消後重試。</string>
-    <string name="nexus_authorized_file_received">Nexus 已授權此檔案。點選即可開始在 GameNative 中下載。</string>
-    <string name="nexus_authorization_wrong_account">Nexus 網站授權屬於其他帳號。請在瀏覽器和 GameNative 中登入相同的 Nexus 帳號。</string>
+    <string name="nexus_authorization_already_pending">OpenNative 已在等待 Nexus 授權此檔案。請完成瀏覽器中的下載確認，或取消後重試。</string>
+    <string name="nexus_authorized_file_received">Nexus 已授權此檔案。點選即可開始在 OpenNative 中下載。</string>
+    <string name="nexus_authorization_wrong_account">Nexus 網站授權屬於其他帳號。請在瀏覽器和 OpenNative 中登入相同的 Nexus 帳號。</string>
     <string name="nexus_waiting_for_nexus">正在等待 Nexus 網站授權</string>
     <string name="nexus_resume_requires_website_authorization">此下載已中斷。請點選「繼續」，在 Nexus Mods 網站上重新授權此檔案。</string>
     <string name="nexus_waiting_for_website_authorization">合輯 %1$d/%2$d：請在 Nexus Mods 上授權 %3$s</string>
@@ -1894,10 +1894,10 @@
     <string name="nexus_no_issues_found">未發現問題</string>
     <string name="nexus_no_issues_description">衝突和外掛程式警告將出現在這裡。</string>
     <string name="nexus_overwrite_existing_title">覆蓋現有檔案？</string>
-    <string name="nexus_overwrite_existing_message">GameNative 會在取代現有檔案之前先備份。</string>
+    <string name="nexus_overwrite_existing_message">OpenNative 會在取代現有檔案之前先備份。</string>
     <string name="nexus_backup_overwrite">備份和覆蓋</string>
     <string name="nexus_apply_mod_order_title">套用模組順序？</string>
-    <string name="nexus_apply_mod_order_message">GameNative 會從最低到最高優先順序套用啟用的模組，並備份被取代的檔案。</string>
+    <string name="nexus_apply_mod_order_message">OpenNative 會從最低到最高優先順序套用啟用的模組，並備份被取代的檔案。</string>
     <string name="nexus_backup_apply">備份與套用</string>
     <string name="nexus_freed_size">釋放%1$s</string>
     <string name="nexus_storage_cleanup_failed">儲存清理失敗</string>
@@ -2140,7 +2140,7 @@
     <string name="local_mod_folder_counts">%1$s，%2$s</string>
     <string name="local_mod_name">模組名稱</string>
     <string name="local_mod_version_optional">版本（選填）</string>
-    <string name="local_mod_snapshot_notice">GameNative 會複製一份私人快照，並將其視為不受信任的內容。匯入期間絕不會執行可執行檔或安裝指令碼。</string>
+    <string name="local_mod_snapshot_notice">OpenNative 會複製一份私人快照，並將其視為不受信任的內容。匯入期間絕不會執行可執行檔或安裝指令碼。</string>
     <string name="local_mod_import">匯入模組</string>
     <string name="local_mod_archive_source">本機壓縮檔</string>
     <string name="local_mod_files_source">本機檔案</string>
@@ -2150,8 +2150,8 @@
     <string name="local_mod_imported">已匯入本機模組</string>
     <string name="local_mod_duplicate">此內容已作為 %1$s 進行管理。已開啟現有模組。</string>
     <string name="local_mod_name_required">請輸入此模組的名稱。</string>
-    <string name="local_mod_unreadable">GameNative 無法讀取所選內容。</string>
-    <string name="local_mod_unreadable_file">GameNative 無法讀取 %1$s。</string>
+    <string name="local_mod_unreadable">OpenNative 無法讀取所選內容。</string>
+    <string name="local_mod_unreadable_file">OpenNative 無法讀取 %1$s。</string>
     <string name="local_mod_empty">所選檔案是空的。</string>
     <string name="local_mod_empty_folder">所選資料夾不包含任何檔案。</string>
     <string name="local_mod_invalid_archive">無法安全讀取所選壓縮檔。它可能已損毀、已加密、由多個分卷組成、不受支援或包含不安全的路徑。</string>
@@ -2177,7 +2177,7 @@
     <string name="local_mod_import_status_copying">正在複製</string>
     <string name="local_mod_copied_progress">已複製 %1$s，共 %2$s</string>
     <string name="nexus_invalid_source_metadata">此受管理模組的來源資訊不完整，無法重試。</string>
-    <string name="nexus_archive_memory_error">此壓縮檔需要的記憶體超過 Android 允許的上限。請在更新 GameNative 後重試，或選擇較小的檔案。</string>
+    <string name="nexus_archive_memory_error">此壓縮檔需要的記憶體超過 Android 允許的上限。請在更新 OpenNative 後重試，或選擇較小的檔案。</string>
     <!-- Bionic FG (AI) Frame Generation -->
     <string name="steam_invite_tab_title">邀請</string>
     <string name="steam_invite_header">%1$d 位好友</string>

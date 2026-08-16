@@ -982,7 +982,7 @@ object NexusModManager {
             }
             if (install.status == ModInstallStatus.APPLIED.name) {
                 if (recipes.none { it.enabled }) {
-                    add(ModHealthSeverity.ERROR, "Applied mod has no placement recipe", "GameNative cannot verify or safely remove deployed files.", install)
+                    add(ModHealthSeverity.ERROR, "Applied mod has no placement recipe", "OpenNative cannot verify or safely remove deployed files.", install)
                 } else if (extracted.isDirectory) {
                     val missing = missingAppliedTargets(install, recipes, gameRootDir, winePrefix).take(3)
                     if (missing.isNotEmpty()) {
@@ -1021,7 +1021,7 @@ object NexusModManager {
             add(
                 ModHealthSeverity.ERROR,
                 "Unsafe backup records",
-                "$unsafeBackupCount backup record(s) point outside GameNative's backup folder.\n${unsafeBackupExamples.joinToString("\n")}",
+                "$unsafeBackupCount backup record(s) point outside OpenNative's backup folder.\n${unsafeBackupExamples.joinToString("\n")}",
             )
         }
         if (missingBackupCount > 0) {

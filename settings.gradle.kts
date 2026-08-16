@@ -20,6 +20,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "gamenative"
+rootProject.name = "OpenNative"
 include(":app")
 include(":ubuntufs")

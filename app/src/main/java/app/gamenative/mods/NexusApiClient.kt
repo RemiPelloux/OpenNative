@@ -523,7 +523,7 @@ class NexusApiClient(
     ): NexusApiException {
         val (message, downloadReason) = when (statusCode) {
             400 -> if (hasAuthorization) {
-                "Nexus rejected this website download authorization. Make sure the browser and GameNative use the same Nexus account." to
+                "Nexus rejected this website download authorization. Make sure the browser and OpenNative use the same Nexus account." to
                     NexusApiErrorReason.DOWNLOAD_AUTHORIZATION_INVALID
             } else {
                 return this

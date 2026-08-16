@@ -1,49 +1,45 @@
-# GameNative Roadmap
+# OpenNative Roadmap
 
-## Vision
-
-PC gaming is currently locked to those who can afford expensive hardware. We believe games are one of the most powerful artistic mediums we have — and that everyone should have access to them. With over 3 billion Android devices in circulation, we are changing that.
-
-GameNative is built in the open and improved by a global community of contributors. Our goal is to make PC gaming on Android a first class experience — bringing Steam, Epic, GOG and other storefronts natively to Android devices without streaming.
-
----
+OpenNative prioritizes measured frame pacing, stability and handheld ergonomics. Items move from experimental to default only after repeatable A/B tests.
 
 ## Now
 
-These are the things we are actively working on:
+### 1. Frame delivery and shader path
 
-- **Android 35 support and Google Play launch** — full compatibility with the latest Android SDK and distribution through Google Play
-- **External launchers** — getting Rockstar, EA and other launchers working reliably
-- **Online play** — making online multiplayer work for Steam and other launchers
-- **Steam cloud saves** — reliable cloud save support for Steam games
-- **Non-Steam store support** — downloads, installs, DLC and deletions working well for Epic, GOG and Amazon
-- **Epic and GOG** — cloud saves working reliably for both, EOS DRM working for Epic
-- **Steam Input** — fixing reliability issues across games including No Man's Sky and others
-- **Controller** — making PC games genuinely playable on a touchscreen, including layout, comfort and also local multiplayer support
-- **External devices** — reliable support for keyboards, mice and other external peripherals
-- **External storage** — reliable external storage with fast downloads and fast game launches
-- **Code quality** — reducing complexity and duplication, especially across Epic, GOG and Amazon integrations
-- **Game compatibility** — more games working out of the box without manual tweaks
-- **Device support** — ensuring GameNative works great across a wide range of Android devices, chipsets and form factors
+- Capture Perfetto and GPU traces around the SurfaceFlinger compatibility path, Vulkan presentation, DXVK shader compilation and frame queue depth.
+- Eliminate remaining avoidable copies and synchronization only when buffer ownership can be proven safe.
+- Add shader-cache warmup visibility, cache health reporting and per-title cache reset instead of broad cache deletion.
+- Measure mailbox versus FIFO presentation for 30 FPS titles; never force a mode globally.
 
----
+### 2. Thermal stability on AYN Thor
+
+- Establish five-run cold/warm baselines with FPS, p95/p99 frametime, RSS, CPU/GPU load and temperature.
+- Add sustained thermal warnings and a user-confirmed lower-power profile; never change Android clocks or global settings.
+- Run 30 launch/stop cycles and a 60-minute Gamma Emerald session without ANR, native crash or unbounded memory growth.
+
+### 3. Runtime and data efficiency
+
+- Audit remaining Room and store-library flows for N+1 queries with query-count tests.
+- Remove diagnostic Box64/guest rewrite logging from production paths unless explicitly enabled.
+- Cache immutable container metadata and avoid reconstructing expensive launch configuration during Compose recomposition.
+- Batch or debounce disk writes from metrics, session state and profile changes.
+
+## Next
+
+- Make the secondary-display cockpit resilient to hot-plug, rotation and activity recreation.
+- Add per-game performance presets with explicit inheritance and reversible overrides.
+- Export sanitized diagnostic bundles that exclude credentials, saves, game paths and protected content.
+- Add release CI for lint, focused unit tests, reproducible APK builds, checksums and SBOM generation.
+- Provide a migration assistant before adopting a final `com.remipelloux.opennative` package ID.
 
 ## Later
 
-Where we are taking GameNative over the longer term:
+- Compare FEX and Box64 presets by workload rather than device marketing name.
+- Test experimental refresh-rate matching for capped games with power measurements.
+- Upstream generic renderer, controller and database fixes when they are independent of OpenNative branding.
+- Expand testing beyond Snapdragon/Turnip to additional Android ARM64 GPUs.
 
-- **Performance and thermals** — increasing performance and reducing heat during extended play sessions to make mobile gaming more viable
-- **Supporting indie devs** — discovering and recommending indie PC games, ensuring they work great on GameNative, and helping indie developers reach a new audience on Android
-- **Upstream contributions** — actively contributing to Proton, Wine, FEX, Box64, DXVK, VKD3D and other components that make PC gaming on Android possible
-- **Hardware partnerships** — working with manufacturers of gaming handhelds, phones and tablets to make device-specific optimizations
-- **Steam Deck alternative** — making GameNative a full replacement for Steam Deck-like devices on Android
+## Promotion criteria
 
----
+A performance change needs five warmed runs per variant on the same scene and configuration. Promote it when it improves median FPS by at least 3%, clearly improves p95/p99 frametime, or reduces power/temperature without a meaningful performance loss. Reject changes with crashes, visual corruption, input regressions or more than 2% regression in another representative workload.
 
-## Contributing
-
-Before opening a PR, start a discussion and get alignment first. If you have access to #code-changes, post there. Otherwise open a thread in #development. PRs without prior discussion will be closed.
-
-If you're unsure whether your idea is in scope, discuss it first before writing any code. We genuinely appreciate every contribution — please understand that not everything will align with the current direction of the project.
-
-See our contribution guidelines for more detail.
