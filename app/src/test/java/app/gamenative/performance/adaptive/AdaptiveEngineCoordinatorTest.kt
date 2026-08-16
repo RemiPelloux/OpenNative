@@ -28,6 +28,7 @@ class AdaptiveEngineCoordinatorTest {
         }
 
         assertEquals(AdaptiveResolutionMode.OBSERVE, AdaptiveEngineCoordinator.state?.mode)
+        assertEquals("1280x720", container.getExtra(AdaptiveEngineCoordinator.NATIVE_RESOLUTION_KEY, ""))
         assertEquals("", container.getExtra(AdaptiveEngineCoordinator.PENDING_KEY, ""))
         assertEquals("1280x720", container.screenSize)
     }
@@ -54,6 +55,18 @@ class AdaptiveEngineCoordinatorTest {
         assertEquals(pending, container.screenSize)
         assertEquals("", container.getExtra(AdaptiveEngineCoordinator.PENDING_KEY, ""))
         assertFalse(AdaptiveEngineCoordinator.prepareForLaunch(container))
+    }
+
+    @Test
+    fun `native ceiling survives a lower active resolution`() {
+        val container = container("ceiling")
+        container.putExtra(AdaptiveEngineCoordinator.NATIVE_RESOLUTION_KEY, "1280x720")
+        container.setScreenSize("1024x576")
+
+        AdaptiveEngineCoordinator.start(container)
+
+        assertEquals(RenderResolution(1280, 720), AdaptiveEngineCoordinator.state?.availableResolutions?.last())
+        assertEquals(RenderResolution(1024, 576), AdaptiveEngineCoordinator.state?.activeResolution)
     }
 
     private fun container(id: String) = Container(id).apply {

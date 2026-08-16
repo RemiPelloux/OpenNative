@@ -24,6 +24,7 @@ object AdaptiveEngineCoordinator {
     const val PENDING_KEY = "adaptivePendingResolution"
     const val PREVIOUS_KEY = "adaptivePreviousResolution"
     const val PROBE_BASELINE_KEY = "adaptiveProbeBaselineP95Ms"
+    const val NATIVE_RESOLUTION_KEY = "adaptiveNativeResolution"
     const val MIN_INDEX_KEY = "adaptiveMinResolutionIndex"
     const val MAX_INDEX_KEY = "adaptiveMaxResolutionIndex"
 
@@ -59,7 +60,11 @@ object AdaptiveEngineCoordinator {
         this.container = container
         activeResolution = ResolutionLadder.parse(container.screenSize)
         val active = activeResolution ?: return stop()
-        ladder = ResolutionLadder.around(active)
+        val native = ResolutionLadder.parse(container.getExtra(NATIVE_RESOLUTION_KEY, "")) ?: active.also {
+            container.putExtra(NATIVE_RESOLUTION_KEY, it.key)
+            container.saveData()
+        }
+        ladder = ResolutionLadder.around(native)
         val localLadder = ladder ?: return
         val minIndex = container.getExtra(MIN_INDEX_KEY, "0").toIntOrNull()?.coerceIn(0, localLadder.steps.lastIndex) ?: 0
         val maxIndex = container.getExtra(MAX_INDEX_KEY, localLadder.steps.lastIndex.toString())
