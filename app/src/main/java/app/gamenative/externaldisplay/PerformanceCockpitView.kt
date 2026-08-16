@@ -19,6 +19,9 @@ import android.widget.TextView
 import app.gamenative.R
 import app.gamenative.powercontrol.PowerManager
 import app.gamenative.powercontrol.metrics.MetricsSnapshot
+import app.gamenative.performance.adaptive.AdaptiveEngineCoordinator
+import app.gamenative.performance.adaptive.AdaptivePerformanceObserver
+import app.gamenative.performance.shaders.ShaderHealthMonitor
 import com.winlator.widget.TouchpadView
 import com.winlator.xserver.XServer
 import java.util.Locale
@@ -49,6 +52,7 @@ class PerformanceCockpitView(
     private val p95Value = metricValue()
     private val usageValue = metricValue()
     private val temperatureValue = metricValue()
+    private val adaptiveValue = TextView(context)
     private val keyboardView = ExternalOnScreenKeyboardView(context, xServer)
     private val keyboardPanel = buildKeyboardPanel()
 
@@ -73,6 +77,7 @@ class PerformanceCockpitView(
         }
         content.addView(buildHeader())
         content.addView(buildMetricsBand())
+        content.addView(buildAdaptiveBand())
         content.addView(buildActionBand())
         content.addView(buildTouchpad(xServer, touchpadViewProvider))
         addView(content)
@@ -174,6 +179,31 @@ class PerformanceCockpitView(
             iconRes = R.drawable.icon_popup_menu_cpu,
             onClick = onTogglePerformanceHud,
         )
+    }
+
+    private fun buildAdaptiveBand(): View = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        setPadding(dp(22), 0, dp(22), 0)
+        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48))
+        background = solidBackground(SURFACE)
+
+        addView(TextView(context).apply {
+            setText(R.string.adaptive_engine_title)
+            setTextColor(Color.parseColor(CYAN))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+        })
+        adaptiveValue.apply {
+            text = "--"
+            setTextColor(Color.parseColor(TEXT))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL)
+            gravity = Gravity.END
+        }
+        addView(adaptiveValue, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+            marginStart = dp(16)
+        })
     }
 
     private fun buildTouchpad(
@@ -294,6 +324,17 @@ class PerformanceCockpitView(
             val temperature = max(it.cpuTempC ?: Int.MIN_VALUE, it.gpuTempC ?: Int.MIN_VALUE)
             if (temperature == Int.MIN_VALUE) "--" else "$temperature\u00B0C"
         } ?: "--"
+        val prediction = AdaptivePerformanceObserver.latestPrediction
+        val engine = AdaptiveEngineCoordinator.state
+        val shader = ShaderHealthMonitor.state
+        adaptiveValue.text = if (prediction == null || engine == null) {
+            "--"
+        } else {
+            val confidence = (prediction.confidence * 100).toInt()
+            val resolution = engine.pendingResolution?.let { "${engine.activeResolution?.key}>${it.key}" }
+                ?: engine.activeResolution?.key.orEmpty()
+            "${prediction.bottleneck.name.lowercase()} $confidence%  $resolution  shader:${shader.warmth.name.lowercase()}"
+        }
     }
 
     private fun toggleKeyboard() {

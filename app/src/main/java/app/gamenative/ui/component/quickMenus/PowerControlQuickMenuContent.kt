@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +29,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,6 +58,9 @@ import app.gamenative.ui.component.QuickMenuAdjustmentRow
 import app.gamenative.ui.component.QuickMenuToggleRow
 import app.gamenative.ui.theme.PluviaTheme
 import app.gamenative.utils.MathUtils.normalizedProgress
+import app.gamenative.performance.adaptive.AdaptiveEngineCoordinator
+import app.gamenative.performance.adaptive.AdaptiveResolutionMode
+import app.gamenative.performance.shaders.ShaderHealthMonitor
 import kotlinx.coroutines.delay
 
 @Composable
@@ -86,6 +92,7 @@ fun PowerControlQuickMenuContent(
             .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        AdaptiveEnginePanel()
         when (uiState) {
             is PowerControlUiState.Loading -> {
                 LoadingView()
@@ -110,6 +117,157 @@ fun PowerControlQuickMenuContent(
                     firstItemFocusRequester = firstItemFocusRequester,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun AdaptiveEnginePanel() {
+    var engineState by remember { mutableStateOf(AdaptiveEngineCoordinator.state) }
+    var shaderState by remember { mutableStateOf(ShaderHealthMonitor.state) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            engineState = AdaptiveEngineCoordinator.state
+            shaderState = ShaderHealthMonitor.state
+            delay(500)
+        }
+    }
+
+    val state = engineState
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF1B2026), RoundedCornerShape(6.dp))
+            .border(1.dp, Color(0xFF33404B), RoundedCornerShape(6.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.adaptive_engine_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color(0xFFF5F7F8),
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = state?.let {
+                        "${it.activeResolution?.key ?: "--"}  •  ${it.decisionReason.name.replace('_', ' ').lowercase()}"
+                    } ?: stringResource(R.string.adaptive_engine_waiting),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF9BA7B2),
+                )
+            }
+            state?.let {
+                Text(
+                    text = "${(it.model.confidence * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color(0xFF36C5F0),
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            AdaptiveResolutionMode.entries.forEach { mode ->
+                val selected = state?.mode == mode
+                Button(
+                    onClick = { AdaptiveEngineCoordinator.setMode(mode); engineState = AdaptiveEngineCoordinator.state },
+                    modifier = Modifier.weight(1f).heightIn(min = 40.dp),
+                    shape = RoundedCornerShape(5.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selected) Color(0xFF36C5F0) else Color(0xFF25313A),
+                        contentColor = if (selected) Color(0xFF111418) else Color(0xFFF5F7F8),
+                    ),
+                ) {
+                    Text(
+                        text = when (mode) {
+                            AdaptiveResolutionMode.FIXED -> stringResource(R.string.adaptive_mode_fixed)
+                            AdaptiveResolutionMode.OBSERVE -> stringResource(R.string.adaptive_mode_observe)
+                            AdaptiveResolutionMode.AUTOMATIC -> stringResource(R.string.adaptive_mode_auto)
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
+            }
+        }
+
+        state?.let { current ->
+            if (current.availableResolutions.isNotEmpty()) {
+                Text(
+                    text = stringResource(
+                        R.string.adaptive_resolution_range,
+                        current.availableResolutions[current.minimumIndex].key,
+                        current.availableResolutions[current.maximumIndex].key,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF9BA7B2),
+                )
+                Slider(
+                    value = current.maximumIndex.toFloat(),
+                    onValueChange = {
+                        AdaptiveEngineCoordinator.setBounds(current.minimumIndex, it.toInt())
+                        engineState = AdaptiveEngineCoordinator.state
+                    },
+                    valueRange = current.minimumIndex.toFloat()..current.availableResolutions.lastIndex.toFloat(),
+                    steps = (current.availableResolutions.lastIndex - current.minimumIndex - 1).coerceAtLeast(0),
+                )
+            }
+            current.pendingResolution?.let { pending ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.adaptive_pending_restart, pending.key),
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFF4C542),
+                    )
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .selectable(selected = false) {
+                                AdaptiveEngineCoordinator.discardPending()
+                                engineState = AdaptiveEngineCoordinator.state
+                            }
+                            .padding(8.dp),
+                        color = Color(0xFF36C5F0),
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
+            }
+        }
+
+        HorizontalDivider(color = Color(0xFF33404B))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.shader_health_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color(0xFFF5F7F8),
+                )
+                Text(
+                    text = stringResource(
+                        R.string.shader_health_summary,
+                        shaderState.warmth.name.lowercase(),
+                        shaderState.activeFiles,
+                        shaderState.inactiveGenerations,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF9BA7B2),
+                )
+            }
+            Text(
+                text = stringResource(R.string.shader_health_clean_after_exit),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .selectable(selected = false) { ShaderHealthMonitor.requestMaintenanceAfterExit() }
+                    .padding(8.dp),
+                color = Color(0xFF36C5F0),
+                style = MaterialTheme.typography.labelMedium,
+            )
         }
     }
 }

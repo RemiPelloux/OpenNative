@@ -232,6 +232,7 @@ class PluviaApp : SplitCompatApplication() {
 
             // Stop performance driver
             PowerManager.stop()
+            ShaderHealthMonitor.performPendingMaintenance()
             ShaderHealthMonitor.resetSession()
 
             xEnvironment = null

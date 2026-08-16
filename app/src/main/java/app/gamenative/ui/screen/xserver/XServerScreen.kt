@@ -3761,7 +3761,7 @@ private fun setupXEnvironment(
         val initialCacheStats = ShaderCacheManager.inspect(shaderCachePaths)
         activeShaderCachePaths = shaderCachePaths
         shaderCacheStatsAtLaunch = initialCacheStats
-        ShaderHealthMonitor.sessionStarted(shaderCachePaths, initialCacheStats)
+        ShaderHealthMonitor.sessionStarted(container, shaderCachePaths, initialCacheStats)
         Timber.i(
             "Shader cache generation=%s mesa=%s dxvk=%s vkd3d=%s warm=%s files=%d bytes=%d",
             shaderCachePaths.generation(),

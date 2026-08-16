@@ -2211,6 +2211,16 @@
     <string name="power_control_auto_tuning">Auto-Tuning</string>
     <string name="power_control_auto_tuning_desc">More stable performance, longer battery life, less heat: automatically tunes CPU and GPU for your game. Verified on Retroid Pocket 6.</string>
     <string name="power_control_adaptive_fps">Automatic FPS reduction</string>
+    <string name="adaptive_engine_title">Adaptive Engine</string>
+    <string name="adaptive_engine_waiting">Waiting for a game session</string>
+    <string name="adaptive_mode_fixed">Fixed</string>
+    <string name="adaptive_mode_observe">Observe</string>
+    <string name="adaptive_mode_auto">Adaptive</string>
+    <string name="adaptive_resolution_range">Resolution range %1$s – %2$s</string>
+    <string name="adaptive_pending_restart">%1$s staged for next launch</string>
+    <string name="shader_health_title">Shader Health</string>
+    <string name="shader_health_summary">%1$s · %2$d files · %3$d inactive</string>
+    <string name="shader_health_clean_after_exit">Clean after exit</string>
     <string name="power_control_adaptive_fps_desc">Lowers the FPS cap when the game cannot reach it, for stable pacing. Verified on Retroid Pocket 6.</string>
     <string name="power_control_tuning_mode">Tuning Mode</string>
     <string name="power_control_tuning_mode_per_cluster">Per-cluster (verified on Retroid Pocket 6)</string>

@@ -17,11 +17,18 @@ data class ShaderHealthState(
 )
 
 object ShaderHealthMonitor {
+    private const val DEFAULT_CACHE_LIMIT_BYTES = 2L * 1024L * 1024L * 1024L
+    private const val DEFAULT_INACTIVE_GENERATIONS = 3
+    private var sessionContainer: Container? = null
+    private var maintenanceRequested = false
+
     @Volatile
     var state = ShaderHealthState(ShaderWarmth.UNAVAILABLE, null, 0, 0, 0, 0, 0, 0)
         private set
 
-    fun sessionStarted(paths: ShaderCacheManager.CachePaths, initial: ShaderCacheManager.CacheStats) {
+    fun sessionStarted(container: Container, paths: ShaderCacheManager.CachePaths, initial: ShaderCacheManager.CacheStats) {
+        sessionContainer = container
+        maintenanceRequested = false
         state = ShaderHealthState(
             warmth = if (initial.files() > 0) ShaderWarmth.WARM else ShaderWarmth.COLD,
             activeGeneration = paths.generation(),
@@ -59,6 +66,19 @@ object ShaderHealthMonitor {
         ShaderCacheManager.pruneInactive(container, maximumTotalBytes, maximumInactiveGenerations).also {
             inspect(container)
         }
+
+    fun requestMaintenanceAfterExit() {
+        if (sessionContainer != null) maintenanceRequested = true
+    }
+
+    fun performPendingMaintenance() {
+        val owner = sessionContainer
+        if (owner != null && maintenanceRequested) {
+            prune(owner, DEFAULT_CACHE_LIMIT_BYTES, DEFAULT_INACTIVE_GENERATIONS)
+        }
+        maintenanceRequested = false
+        sessionContainer = null
+    }
 
     fun resetSession() {
         state = state.copy(warmth = ShaderWarmth.UNAVAILABLE, sessionAddedBytes = 0, sessionAddedFiles = 0)

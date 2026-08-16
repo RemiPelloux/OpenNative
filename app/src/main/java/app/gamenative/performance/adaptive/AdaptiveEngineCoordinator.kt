@@ -12,6 +12,9 @@ data class AdaptiveEngineState(
     val decisionReason: ResolutionDecisionReason,
     val model: FrameCostEstimate,
     val memoryPressure: MemoryPressureLevel,
+    val availableResolutions: List<RenderResolution>,
+    val minimumIndex: Int,
+    val maximumIndex: Int,
     val requiresRestart: Boolean,
 )
 
@@ -69,7 +72,7 @@ object AdaptiveEngineCoordinator {
         val pending = ResolutionLadder.parse(container.getExtra(PENDING_KEY, ""))
         state = AdaptiveEngineState(
             mode(container), active, pending, ResolutionDecisionReason.WARMUP, rlsModel.estimate(),
-            MemoryPressureLevel.NORMAL, pending != null,
+            MemoryPressureLevel.NORMAL, localLadder.steps, minIndex, maxIndex, pending != null,
         )
     }
 
@@ -123,6 +126,10 @@ object AdaptiveEngineCoordinator {
             decisionReason = decision?.reason ?: ResolutionDecisionReason.HOLD,
             model = model,
             memoryPressure = memory.level,
+            availableResolutions = localLadder.steps,
+            minimumIndex = owner.getExtra(MIN_INDEX_KEY, "0").toIntOrNull()?.coerceIn(0, localLadder.steps.lastIndex) ?: 0,
+            maximumIndex = owner.getExtra(MAX_INDEX_KEY, localLadder.steps.lastIndex.toString()).toIntOrNull()
+                ?.coerceIn(0, localLadder.steps.lastIndex) ?: localLadder.steps.lastIndex,
             requiresRestart = pending != null,
         ).also { state = it }
     }
@@ -133,6 +140,31 @@ object AdaptiveEngineCoordinator {
         owner.putExtra(MODE_KEY, mode.name)
         owner.saveData()
         state = state?.copy(mode = mode)
+    }
+
+    @Synchronized
+    fun setBounds(minimumIndex: Int, maximumIndex: Int) {
+        val owner = container ?: return
+        val localLadder = ladder ?: return
+        val min = minimumIndex.coerceIn(0, localLadder.steps.lastIndex)
+        val max = maximumIndex.coerceIn(min, localLadder.steps.lastIndex)
+        owner.putExtra(MIN_INDEX_KEY, min)
+        owner.putExtra(MAX_INDEX_KEY, max)
+        owner.saveData()
+        controller = AdaptiveResolutionController(localLadder, min, max)
+        state = state?.copy(minimumIndex = min, maximumIndex = max)
+    }
+
+    @Synchronized
+    fun stageResolution(index: Int) {
+        val owner = container ?: return
+        val localLadder = ladder ?: return
+        val target = localLadder.steps[index.coerceIn(0, localLadder.steps.lastIndex)]
+        if (target == activeResolution) return discardPending()
+        owner.putExtra(PREVIOUS_KEY, activeResolution?.key)
+        owner.putExtra(PENDING_KEY, target.key)
+        owner.saveData()
+        state = state?.copy(pendingResolution = target, requiresRestart = true)
     }
 
     @Synchronized
