@@ -26,6 +26,7 @@ import android.view.InputDevice
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import app.gamenative.BuildConfig
+import app.gamenative.performance.adaptive.AdaptiveEngineCoordinator
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -440,6 +441,7 @@ fun XServerScreen(
         ),
     )
 
+    remember(container.id) { AdaptiveEngineCoordinator.prepareForLaunch(container) }
     val xServerState = rememberSaveable(stateSaver = XServerState.Saver) {
         mutableStateOf(
             XServerState(
@@ -2235,6 +2237,7 @@ fun XServerScreen(
                             )
 
                             // Start performance driver after environment is set up
+                            AdaptiveEngineCoordinator.start(container)
                             PowerManager.start(container.rootDir)
 
                             // Pin game process to performance cores (CPUs 4-7)

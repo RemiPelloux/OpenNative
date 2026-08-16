@@ -16,6 +16,7 @@ import app.gamenative.powercontrol.drivers.SamsungPerformanceDriver
 import app.gamenative.powercontrol.fan.FanController
 import app.gamenative.powercontrol.metrics.MetricsSnapshot
 import app.gamenative.powercontrol.metrics.PerformanceMetricsCollector
+import app.gamenative.performance.adaptive.AdaptiveEngineCoordinator
 import app.gamenative.powercontrol.profiles.CpuGovernor
 import com.winlator.container.Container
 import com.winlator.core.ProcessHelper
@@ -239,6 +240,7 @@ object PowerManager {
         stopAutoTuning()
         AdaptiveFpsCapController.stop()
         PerformanceMetricsCollector.stop()
+        AdaptiveEngineCoordinator.stop()
         FanController.stop()
         getDriver().stop()
         isGameStarted = false

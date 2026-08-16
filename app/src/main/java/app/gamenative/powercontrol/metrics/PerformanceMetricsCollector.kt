@@ -7,6 +7,7 @@ import android.os.SystemClock
 import android.view.Display
 import app.gamenative.performance.adaptive.AdaptivePerformanceObserver
 import app.gamenative.performance.adaptive.AdaptivePrediction
+import app.gamenative.performance.adaptive.AdaptiveEngineCoordinator
 import app.gamenative.powercontrol.PowerBaselineScripts
 import app.gamenative.powercontrol.PowerManager
 import java.io.File
@@ -183,6 +184,7 @@ object PerformanceMetricsCollector {
         )
 
         val prediction = AdaptivePerformanceObserver.observe(snapshot, PowerManager.targetFps)
+        AdaptiveEngineCoordinator.observe(snapshot, prediction)
         publish(snapshot)
         if (decision.writeLog) appendLog(snapshot, prediction)
 
