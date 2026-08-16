@@ -59,6 +59,7 @@ object PerformanceMetricsCollector {
     private var activityManager: ActivityManager? = null
     private val memoryInfo = ActivityManager.MemoryInfo()
     private var cachedAvailableMemoryBytes: Long? = null
+    private var cachedTotalMemoryBytes: Long? = null
     private var cachedLowMemory = false
 
     @Volatile
@@ -82,6 +83,7 @@ object PerformanceMetricsCollector {
         cachedGpuTempC = null
         activityManager = appContext.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
         cachedAvailableMemoryBytes = null
+        cachedTotalMemoryBytes = null
         cachedLowMemory = false
         sampleCount = 0L
         paused = false
@@ -180,6 +182,7 @@ object PerformanceMetricsCollector {
             cpuTempC = cachedCpuTempC,
             gpuTempC = cachedGpuTempC,
             availableMemoryBytes = cachedAvailableMemoryBytes,
+            totalMemoryBytes = cachedTotalMemoryBytes,
             lowMemory = cachedLowMemory,
         )
 
@@ -212,9 +215,11 @@ object PerformanceMetricsCollector {
             val manager = activityManager ?: return
             manager.getMemoryInfo(memoryInfo)
             cachedAvailableMemoryBytes = memoryInfo.availMem
+            cachedTotalMemoryBytes = memoryInfo.totalMem
             cachedLowMemory = memoryInfo.lowMemory
         } catch (_: Exception) {
             cachedAvailableMemoryBytes = null
+            cachedTotalMemoryBytes = null
             cachedLowMemory = false
         }
     }
@@ -264,7 +269,7 @@ object PerformanceMetricsCollector {
             "{\"timestampMs\":%d,\"fps\":%.2f,\"frameTimeP50Ms\":%.2f,\"frameTimeP95Ms\":%.2f," +
                 "\"frameTimeMaxMs\":%.2f,\"slowFrameCount\":%d,\"totalFrameCount\":%d," +
                 "\"cpuUsagePercent\":%s,\"cpuUsageSource\":\"%s\",\"gpuUsagePercent\":%s," +
-                "\"cpuTempC\":%s,\"gpuTempC\":%s,\"availableMemoryBytes\":%s,\"lowMemory\":%s," +
+                "\"cpuTempC\":%s,\"gpuTempC\":%s,\"availableMemoryBytes\":%s,\"totalMemoryBytes\":%s,\"lowMemory\":%s," +
                 "\"adaptiveBottleneck\":\"%s\",\"adaptiveAdvice\":\"%s\"," +
                 "\"predictedP95Ms\":%.2f,\"predictedTemperatureC\":%s,\"adaptiveConfidence\":%.3f}",
             snapshot.timestampMs,
@@ -280,6 +285,7 @@ object PerformanceMetricsCollector {
             snapshot.cpuTempC?.toString() ?: "null",
             snapshot.gpuTempC?.toString() ?: "null",
             snapshot.availableMemoryBytes?.toString() ?: "null",
+            snapshot.totalMemoryBytes?.toString() ?: "null",
             snapshot.lowMemory,
             prediction.bottleneck.name,
             prediction.resolutionAdvice.name,

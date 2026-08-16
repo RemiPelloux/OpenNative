@@ -17,6 +17,8 @@ import app.gamenative.powercontrol.fan.FanController
 import app.gamenative.powercontrol.metrics.MetricsSnapshot
 import app.gamenative.powercontrol.metrics.PerformanceMetricsCollector
 import app.gamenative.performance.adaptive.AdaptiveEngineCoordinator
+import app.gamenative.performance.device.DeviceCapabilityDetector
+import app.gamenative.performance.device.DeviceCapabilityProfile
 import app.gamenative.powercontrol.profiles.CpuGovernor
 import com.winlator.container.Container
 import com.winlator.core.ProcessHelper
@@ -93,6 +95,10 @@ object PowerManager {
     @Volatile
     var latestMetrics: MetricsSnapshot? = null
 
+    @Volatile
+    var deviceCapabilities: DeviceCapabilityProfile? = null
+        private set
+
     /**
      * Process name of the game [pinGameWithRetry] pinned, or null when nothing is pinned.
      */
@@ -136,6 +142,7 @@ object PowerManager {
      */
     fun initialize(context: Context) {
         appContext = context.applicationContext
+        deviceCapabilities = DeviceCapabilityDetector.detect(context.applicationContext)
         if (driver != null) return
 
         driver = when {

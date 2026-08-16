@@ -2,6 +2,8 @@ package app.gamenative.performance.adaptive
 
 import app.gamenative.powercontrol.metrics.MetricsSnapshot
 import com.winlator.container.Container
+import app.gamenative.performance.device.MemoryPressureLevel
+import app.gamenative.performance.device.MemoryPressurePolicy
 
 data class AdaptiveEngineState(
     val mode: AdaptiveResolutionMode,
@@ -9,6 +11,7 @@ data class AdaptiveEngineState(
     val pendingResolution: RenderResolution?,
     val decisionReason: ResolutionDecisionReason,
     val model: FrameCostEstimate,
+    val memoryPressure: MemoryPressureLevel,
     val requiresRestart: Boolean,
 )
 
@@ -64,7 +67,10 @@ object AdaptiveEngineCoordinator {
         if (previous != null && baseline != null) controller?.markProbe(previous, baseline)
         rlsModel = FrameCostRlsModel()
         val pending = ResolutionLadder.parse(container.getExtra(PENDING_KEY, ""))
-        state = AdaptiveEngineState(mode(container), active, pending, ResolutionDecisionReason.WARMUP, rlsModel.estimate(), pending != null)
+        state = AdaptiveEngineState(
+            mode(container), active, pending, ResolutionDecisionReason.WARMUP, rlsModel.estimate(),
+            MemoryPressureLevel.NORMAL, pending != null,
+        )
     }
 
     @Synchronized
@@ -72,7 +78,12 @@ object AdaptiveEngineCoordinator {
         val owner = container ?: return null
         val localLadder = ladder ?: return null
         val active = activeResolution ?: return null
-        val safeWindow = !snapshot.lowMemory &&
+        val memory = MemoryPressurePolicy.decide(
+            snapshot.totalMemoryBytes,
+            snapshot.availableMemoryBytes,
+            snapshot.lowMemory,
+        )
+        val safeWindow = memory.allowModelTraining &&
             prediction.bottleneck !in setOf(
                 PerformanceBottleneck.WARMUP,
                 PerformanceBottleneck.MEMORY,
@@ -111,6 +122,7 @@ object AdaptiveEngineCoordinator {
             pendingResolution = pending,
             decisionReason = decision?.reason ?: ResolutionDecisionReason.HOLD,
             model = model,
+            memoryPressure = memory.level,
             requiresRestart = pending != null,
         ).also { state = it }
     }

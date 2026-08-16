@@ -14,6 +14,9 @@ import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 /** Owns persistent, compatibility-scoped shader caches for one game container. */
 public final class ShaderCacheManager {
@@ -262,6 +265,53 @@ public final class ShaderCacheManager {
         return inspectPath(root);
     }
 
+    /** Expensive tree inspection intended for an explicit maintenance screen, never a frame loop. */
+    public static CacheHealth inspectHealth(Container container) {
+        CachePaths active = activePaths(container);
+        CacheStats activeStats = inspect(active);
+        CacheStats allStats = inspectAll(container);
+        return new CacheHealth(
+                active.generation,
+                activeStats,
+                allStats,
+                Math.max(0L, allStats.bytes - activeStats.bytes),
+                countInactiveGenerations(container, active)
+        );
+    }
+
+    /**
+     * Deletes oldest inactive backend generations until both limits are met. Active generations
+     * and files outside the managed cache root are never candidates.
+     */
+    public static CacheMaintenanceResult pruneInactive(
+            Container container,
+            long maximumTotalBytes,
+            int maximumInactiveGenerations
+    ) {
+        if (maximumTotalBytes < 0 || maximumInactiveGenerations < 0) {
+            throw new IllegalArgumentException("Cache maintenance limits must be non-negative");
+        }
+        CachePaths active = activePaths(container);
+        File root = managedRoot(container);
+        List<GenerationDirectory> candidates = inactiveGenerationDirectories(container, active);
+        candidates.sort(Comparator.comparingLong(GenerationDirectory::newestWriteMillis));
+
+        long totalBytes = inspectPath(root).bytes;
+        long freedBytes = 0L;
+        int removed = 0;
+        int remaining = candidates.size();
+        for (GenerationDirectory candidate : candidates) {
+            if (totalBytes <= maximumTotalBytes && remaining <= maximumInactiveGenerations) break;
+            if (deleteTreeInsideRoot(root, candidate.directory)) {
+                totalBytes = Math.max(0L, totalBytes - candidate.bytes);
+                freedBytes += candidate.bytes;
+                removed++;
+                remaining--;
+            }
+        }
+        return new CacheMaintenanceResult(removed, freedBytes, totalBytes, remaining);
+    }
+
     public static boolean clearActive(Container container) {
         CachePaths paths = activePaths(container);
         File allowedRoot = managedRoot(container);
@@ -331,6 +381,36 @@ public final class ShaderCacheManager {
 
     private static File managedRoot(Container container) {
         return new File(new File(container.getRootDir(), ".cache"), CACHE_ROOT_NAME);
+    }
+
+    private static int countInactiveGenerations(Container container, CachePaths active) {
+        return inactiveGenerationDirectories(container, active).size();
+    }
+
+    private static List<GenerationDirectory> inactiveGenerationDirectories(
+            Container container,
+            CachePaths active
+    ) {
+        List<GenerationDirectory> result = new ArrayList<>();
+        File backends = new File(managedRoot(container), BACKENDS_DIRECTORY);
+        File[] backendTypes = backends.listFiles(File::isDirectory);
+        if (backendTypes == null) return result;
+        for (File backend : backendTypes) {
+            String activeGeneration = switch (backend.getName()) {
+                case "mesa" -> active.backendGenerations == null ? "" : active.backendGenerations.mesa;
+                case "dxvk" -> active.backendGenerations == null ? "" : active.backendGenerations.dxvk;
+                case "vkd3d" -> active.backendGenerations == null ? "" : active.backendGenerations.vkd3d;
+                default -> "";
+            };
+            File[] generations = backend.listFiles(File::isDirectory);
+            if (generations == null) continue;
+            for (File generation : generations) {
+                if (!isGeneration(generation.getName()) || generation.getName().equals(activeGeneration)) continue;
+                CacheStats stats = inspectPath(generation);
+                result.add(new GenerationDirectory(generation, stats.bytes, stats.newestWriteMillis));
+            }
+        }
+        return result;
     }
 
     private static CachePaths activePaths(Container container) {
@@ -500,4 +580,21 @@ public final class ShaderCacheManager {
             long addedBytes,
             boolean wroteCache
     ) {}
+
+    public record CacheHealth(
+            String activeGeneration,
+            CacheStats active,
+            CacheStats total,
+            long inactiveBytes,
+            int inactiveGenerations
+    ) {}
+
+    public record CacheMaintenanceResult(
+            int removedGenerations,
+            long freedBytes,
+            long remainingBytes,
+            int remainingInactiveGenerations
+    ) {}
+
+    private record GenerationDirectory(File directory, long bytes, long newestWriteMillis) {}
 }

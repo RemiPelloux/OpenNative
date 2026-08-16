@@ -75,6 +75,7 @@ class AdaptiveEngineCoordinatorTest {
         cpuTempC = 72,
         gpuTempC = 74,
         availableMemoryBytes = 4L * 1024 * 1024 * 1024,
+        totalMemoryBytes = 12L * 1024 * 1024 * 1024,
         lowMemory = false,
     )
 

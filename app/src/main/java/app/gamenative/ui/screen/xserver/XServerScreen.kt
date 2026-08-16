@@ -27,6 +27,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import app.gamenative.BuildConfig
 import app.gamenative.performance.adaptive.AdaptiveEngineCoordinator
+import app.gamenative.performance.shaders.ShaderHealthMonitor
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -3760,6 +3761,7 @@ private fun setupXEnvironment(
         val initialCacheStats = ShaderCacheManager.inspect(shaderCachePaths)
         activeShaderCachePaths = shaderCachePaths
         shaderCacheStatsAtLaunch = initialCacheStats
+        ShaderHealthMonitor.sessionStarted(shaderCachePaths, initialCacheStats)
         Timber.i(
             "Shader cache generation=%s mesa=%s dxvk=%s vkd3d=%s warm=%s files=%d bytes=%d",
             shaderCachePaths.generation(),
@@ -3893,6 +3895,7 @@ private fun setupXEnvironment(
             runCatching { ShaderCacheManager.inspect(cachePaths) }
                 .onSuccess { finalStats ->
                     val result = ShaderCacheManager.compare(initialCacheStats, finalStats)
+                    ShaderHealthMonitor.sessionFinished(finalStats, result)
                     Timber.i(
                         "Shader cache session result warm=%s wrote=%s addedFiles=%d addedBytes=%d files=%d bytes=%d",
                         result.warmAtLaunch(),
