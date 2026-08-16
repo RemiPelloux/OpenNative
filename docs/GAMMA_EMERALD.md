@@ -25,6 +25,8 @@ Keep `WINEESYNC=1`, the Mesa shader cache enabled, and a 30 FPS wrapper cap. Ope
 
 OpenNative also builds the DXVK state-cache path from its real application data directory. Older builds still pointed at the upstream package path, so shader state could fail to persist and battle effects could repeatedly trigger expensive pipeline work.
 
+From OpenNative 0.2.2, Gamma Emerald receives isolated DXVK, Mesa/Zink and VKD3D cache paths inside its own container. Their compatibility generations are independent: changing Turnip keeps reusable DXVK state but rotates driver-specific caches. Re-run the same battle twice when validating: the first pass populates the generation and the second pass is the meaningful warm-cache sample. Do not import caches from another device or container.
+
 The native and WoW64 masks above are container settings, not a request for OpenNative to force CPU affinity. OpenNative's power-control game pinning should stay disabled for this profile so FEX receives the configured WoW64 mask and Android remains free to schedule the host threads.
 
 ## Shadows

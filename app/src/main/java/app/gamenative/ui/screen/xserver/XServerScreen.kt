@@ -150,6 +150,7 @@ import com.winlator.core.GuestMemoryBudget
 import com.winlator.core.KeyValueSet
 import com.winlator.core.OnExtractFileListener
 import com.winlator.core.ProcessHelper
+import com.winlator.core.ShaderCacheManager
 import com.winlator.core.TarCompressorUtils
 import com.winlator.core.Win32AppWorkarounds
 import com.winlator.core.WineInfo
@@ -3702,6 +3703,8 @@ private fun setupXEnvironment(
 
     var preInstallCommands: List<PreInstallSteps.PreInstallCommand> = emptyList()
     var gameExecutable = ""
+    var activeShaderCachePaths: ShaderCacheManager.CachePaths? = null
+    var shaderCacheStatsAtLaunch: ShaderCacheManager.CacheStats? = null
 
     if (container != null) {
         try {
@@ -3750,6 +3753,20 @@ private fun setupXEnvironment(
         envVars.remove("DXVK_FRAME_RATE")
         envVars.remove("VKD3D_FRAME_RATE")
         if (!envVars.has("WINEESYNC")) envVars.put("WINEESYNC", "1")
+        val shaderCachePaths = ShaderCacheManager.prepare(container, envVars)
+        val initialCacheStats = ShaderCacheManager.inspect(shaderCachePaths)
+        activeShaderCachePaths = shaderCachePaths
+        shaderCacheStatsAtLaunch = initialCacheStats
+        Timber.i(
+            "Shader cache generation=%s mesa=%s dxvk=%s vkd3d=%s warm=%s files=%d bytes=%d",
+            shaderCachePaths.generation(),
+            shaderCachePaths.backendGenerations().mesa(),
+            shaderCachePaths.backendGenerations().dxvk(),
+            shaderCachePaths.backendGenerations().vkd3d(),
+            initialCacheStats.files() > 0,
+            initialCacheStats.files(),
+            initialCacheStats.bytes(),
+        )
 
         val ffpGameDir = runCatching {
             Container.drivesIterator(container.drives).asSequence()
@@ -3867,6 +3884,26 @@ private fun setupXEnvironment(
     guestProgramLauncherComponent.envVars = envVars
 
     val gameTerminationCallback = Callback<Int> { status ->
+        val cachePaths = activeShaderCachePaths
+        val initialCacheStats = shaderCacheStatsAtLaunch
+        if (cachePaths != null && initialCacheStats != null) {
+            runCatching { ShaderCacheManager.inspect(cachePaths) }
+                .onSuccess { finalStats ->
+                    val result = ShaderCacheManager.compare(initialCacheStats, finalStats)
+                    Timber.i(
+                        "Shader cache session result warm=%s wrote=%s addedFiles=%d addedBytes=%d files=%d bytes=%d",
+                        result.warmAtLaunch(),
+                        result.wroteCache(),
+                        result.addedFiles(),
+                        result.addedBytes(),
+                        finalStats.files(),
+                        finalStats.bytes(),
+                    )
+                }
+                .onFailure { error -> Timber.w(error, "Could not inspect shader cache after session") }
+        } else {
+            Timber.w("Shader cache session state was unavailable at termination")
+        }
         if (status != 0) {
             Timber.e("Guest program terminated with status: $status")
             onGameLaunchError?.invoke("Game terminated with error status: $status")

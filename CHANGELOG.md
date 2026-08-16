@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.2 - 2026-08-16
+
+- Add persistent per-container shader caches for DXVK, Mesa/Zink and VKD3D across Bionic and glibc launchers.
+- Scope Mesa, DXVK and VKD3D generations independently so a driver update does not discard reusable DXVK state.
+- Migrate the original unified cache layout by same-filesystem rename and report cold/warm cache growth for every session.
+- Preserve explicit user cache paths and fall back safely if cache directories cannot be created.
+- Add on-demand cache statistics and guarded cache-cleanup APIs without scanning during gameplay.
+
 ## 0.2.1 - 2026-08-16
 
 - Fix the DXVK state cache path to use OpenNative's real application data directory.

@@ -25,6 +25,10 @@ Shader work remains a separate A/B target: distinguish first-use DXVK pipeline c
 
 The DXVK state cache now uses OpenNative's runtime-derived app data path instead of the obsolete upstream package path. The SurfaceFlinger compatibility renderer also reclaims converted-buffer pools when transient game windows retire, preventing window churn from retaining up to eight full-size buffers per old window.
 
+OpenNative 0.2.2 manages shader caches under each container's home directory. DXVK, Mesa/Zink and VKD3D receive independent compatibility generations below `.cache/opennative-shaders/backends`. Bionic receives the Android-host path used by its native launcher, while glibc receives the equivalent `/home/xuser` rootfs path. Mesa and VKD3D rotate when the effective Vulkan driver changes; DXVK state survives a driver update and rotates only when its own wrapper/runtime format changes. The original unified layout is migrated with same-filesystem renames, not copied during startup. Explicit user paths take precedence.
+
+Each normal session reports whether the cache was warm at launch, whether any backend wrote new data, and file/byte growth at termination. Cache inspection runs only at launch and termination; the frame loop never walks the cache tree. Validation must compare the same scene twice after a clean generation and record first-run versus warm-run frametime p95/p99 and shader events. A warm-cache improvement is not a general FPS claim.
+
 ## Acceptance
 
 Promote a change when it produces at least a 3% repeatable throughput gain, a clear p95/p99 improvement, or a meaningful power/temperature reduction without more than 2% regression elsewhere. Stability, correct rendering and controller input are mandatory.

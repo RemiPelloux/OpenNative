@@ -5,8 +5,6 @@ import android.content.Context;
 import com.winlator.core.envvars.EnvVars;
 import com.winlator.xenvironment.ImageFs;
 
-import java.io.File;
-
 public class DXVKHelper {
     public static final String DEFAULT_CONFIG = "version="+DefaultVersion.DXVK+",framerate=0,maxDeviceMemory=0";
 
@@ -16,16 +14,9 @@ public class DXVKHelper {
     }
 
     public static void setEnvVars(Context context, KeyValueSet config, EnvVars envVars) {
-        ImageFs imageFs = ImageFs.find(context);
-        File stateCacheDir = new File(imageFs.cache_path, "dxvk");
-        if (!stateCacheDir.isDirectory() && !stateCacheDir.mkdirs()) {
-            android.util.Log.w("DXVKHelper", "Could not create DXVK state cache directory: " + stateCacheDir);
-        }
-        envVars.put("DXVK_STATE_CACHE_PATH", stateCacheDir.getAbsolutePath());
         envVars.put("DXVK_LOG_LEVEL", "none");
 
-        File rootDir = ImageFs.find(context).getRootDir();
-        File dxvkConfigFile = new File(imageFs.config_path+"/dxvk.conf");
+        java.io.File rootDir = ImageFs.find(context).getRootDir();
 
         String content = "\"";
         String maxDeviceMemory = GuestMemoryBudget.resolve(context, config.get("maxDeviceMemory"));
