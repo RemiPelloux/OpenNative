@@ -1,87 +1,109 @@
 <div align="center">
 
-<img src="docs/brand/opennative-mark.svg" alt="OpenNative" width="112" />
+<img src="docs/brand/opennative-mark.svg" alt="OpenNative logo" width="112" />
 
 # OpenNative
 
-**A performance-focused Android runtime for PC games you own.**
+**A performance-focused Windows compatibility environment for Android gaming handhelds.**
 
 [![Release](https://img.shields.io/github/v/release/RemiPelloux/OpenNative?style=flat-square&logo=github)](https://github.com/RemiPelloux/OpenNative/releases)
-[![Android](https://img.shields.io/badge/Android-ARM64-3DDC84?style=flat-square&logo=android&logoColor=white)](#compatibility)
+[![Android](https://img.shields.io/badge/Android-ARM64-3DDC84?style=flat-square&logo=android&logoColor=white)](#platform-support)
 [![License](https://img.shields.io/badge/license-GPL--3.0-36C5F0?style=flat-square)](LICENSE)
 
-[Install](#install) · [Features](#features) · [Build](#build-from-source) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md)
+[Download](https://github.com/RemiPelloux/OpenNative/releases) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
 
 </div>
 
-OpenNative combines Wine, Proton, DXVK, VKD3D, Mesa, Box64 and FEX in an Android interface designed for gaming handhelds. It focuses on stable frame delivery, low background overhead, controller reliability, portable game profiles and secondary-display controls.
+OpenNative brings Wine/Proton, DXVK, VKD3D, Mesa, Box64 and FEX together in an Android interface designed for handheld gaming. The project prioritizes predictable frame delivery, low background overhead, controller reliability, portable configuration and safe runtime management.
 
-OpenNative does not include games, firmware or store credentials. Use it only with software and accounts you are authorized to use.
+OpenNative is an independent open-source project. It does not include games, firmware, store credentials or third-party shader caches. Use it only with software, downloads and accounts you are authorized to access.
 
-## Features
+## Project status
 
-- **Unified PC library:** Steam, Epic, GOG, Amazon and locally owned custom executables in one handheld interface.
-- **Portable game profiles:** versioned Wine, graphics, controller and display settings without embedded device paths.
-- **Persistent shader state:** independent per-game DXVK, Mesa/Zink and VKD3D cache generations with safe invalidation.
-- **Faster reliable launches:** healthy runtime components are reused and damaged installations are repaired through staging.
-- **Shader Health:** cold/warm state, bounded local warmup and per-title maintenance that runs only after game exit.
-- **Adaptive Engine:** observation-first performance diagnosis and opt-in next-launch resolution changes with rollback.
-- **Low-overhead diagnostics:** expensive metrics and disk capture remain outside normal gameplay unless requested.
-- **Handheld cockpit:** performance and session controls can move to an Android secondary display with a drawer fallback.
-- **Efficient libraries:** known Room/store N+1 paths use bulk reads and grouped writes.
-- **Private reports:** diagnostic exports redact credentials, saves, game binaries and local paths.
+| Channel | Version | Status |
+| --- | --- | --- |
+| Stable | `1.1.0` | Available from GitHub Releases |
+| Next milestone | `1.5.0` | Planned and under specification |
+| Architecture milestone | `2.0.0` | Long-term roadmap |
 
-OpenNative never downloads third-party shader caches, forces device clocks, changes Android globally or promises a universal FPS gain. Performance changes must pass controlled before/after measurements.
+The stable application ID remains `com.remipelloux.gamenativecustom` to preserve existing app-private containers and saves during in-place upgrades. A future identity migration will ship only with an atomic, tested data-transfer path.
 
-## Coming in 1.5.0
+## Current capabilities
 
-These features are planned and are **not included in the current `1.1.0` release**:
+### Runtime and compatibility
 
-- A compact `+` after **Custom** for creating named, reorderable provider tabs.
-- Versioned HTTPS feeds with pagination, offline snapshots and visible trust/compatibility metadata.
-- Optional AllDebrid link resolution with Android Keystore-backed credential storage.
-- A resumable foreground download queue with verification, storage reservation and recovery after process death.
-- A Wine Installer Manager for portable archives, `.exe` setup programs and `.msi` packages.
-- Dedicated installation containers, complete Wine process-tree tracking and final game-executable discovery.
-- Safe installer cleanup only after the installed game and launch record have been verified.
-- Shareable per-game and global settings presets with redaction, import previews and reversible conflict handling.
-- A redesigned OpenNative secondary-screen cockpit with stronger controller and hot-plug behavior.
+- Unified Steam, Epic, GOG, Amazon and custom-executable library flows.
+- Wine/Proton containers with Box64 and FEX translation options.
+- Per-title graphics, runtime, controller and display configuration.
+- Versioned portable profiles without embedded device-local paths.
 
-See the [1.5.0 delivery plan](docs/ROADMAP_1.5.0.md) and [provider/installer specification](docs/CUSTOM_PROVIDER_TABS.md).
+### Performance and shaders
 
-## Compatibility
+- Independent per-game DXVK, Mesa/Zink and VKD3D cache generations.
+- Safe cache invalidation, local warmup and post-session maintenance.
+- Adaptive Engine observation with opt-in next-launch resolution changes and rollback.
+- Low-overhead metrics that avoid persistent diagnostic I/O during ordinary play.
+- Batched reads and writes across known Room and store-library N+1 paths.
 
-| Target | Status |
+### Handheld experience
+
+- Controller-aware navigation and custom-game executable management.
+- Secondary-display performance cockpit with an in-game drawer fallback.
+- Local performance, memory-pressure, thermal and Shader Health reporting.
+- Sanitized diagnostic exports that exclude credentials, saves and game binaries.
+
+Performance varies by game, runtime, driver and thermal conditions. OpenNative does not claim universal FPS improvements. Changes are promoted only after controlled before/after measurements.
+
+## Planned for 1.5.0
+
+The following work is planned and is **not part of the current stable release**:
+
+| Area | Planned capability |
 | --- | --- |
-| Android ARM64, API 29+ (`modern`) | Primary build |
-| AYN Thor Max, Android 13 | Device-tested |
-| Android secondary displays | Cockpit with drawer fallback |
-| Legacy 32-bit Android | Buildable, not the primary performance target |
-| Individual games | Depends on runtime, driver and title |
+| Provider tabs | A `+` after **Custom** creates named, reorderable library tabs backed by user-configured HTTPS feeds |
+| Link resolution | Optional AllDebrid integration with Android Keystore-backed secret storage |
+| Transfers | Resumable foreground downloads, storage reservation, verification and process-death recovery |
+| Installer Manager | Managed installation of portable archives, Windows `.exe` installers and `.msi` packages |
+| Wine setup sessions | Dedicated containers, child-process tracking, reboot/timeout states and executable discovery |
+| Cleanup | Installer deletion only after verified installation and receipt commit |
+| Settings sharing | Redacted per-game and global presets with diff preview, merge/replace and rollback |
+| Cockpit | Refined OpenNative secondary-screen UX with robust controller, rotation and hot-plug behavior |
+| Performance | Measured frame-delivery, shader, database, Compose and transfer-path optimization |
 
-The application ID remains `com.remipelloux.gamenativecustom` so existing OpenNative installations retain app-private containers and saves. The internal `app.gamenative` namespace and historical storage identifiers are also preserved until a tested migration exists.
+Implementation is gated by security, recovery and performance criteria. See the [1.5.0 roadmap](docs/ROADMAP_1.5.0.md) and [provider/installer specification](docs/CUSTOM_PROVIDER_TABS.md).
 
-## Install
+## Platform support
 
-Download the current ARM64 APK from [GitHub Releases](https://github.com/RemiPelloux/OpenNative/releases). Install it over an existing OpenNative build signed with the same certificate; do not uninstall first when app-private containers or saves must be preserved.
+| Target | Support level |
+| --- | --- |
+| Android ARM64, API 29+ (`modern`) | Primary release target |
+| AYN Thor Max, Android 13 | Primary device-validation target |
+| Android secondary displays | Supported through cockpit and drawer fallback |
+| Legacy 32-bit Android | Buildable, not a primary optimization target |
+| Individual Windows games | Compatibility depends on title and selected runtime stack |
 
-Before redistributing an APK, review [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES). Some inherited prebuilt components have separate terms, and the remaining binary-host dependency is documented in [OpenNative Independence](docs/INDEPENDENCE.md).
+## Installation
 
-OpenNative has no third-party in-app updater. Releases are installed explicitly.
+1. Download the current ARM64 APK from [GitHub Releases](https://github.com/RemiPelloux/OpenNative/releases).
+2. Verify that the APK comes from this repository.
+3. Install it over an existing compatible OpenNative build to retain app-private data.
+4. Do not uninstall first when containers or saves must be preserved.
 
-## Custom games
+OpenNative has no third-party in-app updater. Before redistributing an APK, review [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES); bundled components may have licenses and redistribution terms separate from the application source.
+
+## Adding a custom game
 
 1. Extract the game into a folder Android can access.
-2. Open **Library > Custom** and grant that folder with Android's picker.
-3. Select the actual game executable in its container settings.
-4. Start at 1280x720, 30 FPS and a compatibility-oriented translation profile.
-5. Change one setting at a time and compare a repeatable scene.
+2. Open **Library > Custom** and grant access through Android's folder picker.
+3. Select the actual game executable in the container settings.
+4. Begin with a conservative resolution, frame cap and compatibility-oriented translation profile.
+5. Change one setting at a time and validate a repeatable scene.
 
-The validated AYN Thor starting point for Gamma Emerald, including the optional shadow profile, is in [Gamma Emerald](docs/GAMMA_EMERALD.md).
+The tested AYN Thor starting point for Gamma Emerald is documented in [Gamma Emerald](docs/GAMMA_EMERALD.md).
 
 ## Build from source
 
-Requirements:
+### Requirements
 
 - JDK 17
 - Android SDK 36
@@ -94,43 +116,53 @@ cd OpenNative
 ./gradlew :app:assembleModernRelease
 ```
 
-Optional API keys belong in `local.properties` or environment variables and must never be committed.
+Optional API keys belong in `local.properties` or environment variables. Never commit credentials, signing keys, games, saves or private diagnostic data.
 
-## Tests
+## Testing
 
-The Android JVM suite uses an explicit ByteBuddy agent so Mockito and MockK work on JDKs that disable dynamic self-attachment.
-
-Run a focused class while developing:
+Run the smallest relevant test scope while developing:
 
 ```bash
 ./gradlew :app:testModernDebugUnitTest --tests 'app.gamenative.performance.*'
 ```
 
-Run the full modern JVM suite only when enough local disk and memory are available:
+Run the full modern JVM suite only in an environment with sufficient memory and disk space:
 
 ```bash
 ./gradlew :app:testModernDebugUnitTest
 ```
 
-Gradle test/build outputs are disposable and can be removed with `./gradlew clean`. Performance work follows the evidence and promotion rules in [Performance Method](docs/PERFORMANCE.md).
+Mockito and MockK use an explicit ByteBuddy agent for JDKs that restrict dynamic attachment. Generated Gradle outputs are disposable and can be removed with `./gradlew clean`. Performance changes must follow the [measurement protocol](docs/PERFORMANCE.md).
 
 ## Documentation
 
-- [Roadmap](ROADMAP.md): active milestones and links to the `1.5.0` and `2.0.0` plans.
-- [Adaptive Engine](docs/ADAPTIVE_ENGINE.md): model, safeguards and resolution policy.
-- [Performance Method](docs/PERFORMANCE.md): capture protocol and current Thor findings.
-- [Gamma Emerald](docs/GAMMA_EMERALD.md): tested container baseline.
-- [Custom provider tabs](docs/CUSTOM_PROVIDER_TABS.md): planned dynamic tabs, AllDebrid and safe installation pipeline.
-- [Independence](docs/INDEPENDENCE.md): identifiers, attribution and binary-host migration.
-- [Changelog](CHANGELOG.md): released changes since `0.1.0`.
-- [Contributing](CONTRIBUTING.md): code, testing and evidence requirements.
+| Document | Purpose |
+| --- | --- |
+| [Roadmap](ROADMAP.md) | Milestones, delivery phases and release gates |
+| [1.5.0 roadmap](docs/ROADMAP_1.5.0.md) | Detailed implementation and validation plan |
+| [Provider tabs](docs/CUSTOM_PROVIDER_TABS.md) | Provider, AllDebrid, transfer and Installer Manager contract |
+| [Adaptive Engine](docs/ADAPTIVE_ENGINE.md) | Decision model, safeguards and resolution policy |
+| [Performance method](docs/PERFORMANCE.md) | Benchmark protocol and current AYN Thor findings |
+| [Independence](docs/INDEPENDENCE.md) | Compatibility identifiers, attribution and infrastructure migration |
+| [Changelog](CHANGELOG.md) | Released behavior and compatibility changes |
 
-## Privacy
+## Security and privacy
 
-OpenNative does not send gameplay feedback, compatibility telemetry, device statistics or recommendations to GameNative services. Store features communicate with the selected store provider. Read the [privacy policy](PrivacyPolicy/README.md), and remove private paths and tokens from bug reports.
+- Provider credentials must remain in Keystore-backed local storage and are excluded from exports and diagnostics.
+- OpenNative does not automatically upload gameplay telemetry or diagnostic reports.
+- Provider features do not include a copyrighted-content index, DRM bypass or automatic execution of downloads.
+- Destructive maintenance is scoped, explicit and delayed until verification completes.
+
+Read the [privacy policy](PrivacyPolicy/README.md) before using online services. Review every diagnostic bundle before sharing it.
+
+## Contributing
+
+Focused fixes, tests, compatibility work and evidence-backed performance improvements are welcome. Reports should include the device, Android version, SoC/GPU, driver, game version, runtime configuration and reproducible steps, with private paths removed.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development and validation requirements.
 
 ## Credits and license
 
-OpenNative derives from GameNative by Utkarsh Dalal and its contributors. It also depends on Wine, Proton, DXVK, VKD3D, Mesa, Box64, FEX and other open-source projects. Copyrights, license notices and Git history are preserved; attribution does not imply shared governance or endorsement.
+OpenNative derives from GameNative by Utkarsh Dalal and its contributors and incorporates work from Wine, Proton, DXVK, VKD3D, Mesa, Box64, FEX and other open-source projects. Copyrights, license notices and Git history are preserved. Attribution does not imply shared governance or endorsement.
 
 OpenNative source is licensed under [GPL-3.0](LICENSE). Bundled components may use different licenses; consult [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).

@@ -1,45 +1,128 @@
 # OpenNative Roadmap
 
-OpenNative `1.1.0` is the current stable line. The next milestones prioritize deterministic quality, measured runtime improvements and an architecture that can evolve without risking existing containers or saves.
+## Purpose
 
-## Milestones
+This roadmap defines the public delivery sequence for OpenNative after `1.1.0`. It separates committed engineering objectives from exploratory ideas and ties each milestone to explicit acceptance criteria.
 
-| Milestone | Purpose | Plan |
+Dates are intentionally omitted until the preceding quality gate passes. A feature is considered delivered only when its implementation, migration, failure recovery, documentation and validation are complete.
+
+## Release strategy
+
+| Milestone | Objective | Status |
 | --- | --- | --- |
-| `1.5.0` | Stabilize the current runtime and complete the handheld experience | [Detailed roadmap](docs/ROADMAP_1.5.0.md) |
-| `2.0.0` | Introduce versioned runtime modules and a safe identity/data migration | [Detailed roadmap](docs/ROADMAP_2.0.0.md) |
+| `1.1.x` | Maintain the current stable runtime and address critical regressions | Stable maintenance |
+| `1.5.0` | Deliver provider tabs, safe transfers/installers, settings sharing and measurable handheld improvements | Planned |
+| `2.0.0` | Introduce modular runtimes and a safe OpenNative identity/data migration | Future architecture |
 
-## 1.5.0 delivery order
+Detailed plans:
 
-| Stage | Deliverable | Gate |
+- [OpenNative 1.5.0](docs/ROADMAP_1.5.0.md)
+- [OpenNative 2.0.0](docs/ROADMAP_2.0.0.md)
+- [Custom provider tabs and Installer Manager](docs/CUSTOM_PROVIDER_TABS.md)
+
+## Engineering principles
+
+1. **Preserve user data.** Existing containers, saves and local settings take priority over cosmetic migrations.
+2. **Measure before optimizing.** Renderer, shader and translation changes require repeatable evidence.
+3. **Fail recoverably.** Downloads, installations, imports and migrations must retain a clear recovery path.
+4. **Keep secrets local.** Credentials never enter ordinary entities, logs, diagnostics or shared profiles.
+5. **Protect generic ARM64 behavior.** Device tuning remains capability-based, optional and reversible.
+6. **Separate metadata from execution.** Remote feeds cannot silently become filesystem paths, commands or executable policy.
+7. **Document limitations.** Release notes state what is supported, experimental and unresolved.
+
+## OpenNative 1.5.0
+
+### Product outcomes
+
+- Users can create provider tabs through a `+` immediately after **Custom**.
+- Provider metadata remains usable offline through validated cached snapshots.
+- Optional AllDebrid resolution works without exposing the user's API key.
+- Transfers survive interruption, cancellation, low-space failures and process recreation.
+- Portable archives and Windows installers can be installed through a reviewed, recoverable workflow.
+- Installers are removed only after installation and launch metadata are verified.
+- Game/global settings can be shared without paths, secrets, saves or protected content.
+- The secondary-screen cockpit is consistent with OpenNative branding and reliable with touch/controller input.
+- Performance work produces measurable frame-pacing, memory, thermal or responsiveness improvements.
+
+### Delivery phases
+
+| Phase | Scope | Required gate |
 | --- | --- | --- |
-| 0 | Schemas, secret store, URL policy and test fixtures | No secret leakage; migrations and malformed inputs covered |
-| 1 | Dynamic provider tabs and read-only paginated feeds | Built-in sources unchanged; offline snapshot works |
-| 2 | AllDebrid adapter and resumable foreground transfers | Fake-server contract passes; cancellation and low-space recovery pass |
-| 3 | Portable archive installation and launch-candidate review | Path confinement, hash failure and atomic promotion pass |
-| 4 | Wine `.exe`/`.msi` Installer Manager | Child-process, timeout, reboot and executable-discovery cases pass |
-| 5 | Verified cleanup, settings sharing and recovery UX | No deletion before receipt commit; import/export round trip passes |
-| 6 | Cockpit polish, performance audit and device certification | CI, 30 cycles, 60-minute soak and AYN Thor acceptance pass |
+| 0. Foundations | Schemas, migrations, secret store, URL policy, typed errors and fake servers | Malformed input fails closed; no secret reaches logs/entities/exports |
+| 1. Provider library | Dynamic tabs, read-only feeds, paging, cache, search and ordering | Built-in sources unchanged; 10,000-item fixture remains responsive |
+| 2. Resolution and transfer | AllDebrid adapter, foreground jobs, resume, retry and storage reservation | Contract, 429, redirect, timeout, cancellation and low-space tests pass |
+| 3. Portable installation | Archive inspection, staging, verification and atomic promotion | No path escape; failed promotion preserves prior destination |
+| 4. Installer Manager | Wine `.exe`/`.msi` sessions, process-tree tracking and executable discovery | Parent/child, timeout, reboot, cancel and missing-executable cases recover |
+| 5. Cleanup and sharing | Receipts, verified deletion, recovery history and portable settings | No unverified deletion; import/export round trips and rollback pass |
+| 6. Polish and certification | Cockpit, accessibility, performance audit, CI and device validation | Release acceptance matrix passes with sanitized evidence |
 
-Stages are promoted in order. A later UI may be prototyped earlier, but downloads and installers do not ship before their storage, secret and recovery contracts pass.
+Phases are promoted in order. UI prototypes may happen earlier, but transfer or execution capabilities do not ship before their storage, secret and recovery foundations.
 
-## Current priorities
+### Performance workstreams
 
-1. Keep the JVM suite deterministic across supported JDKs and prevent test infrastructure failures from hiding product regressions.
-2. Profile frame delivery, shader compilation and translation-runtime stalls before changing synchronization or renderer ownership.
-3. Complete the OpenNative secondary-screen cockpit with reliable controller focus, hot-plug and rotation behavior.
-4. Add private-by-design exports for sharing per-game profiles and reusable settings presets with other users.
-5. Add user-created provider tabs through a `+` after Custom, with optional AllDebrid resolution and safe install/cleanup workflows.
-6. Make component downloads independently verifiable with immutable metadata, checksums and redistribution review.
-7. Certify releases with repeated game captures, launch/stop cycles, soak tests and migration checks.
+#### Frame delivery and shaders
 
-## Non-goals
+- Profile SurfaceFlinger compatibility conversion, Vulkan presentation, queue depth and buffer retirement.
+- Remove steady-state frame-path allocations and redundant conversion only after ownership is proven.
+- Correlate DXVK/Mesa/VKD3D compilation with Unreal streaming and translation-runtime stalls.
+- Preserve backend-specific cache generations and perform maintenance only outside active sessions.
 
-- No downloaded third-party shader caches.
-- No forced clocks, fan firmware, unsafe math flags or global Android changes.
-- No device-specific behavior enabled silently.
-- No performance claim without repeatable A/B evidence.
-- No package or storage rename without an atomic, tested rollback path.
-- No built-in copyrighted-content index, DRM bypass or automatic execution of provider downloads.
+#### Runtime and memory
 
-Released work is recorded in [CHANGELOG.md](CHANGELOG.md). The measurement protocol and promotion gates are defined in [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
+- Eliminate verified N+1 paths with query-count regression budgets.
+- Bound downloads, hashing and copies with streaming buffers rather than whole-file retention.
+- Deduplicate in-flight metadata, artwork, profile and component requests.
+- Pause nonessential catalog, artwork and maintenance work during foreground game/install sessions.
+
+#### Compose and interaction
+
+- Keep network, database, hashing and file work outside recomposition.
+- Use stable keyed models so job progress updates only the affected row.
+- Rate-limit UI progress independently from transfer throughput.
+- Preserve controller focus through dialogs, rotation, display hot-plug and activity recreation.
+
+### Acceptance criteria
+
+`1.5.0` is release-ready only when all of the following are true:
+
+- Modern JVM, migration, provider-contract, transfer and installer suites pass in CI.
+- No open critical or high-severity data-loss, secret-leak, rendering or input regression remains.
+- Existing OpenNative data survives an in-place upgrade and rollback rehearsal.
+- Provider tabs cannot modify built-in store/custom source behavior.
+- AllDebrid tests use a fake server; releases and CI require no real user credential.
+- Interrupted jobs resume or fail with retained recovery material.
+- Cleanup cannot remove an installer before verified install-receipt commit.
+- Thirty launch/stop cycles complete without ANR, native crash or unbounded RSS growth.
+- A 60-minute AYN Thor session completes with recorded FPS, p95/p99, RSS, swap and temperature.
+- Performance claims meet the [measurement criteria](docs/PERFORMANCE.md).
+
+## OpenNative 2.0.0
+
+The `2.0.0` milestone begins only after `1.5.0` certification. Its scope includes:
+
+- A resumable migration to a final OpenNative application identity and storage layout.
+- Modular Wine/Proton, Box64/FEX, graphics-driver and DirectX-wrapper contracts.
+- Signed component manifests with independent update and rollback.
+- A versioned OpenNative compatibility/profile catalog with local override protection.
+- Explainable local optimization recommendations with confidence and rollback.
+- Broader validation across Qualcomm/Adreno, Mali and additional Android ARM64 platforms.
+- Unified phone, tablet, handheld and secondary-display navigation architecture.
+
+See [docs/ROADMAP_2.0.0.md](docs/ROADMAP_2.0.0.md) for the complete architecture plan.
+
+## Explicit non-goals
+
+- Downloaded third-party shader caches.
+- Built-in copyrighted-content discovery or indexing.
+- DRM bypass or silent execution of provider downloads.
+- Forced device clocks, fan firmware, unsafe math flags or global Android changes.
+- Device-specific tuning enabled without consent.
+- Package/storage renaming without atomic migration and rollback.
+- Performance claims without reproducible before/after evidence.
+
+## Tracking and governance
+
+- Released behavior belongs in [CHANGELOG.md](CHANGELOG.md), not in future roadmaps.
+- Performance work follows [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
+- Security, attribution and redistribution constraints are documented in [docs/INDEPENDENCE.md](docs/INDEPENDENCE.md) and [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
+- Scope changes must update the detailed milestone document and its acceptance criteria before implementation is promoted.
