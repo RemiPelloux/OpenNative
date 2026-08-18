@@ -329,7 +329,6 @@ private fun getIconForOption(type: AppOptionMenuType): ImageVector {
         AppOptionMenuType.GetSupport -> Icons.AutoMirrored.Filled.Help
         AppOptionMenuType.SubmitFeedback -> Icons.Default.Feedback
         AppOptionMenuType.ResetDrm -> Icons.Default.Key
-        AppOptionMenuType.UseKnownConfig -> Icons.Default.Build
         AppOptionMenuType.Uninstall -> Icons.Default.Delete
         AppOptionMenuType.VerifyFiles -> Icons.Default.VerifiedUser
         AppOptionMenuType.Update -> Icons.Default.Update
@@ -382,7 +381,6 @@ private fun groupOptions(options: List<AppMenuOption>): Map<OptionCategory, List
             // Container Settings
             AppOptionMenuType.ResetToDefaults,
             AppOptionMenuType.ResetDrm,
-            AppOptionMenuType.UseKnownConfig,
             AppOptionMenuType.ImportConfig,
             AppOptionMenuType.ExportConfig,
             AppOptionMenuType.ImportSaves,

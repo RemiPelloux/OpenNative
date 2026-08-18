@@ -13,7 +13,6 @@ enum class AppOptionMenuType(@StringRes val title: Int) {
     GetSupport(R.string.option_get_support),
     SubmitFeedback(R.string.option_submit_feedback),
     ResetDrm(R.string.option_reset_drm),
-    UseKnownConfig(R.string.option_use_known_config),
     ImportConfig(R.string.import_config),
     ExportConfig(R.string.export_config),
     ImportSaves(R.string.option_import_saves),

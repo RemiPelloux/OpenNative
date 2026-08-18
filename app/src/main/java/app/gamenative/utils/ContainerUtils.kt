@@ -23,7 +23,6 @@ import com.winlator.core.WineThemeManager
 import com.winlator.winhandler.WinHandler.PreferredInputApi
 import com.winlator.xenvironment.ImageFs
 import java.io.File
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.json.JSONArray
@@ -814,49 +813,7 @@ object ContainerUtils {
             }
         }
 
-        // Check for cached best config (store-backed games only, only if no custom config provided)
-        var bestConfigMap: Map<String, Any?>? = null
-
-        if (supportsKnownConfigAutoApply(gameSource) && customConfig == null && PrefManager.autoApplyKnownConfig) {
-            try {
-                val gameName = resolveGameName(appId)
-                if (gameName != "Unknown" && gameName.isNotBlank()) {
-                    val gpuName = GPUInformation.getRenderer(context)
-
-                    // Check cache first (synchronous, fast)
-                    // If not cached, make request on background thread (not UI thread)
-                    runBlocking(Dispatchers.IO) {
-                        try {
-                            val bestConfig = BestConfigService.fetchBestConfig(
-                                gameName = gameName,
-                                gpuName = gpuName,
-                                gameStore = gameSource.name,
-                            )
-                            if (bestConfig != null && bestConfig.matchType != "no_match") {
-                                Timber.i("Applying best config for $gameName (matchType: ${bestConfig.matchType})")
-                                val parsedConfig = BestConfigService.parseConfigToContainerData(
-                                    context,
-                                    bestConfig.bestConfig,
-                                    bestConfig.matchType,
-                                    true,
-                                    bestConfig.matchedStore.equals(gameSource.name, ignoreCase = true),
-                                    matchedGpu = bestConfig.matchedGpu,
-                                )
-                                if (parsedConfig != null && parsedConfig.isNotEmpty()) {
-                                    bestConfigMap = parsedConfig
-                                }
-                            }
-                        } catch (e: Exception) {
-                            Timber.w(e, "Failed to get best config for container creation: ${e.message}")
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Timber.w(e, "Error checking for best config: ${e.message}")
-            }
-        }
-
-        // Initialize container with default/custom config or best config
+        // Initialize the container with explicit local defaults or imported config.
         var containerData = if (customConfig != null) {
             // Use custom config, but ensure drives are set if not specified
             if (customConfig.drives == Container.DEFAULT_DRIVES) {
@@ -925,13 +882,6 @@ object ContainerUtils {
                 externalDisplayMode = PrefManager.externalDisplayInputMode,
                 externalDisplaySwap = PrefManager.externalDisplaySwap,
             )
-        }
-
-        // Apply best config map to containerData if available (full validated config on first run when components exist)
-        containerData = if (bestConfigMap != null && bestConfigMap.isNotEmpty()) {
-            applyBestConfigMapToContainerData(containerData, bestConfigMap)
-        } else {
-            containerData
         }
 
         if (BuildConfig.XR_BUILD) {
@@ -1221,15 +1171,6 @@ object ContainerUtils {
         if (!hasContainer(context, appId)) return false
         val container = getContainer(context, appId)
         return container.isLocalSavesOnly
-    }
-
-    fun supportsKnownConfigAutoApply(gameSource: GameSource): Boolean = when (gameSource) {
-        GameSource.STEAM,
-        GameSource.GOG,
-        GameSource.EPIC,
-        GameSource.AMAZON,
-        GameSource.CUSTOM_GAME,
-        -> true
     }
 
     /**

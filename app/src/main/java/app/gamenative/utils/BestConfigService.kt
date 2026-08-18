@@ -13,8 +13,6 @@ import com.winlator.contents.ContentProfile
 import com.winlator.core.GPUInformation
 import com.winlator.fexcore.FEXCorePresetManager
 import com.winlator.core.KeyValueSet
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -22,15 +20,11 @@ import kotlinx.serialization.json.jsonObject
 import org.json.JSONObject
 import timber.log.Timber
 import java.util.Locale
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * OpenNative container configuration parser and validator.
  */
 object BestConfigService {
-    // In-memory cache keyed by "${gameName}_${gpuName}"
-    private val cache = ConcurrentHashMap<String, BestConfigResponse>()
-
     // unavailable components from last config validation
     private var lastMissingComponents: List<String> = emptyList()
 
@@ -39,17 +33,6 @@ object BestConfigService {
         lastMissingComponents = emptyList()
         return result
     }
-    /**
-     * Data class for API response.
-     */
-    data class BestConfigResponse(
-        val bestConfig: JsonObject,
-        val matchType: String, // "exact_gpu_match" | "gpu_family_match" | "fallback_match" | "no_match"
-        val matchedGpu: String,
-        val matchedDeviceId: Int,
-        val matchedStore: String,
-    )
-
     /**
      * Compatibility message with text and color.
      */
@@ -63,27 +46,6 @@ object BestConfigService {
         val contentType: ContentProfile.ContentType? = null,
         val isDriver: Boolean = false,
     )
-
-    /**
-     * Fetches best configuration for a game.
-     * Returns cached response if available, otherwise makes API call.
-     */
-    suspend fun fetchBestConfig(
-        gameName: String,
-        gpuName: String,
-        gameStore: String,
-    ): BestConfigResponse? = withContext(Dispatchers.IO) {
-        val cacheKey = "${gameName}_${gpuName}_${gameStore}"
-
-        // Check cache first
-        cache[cacheKey]?.let {
-            Timber.tag("BestConfigService").d("Using cached config for $cacheKey")
-            return@withContext it
-        }
-
-        Timber.tag("BestConfigService").d("No OpenNative config source is configured for $cacheKey")
-        null
-    }
 
     /**
      * Gets user-friendly compatibility message based on match type.

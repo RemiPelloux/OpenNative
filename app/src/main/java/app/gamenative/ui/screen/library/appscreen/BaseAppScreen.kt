@@ -41,13 +41,10 @@ import app.gamenative.utils.DiagnosticsLog
 import app.gamenative.ui.component.dialog.LoadingDialog
 import app.gamenative.utils.BestConfigService
 import app.gamenative.utils.ContainerUtils
-import app.gamenative.utils.GameCompatibilityCache
-import app.gamenative.utils.GameCompatibilityService
 import app.gamenative.utils.ManifestInstaller
 import app.gamenative.utils.createPinnedShortcut
 import kotlinx.coroutines.CancellationException
 import com.winlator.container.ContainerData
-import com.winlator.core.GPUInformation
 import java.io.File
 import kotlin.text.Charsets
 import kotlinx.coroutines.CoroutineScope
@@ -249,46 +246,6 @@ abstract class BaseAppScreen {
         fun getKnownConfigInstallState(gameId: Int): KnownConfigInstallState? {
             return knownConfigInstallStates[gameId]
         }
-    }
-
-    /**
-     * Compatibility info is fetched and cached by [LibraryViewModel]. App screens should only read from cache
-     * and render the message if available.
-     */
-    @Composable
-    protected fun rememberCompatibilityInfo(
-        context: Context,
-        gameName: String,
-    ): Pair<String?, ULong?> {
-        var compatibilityMessage by remember(gameName) { mutableStateOf<String?>(null) }
-        var compatibilityColor by remember(gameName) { mutableStateOf<ULong?>(null) }
-
-        LaunchedEffect(gameName) {
-            if (gameName.isBlank()) {
-                compatibilityMessage = null
-                compatibilityColor = null
-                return@LaunchedEffect
-            }
-            try {
-                val cachedResponse = GameCompatibilityCache.getCached(gameName)
-                if (cachedResponse != null) {
-                    val message = GameCompatibilityService.getCompatibilityMessageFromResponse(context, cachedResponse)
-                    compatibilityMessage = message.text
-                    compatibilityColor = message.color.value
-                } else {
-                    compatibilityMessage = null
-                    compatibilityColor = null
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.tag("BaseAppScreen").e(e, "Failed to get compatibility from cache")
-                compatibilityMessage = null
-                compatibilityColor = null
-            }
-        }
-
-        return compatibilityMessage to compatibilityColor
     }
 
     /**
@@ -530,26 +487,6 @@ abstract class BaseAppScreen {
     }
 
     /**
-     * Get "Use known config" menu option. Subclasses can override to customize behavior
-     * or disable it entirely by returning null.
-     */
-    @Composable
-    protected open fun getUseKnownConfigOption(
-        context: Context,
-        libraryItem: LibraryItem,
-    ): AppMenuOption? {
-        val scope = rememberCoroutineScope()
-        return AppMenuOption(
-            optionType = AppOptionMenuType.UseKnownConfig,
-            onClick = {
-                scope.launch(Dispatchers.IO) {
-                    applyKnownConfigForLibraryItem(context, libraryItem)
-                }
-            },
-        )
-    }
-
-    /**
      * Get export-config menu option. Subclasses can override to customize behavior
      * or disable export-config entirely by returning null.
      */
@@ -633,7 +570,6 @@ abstract class BaseAppScreen {
     ): List<AppMenuOption> {
         val configOptions = if (supportsContainerConfig()) {
             listOfNotNull(
-                getUseKnownConfigOption(context, libraryItem),
                 getExportConfigOption(context, libraryItem),
                 getImportConfigOption(context, libraryItem),
             )
@@ -785,112 +721,6 @@ abstract class BaseAppScreen {
         ContainerUtils.applyToContainer(context, libraryItem.appId, defaults)
 
         SnackbarManager.show("Container reset to defaults")
-    }
-
-    /**
-     * Shared helper to fetch and apply a "known config" for a given game/library item.
-     * Installs any missing manifest components before applying the config.
-     */
-    protected open suspend fun applyKnownConfigForLibraryItem(
-        context: Context,
-        libraryItem: LibraryItem,
-    ) {
-        val gameId = libraryItem.gameId
-        val uiScope = CoroutineScope(Dispatchers.Main.immediate)
-        try {
-            val gameName = ContainerUtils.resolveGameName(libraryItem.appId)
-            val gpuName = GPUInformation.getRenderer(context)
-
-            val bestConfig = BestConfigService.fetchBestConfig(
-                gameName = gameName,
-                gpuName = gpuName,
-                gameStore = libraryItem.gameSource.name,
-            )
-            if (bestConfig == null) {
-                SnackbarManager.show(context.getString(R.string.best_config_fetch_failed))
-                return
-            }
-            if (bestConfig.matchType == "no_match") {
-                SnackbarManager.show(context.getString(R.string.best_config_no_config_available))
-                return
-            }
-
-            val installsOk = installMissingComponentsForConfig(
-                context = context,
-                gameId = gameId,
-                configJson = bestConfig.bestConfig,
-                matchType = bestConfig.matchType,
-                uiScope = uiScope,
-                matchedGpu = bestConfig.matchedGpu,
-            )
-            if (!installsOk) return
-
-            val appId = libraryItem.appId
-            val configJson = bestConfig.bestConfig
-            val matchType = bestConfig.matchType
-
-            val parsedConfig = BestConfigService.parseConfigToContainerData(
-                context = context,
-                configJson = configJson,
-                matchType = matchType,
-                applyKnownConfig = true,
-                storeMatch = bestConfig.matchedStore.equals(libraryItem.gameSource.name, ignoreCase = true),
-                matchedGpu = bestConfig.matchedGpu,
-            )
-            val missingComponents = BestConfigService.consumeLastMissingComponents()
-
-            if (missingComponents.isNotEmpty()) {
-                showMissingComponentsDialog(appId, missingComponents) {
-                    // "apply anyway" — re-parse with defaults replacing missing components
-                    uiScope.launch(Dispatchers.IO) {
-                        try {
-                            val forced = BestConfigService.parseConfigToContainerData(
-                                context, configJson, matchType, true,
-                                storeMatch = bestConfig.matchedStore.equals(libraryItem.gameSource.name, ignoreCase = true),
-                                forceApply = true,
-                                matchedGpu = bestConfig.matchedGpu,
-                            )
-                            if (forced != null && forced.isNotEmpty()) {
-                                val c = ContainerUtils.getOrCreateContainer(context, appId)
-                                val cd = ContainerUtils.toContainerData(c)
-                                val updated = ContainerUtils.applyBestConfigMapToContainerData(cd, forced)
-                                ContainerUtils.applyToContainer(context, c, updated)
-                                SnackbarManager.show(context.getString(R.string.best_config_applied_with_defaults))
-                            } else {
-                                SnackbarManager.show(context.getString(R.string.best_config_known_config_invalid))
-                            }
-                        } catch (e: Exception) {
-                            Timber.w(e, "Failed to force-apply config: ${e.message}")
-                            SnackbarManager.show(context.getString(R.string.best_config_apply_failed, e.message ?: "Unknown error"))
-                        }
-                    }
-                }
-            } else if (parsedConfig != null && parsedConfig.isNotEmpty()) {
-                val container = ContainerUtils.getOrCreateContainer(context, appId)
-                val currentData = ContainerUtils.toContainerData(container)
-                val updatedData = ContainerUtils.applyBestConfigMapToContainerData(
-                    currentData,
-                    parsedConfig,
-                )
-                ContainerUtils.applyToContainer(context, container, updatedData)
-                SnackbarManager.show(context.getString(R.string.best_config_applied_successfully))
-            } else {
-                SnackbarManager.show(context.getString(R.string.best_config_known_config_invalid))
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.w(e, "Failed to apply known config for ${libraryItem.appId}: ${e.message}")
-            withContext(Dispatchers.Main) {
-                hideKnownConfigInstallState(gameId)
-            }
-            SnackbarManager.show(
-                context.getString(
-                    R.string.best_config_apply_failed,
-                    e.message ?: "Unknown error",
-                ),
-            )
-        }
     }
 
     /**

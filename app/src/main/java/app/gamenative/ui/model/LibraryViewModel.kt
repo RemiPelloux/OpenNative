@@ -8,11 +8,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.gamenative.BuildConfig
 import app.gamenative.PluviaApp
 import app.gamenative.PrefManager
 import app.gamenative.R
-import app.gamenative.data.GameCompatibilityStatus
 import app.gamenative.data.GameSource
 import app.gamenative.data.LibraryItem
 import app.gamenative.data.gog.GogRecommendationsRepository
@@ -50,13 +48,7 @@ import app.gamenative.utils.CustomGameImporter
 import app.gamenative.utils.CustomGameScanner
 import app.gamenative.data.RecommendationRepository
 import app.gamenative.data.RecommendedGame
-import app.gamenative.utils.DeviceGameStatsCache
-import app.gamenative.utils.GpuGameStatsCache
-import app.gamenative.utils.GameCompatibilityCache
-import app.gamenative.utils.GameCompatibilityService
-import app.gamenative.utils.HardwareUtils
 import app.gamenative.utils.unaccent
-import com.winlator.core.GPUInformation
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -77,9 +69,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
-
-private const val PLAYABLE_FPS_THRESHOLD = 30
-private const val PROVEN_RUNS_THRESHOLD = 5
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
@@ -135,50 +124,7 @@ class LibraryViewModel @Inject constructor(
     private var searchDebounceJob: Job? = null
     private val SEARCH_DEBOUNCE_MS = 500L // 500ms debounce
 
-    // Cache GPU name to avoid repeated calls
-    private val gpuName: String by lazy {
-        try {
-            val gpu = GPUInformation.getRenderer(context)
-            if (gpu.isNullOrEmpty()) {
-                Timber.tag("LibraryViewModel").w("GPU name is null or empty")
-                "Unknown GPU"
-            } else {
-                Timber.tag("LibraryViewModel").d("Retrieved GPU name: $gpu")
-                gpu
-            }
-        } catch (e: Exception) {
-            Timber.tag("LibraryViewModel").e(e, "Failed to get GPU name")
-            "Unknown GPU"
-        }
-    }
-
     init {
-        viewModelScope.launch(Dispatchers.IO) {
-            if (gpuName != "Unknown GPU") {
-                DeviceGameStatsCache.refreshIfStale(
-                    deviceModel = HardwareUtils.getMachineName(),
-                    gpuName = gpuName,
-                    modernBuild = BuildConfig.MODERN_ANDROID,
-                )
-                GpuGameStatsCache.refreshIfStale(
-                    gpuName = gpuName,
-                    modernBuild = BuildConfig.MODERN_ANDROID,
-                )
-            } else {
-                Timber.tag("LibraryViewModel").w("Skipping device/GPU game stats fetch - GPU name is unknown")
-            }
-            _state.update {
-                it.copy(
-                    deviceGameStats = DeviceGameStatsCache.getAll(),
-                    gpuGameStats = GpuGameStatsCache.getAll(),
-                )
-            }
-            // Re-run filtering/sorting now that stats are available, if anything depends on them.
-            if (usesStats(_state.value)) {
-                onFilterApps(paginationCurrentPage)
-            }
-        }
-
         @OptIn(ExperimentalCoroutinesApi::class)
         viewModelScope.launch(Dispatchers.IO) {
             // Re-create the underlying DAO Flow whenever the EXPIRED filter is toggled,
@@ -455,11 +401,6 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isRefreshing = true) }
 
-            // Clear compatibility cache on manual refresh to get fresh data
-            GameCompatibilityCache.clear()
-            DeviceGameStatsCache.clear()
-            GpuGameStatsCache.clear()
-
             try {
                 val newApps = SteamService.refreshOwnedGamesFromServer()
                 if (newApps > 0) {
@@ -479,31 +420,8 @@ class LibraryViewModel @Inject constructor(
                 Timber.tag("LibraryViewModel").e(e, "Failed to refresh owned games from server")
             } finally {
                 onFilterApps(0).join()
-                // Fetch compatibility for current page after refresh
-                val currentPageGames = _state.value.appInfoList.map { it.name }
-                if (currentPageGames.isNotEmpty()) {
-                    fetchCompatibilityForPage(currentPageGames)
-                }
-                if (gpuName != "Unknown GPU") {
-                    DeviceGameStatsCache.refreshIfStale(
-                        deviceModel = HardwareUtils.getMachineName(),
-                        gpuName = gpuName,
-                        modernBuild = BuildConfig.MODERN_ANDROID,
-                    )
-                    GpuGameStatsCache.refreshIfStale(
-                        gpuName = gpuName,
-                        modernBuild = BuildConfig.MODERN_ANDROID,
-                    )
-                }
                 _state.update {
-                    it.copy(
-                        isRefreshing = false,
-                        deviceGameStats = DeviceGameStatsCache.getAll(),
-                        gpuGameStats = GpuGameStatsCache.getAll(),
-                    )
-                }
-                if (usesStats(_state.value)) {
-                    onFilterApps(paginationCurrentPage)
+                    it.copy(isRefreshing = false)
                 }
             }
         }
@@ -560,42 +478,6 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    /** Whether the current sort or any active filter depends on per-game stats. */
-    private fun usesStats(state: LibraryState): Boolean {
-        val statSorts = setOf(
-            SortOption.FPS_HIGH,
-            SortOption.RUNS_HIGH,
-            SortOption.REVIEWS_HIGH,
-            SortOption.REVIEWS_GPU_HIGH,
-        )
-        if (state.currentSortOption in statSorts) return true
-        return state.appInfoSortType.any {
-            it == AppFilter.PLAYABLE || it == AppFilter.FIVE_STAR ||
-                it == AppFilter.FIVE_STAR_GPU || it == AppFilter.PROVEN_GPU
-        }
-    }
-
-    /**
-     * Returns true if a game satisfies all active stat filters. Applied per-source (like
-     * [GameCompatibilityCache]'s compatible filter) so the per-source tab counts stay accurate.
-     * Games with no stats data are hidden whenever a stat filter is active.
-     */
-    private fun passesStatsFilters(state: LibraryState, source: GameSource, name: String): Boolean {
-        val filters = state.appInfoSortType
-        val playable = filters.contains(AppFilter.PLAYABLE)
-        val fiveStar = filters.contains(AppFilter.FIVE_STAR)
-        val fiveStarGpu = filters.contains(AppFilter.FIVE_STAR_GPU)
-        val proven = filters.contains(AppFilter.PROVEN_GPU)
-        if (!playable && !fiveStar && !fiveStarGpu && !proven) return true
-
-        val stats = state.statsFor(source, name)
-        if (playable && (stats?.fps ?: 0) < PLAYABLE_FPS_THRESHOLD) return false
-        if (fiveStar && (stats?.reviewsDevice ?: 0) < 1) return false
-        if (fiveStarGpu && (stats?.reviewsGpu ?: 0) < 1) return false
-        if (proven && (stats?.runsGpu ?: 0) < PROVEN_RUNS_THRESHOLD) return false
-        return true
-    }
-
     private fun onFilterApps(paginationPage: Int = 0): Job {
         Timber.tag("LibraryViewModel").d("onFilterApps - appList.size: ${appList.size}, isFirstLoad: $isFirstLoad")
         return viewModelScope.launch(Dispatchers.IO) {
@@ -607,15 +489,6 @@ class LibraryViewModel @Inject constructor(
             // Fetch download directory apps once on IO thread and cache as a HashSet for O(1) lookups
             val downloadDirectoryApps = DownloadService.getDownloadDirectoryApps() + SteamService.getImportedAppDirs()
             val downloadDirectorySet = downloadDirectoryApps.toHashSet()
-
-            fun passesCompatibleFilter(gameName: String): Boolean {
-                if (!currentState.appInfoSortType.contains(AppFilter.COMPATIBLE)) {
-                    return true
-                }
-                val cached = GameCompatibilityCache.getCached(gameName) ?: return true
-                val status = compatibilityStatusFor(cached)
-                return status == GameCompatibilityStatus.COMPATIBLE || status == GameCompatibilityStatus.GPU_COMPATIBLE
-            }
 
             val steamOwnerTypeFiltered: List<SteamApp> = appList
                 .asSequence()
@@ -686,8 +559,6 @@ class LibraryViewModel @Inject constructor(
             // Note: Don't sort individual lists - we'll sort the combined list for consistent ordering
             val filteredSteamApps: List<SteamApp> = steamFilteredBeforeCompatibility
                 .asSequence()
-                .filter { item -> passesCompatibleFilter(item.name) }
-                .filter { item -> passesStatsFilters(currentState, GameSource.STEAM, item.name) }
                 .sortedWith(
                     compareByDescending<SteamApp> {
                         downloadDirectorySet.contains(SteamService.getAppDirName(it))
@@ -751,7 +622,6 @@ class LibraryViewModel @Inject constructor(
             }
             val customEntries = customGameItems
                 .filter { !steamEntriesAppIds.contains(it.appId) } // Filter out imported steam appId
-                .filter { passesStatsFilters(currentState, it.gameSource, it.name) }
                 .map { LibraryEntry(it, true, lastPlayed = lastPlayedFor(it.appId)) }
 
             // Filter GOG games
@@ -776,8 +646,6 @@ class LibraryViewModel @Inject constructor(
                 .toList()
 
             val gogEntries = filteredGOGGames
-                .filter { passesCompatibleFilter(it.title) }
-                .filter { passesStatsFilters(currentState, GameSource.GOG, it.title) }
                 .map { game ->
                     val appId = "${GameSource.GOG.name}_${game.id}"
                     LibraryEntry(
@@ -819,8 +687,6 @@ class LibraryViewModel @Inject constructor(
                 .toList()
 
             val epicEntries = filteredEpicGames
-                .filter { passesCompatibleFilter(it.title) }
-                .filter { passesStatsFilters(currentState, GameSource.EPIC, it.title) }
                 .map { game ->
                     val appId = "${GameSource.EPIC.name}_${game.id}"
                     LibraryEntry(
@@ -862,8 +728,6 @@ class LibraryViewModel @Inject constructor(
                 .toList()
 
             val amazonEntries = filteredAmazonGames
-                .filter { passesCompatibleFilter(it.title) }
-                .filter { passesStatsFilters(currentState, GameSource.AMAZON, it.title) }
                 .map { game ->
                     val layoutHero = AmazonArtwork.layoutHeroFromProductJson(game.productJson)
                         .ifEmpty { game.heroUrl.ifEmpty { game.artUrl } }
@@ -1049,9 +913,6 @@ class LibraryViewModel @Inject constructor(
                 isFirstLoad = false
             }
 
-            // Fetch compatibility for current page games
-            fetchCompatibilityForPage(pagedList.map { it.name })
-
             _state.update {
                 it.copy(
                     appInfoList = pagedList,
@@ -1085,115 +946,4 @@ class LibraryViewModel @Inject constructor(
         return gameName.contains(searchQuery, ignoreCase = true) || gameName.unaccent().contains(searchQuery, ignoreCase = true)
     }
 
-    /**
-     * Fetches compatibility information for games in paginated batches.
-     * Checks cache first, then fetches uncached games in batches of 50.
-     */
-    private fun fetchCompatibilityForPage(gameNames: List<String>) {
-        if (gameNames.isEmpty()) {
-            Timber.tag("LibraryViewModel").d("fetchCompatibilityForPage: No game names provided")
-            return
-        }
-
-        Timber.tag("LibraryViewModel").d("fetchCompatibilityForPage: Fetching compatibility for ${gameNames.size} games, GPU: $gpuName")
-
-        // Don't make API calls if GPU name is unknown
-        if (gpuName == "Unknown GPU") {
-            Timber.tag("LibraryViewModel").w("Skipping compatibility fetch - GPU name is unknown")
-            return
-        }
-
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                // Separate cached and uncached games
-                val uncachedGames = mutableListOf<String>()
-                val cachedResults = mutableMapOf<String, GameCompatibilityService.GameCompatibilityResponse>()
-
-                for (gameName in gameNames) {
-                    val cached = GameCompatibilityCache.getCached(gameName)
-                    if (cached != null) {
-                        cachedResults[gameName] = cached
-                        Timber.tag("LibraryViewModel").d("Using cached result for: $gameName")
-                    } else {
-                        uncachedGames.add(gameName)
-                    }
-                }
-
-                Timber.tag("LibraryViewModel").d("Cached: ${cachedResults.size}, Uncached: ${uncachedGames.size}")
-
-                // Update state with cached results immediately (for instant UI update)
-                if (cachedResults.isNotEmpty()) {
-                    updateCompatibilityState(cachedResults)
-                }
-
-                // Only fetch if there are uncached games
-                if (uncachedGames.isEmpty()) {
-                    Timber.tag("LibraryViewModel").d("All games in page are cached, skipping API call")
-                    return@launch
-                }
-
-                // Fetch uncached games in batches of 25
-                val batchSize = 25
-                val fetchedResults = mutableMapOf<String, GameCompatibilityService.GameCompatibilityResponse>()
-
-                for (i in uncachedGames.indices step batchSize) {
-                    val batch = uncachedGames.subList(i, min(i + batchSize, uncachedGames.size))
-                    Timber.tag("LibraryViewModel").d("Fetching batch ${i / batchSize + 1} with ${batch.size} games")
-                    val batchResults = GameCompatibilityService.fetchCompatibility(batch, gpuName)
-
-                    if (batchResults != null) {
-                        Timber.tag("LibraryViewModel").d("Received ${batchResults.size} results from API")
-                        // Cache all results using batch caching
-                        GameCompatibilityCache.cacheAll(batchResults)
-                        fetchedResults.putAll(batchResults)
-                    } else {
-                        Timber.tag("LibraryViewModel").w("API returned null for batch")
-                    }
-                }
-
-                // Update state with newly fetched results
-                if (fetchedResults.isNotEmpty()) {
-                    updateCompatibilityState(fetchedResults)
-                    // Re-apply list filtering once new compatibility data is available
-                    if (_state.value.appInfoSortType.contains(AppFilter.COMPATIBLE)) {
-                        onFilterApps(paginationCurrentPage)
-                    }
-                }
-            } catch (e: Exception) {
-                Timber.tag("LibraryViewModel").e(e, "Error fetching compatibility data: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-    }
-
-    /**
-     * Updates the state with compatibility results.
-     */
-    private fun updateCompatibilityState(
-        results: Map<String, GameCompatibilityService.GameCompatibilityResponse>
-    ) {
-        val compatibilityMap = results.mapValues { (gameName, response) ->
-            compatibilityStatusFor(response)
-        }
-
-        // Update state with compatibility map (merge with existing)
-        _state.update { currentState ->
-            val mergedMap = currentState.compatibilityMap.toMutableMap()
-            mergedMap.putAll(compatibilityMap)
-            Timber.tag("LibraryViewModel").d("Updated state with ${compatibilityMap.size} compatibility entries, total: ${mergedMap.size}")
-            currentState.copy(compatibilityMap = mergedMap)
-        }
-    }
-
-    private fun compatibilityStatusFor(
-        response: GameCompatibilityService.GameCompatibilityResponse,
-    ): GameCompatibilityStatus {
-        return when {
-            response.isNotWorking -> GameCompatibilityStatus.NOT_COMPATIBLE
-            !response.hasBeenTried -> GameCompatibilityStatus.UNKNOWN
-            response.gpuPlayableCount > 0 -> GameCompatibilityStatus.GPU_COMPATIBLE
-            response.totalPlayableCount > 0 -> GameCompatibilityStatus.COMPATIBLE
-            else -> GameCompatibilityStatus.UNKNOWN
-        }
-    }
 }

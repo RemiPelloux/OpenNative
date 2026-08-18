@@ -19,6 +19,8 @@ import app.gamenative.ui.enums.AppFilter
 import app.gamenative.ui.enums.HomeDestination
 import app.gamenative.ui.enums.Orientation
 import app.gamenative.ui.enums.PaneType
+import app.gamenative.ui.enums.SortOption
+import app.gamenative.utils.OpenNativeDataMigration
 import com.materialkolor.PaletteStyle
 import com.winlator.box86_64.Box86_64Preset
 import com.winlator.container.Container
@@ -56,6 +58,8 @@ object PrefManager {
     fun init(context: Context) {
         dataStore = context.datastore
 
+        migrateDisabledRemoteServices()
+
         // Note: Should remove after a few release versions. we've moved to encrypted values.
         val oldPassword = stringPreferencesKey("password")
         removePref(oldPassword)
@@ -75,6 +79,33 @@ object PrefManager {
                 refreshToken = it
                 removePref(oldRefreshToken)
             }
+        }
+    }
+
+    private fun migrateDisabledRemoteServices() = runBlocking {
+        dataStore.edit { pref ->
+            if ((pref[OPENNATIVE_DATA_MIGRATION_VERSION] ?: 0) >= OpenNativeDataMigration.VERSION) {
+                return@edit
+            }
+
+            val currentFilterFlags = pref[LIBRARY_FILTER] ?: OpenNativeDataMigration.defaultFilterFlags()
+            pref[LIBRARY_FILTER] = OpenNativeDataMigration.sanitizeFilterFlags(currentFilterFlags)
+
+            val currentSort = pref[LIBRARY_SORT_KEY]
+                ?.let(SortOption::fromKey)
+                ?: pref[LIBRARY_SORT_LEGACY]
+                    ?.let { legacyOrdinal ->
+                        @Suppress("DEPRECATION")
+                        SortOption.fromOrdinal(legacyOrdinal)
+                    }
+                ?: SortOption.INSTALLED_FIRST
+            pref[LIBRARY_SORT_KEY] = OpenNativeDataMigration.sanitizeSort(currentSort).key
+
+            pref[AUTO_APPLY_KNOWN_CONFIG] = false
+            pref[GAME_COMPATIBILITY_CACHE] = "{}"
+            pref[DEVICE_GAME_STATS_CACHE] = "{}"
+            pref[GPU_GAME_STATS_CACHE] = "{}"
+            pref[OPENNATIVE_DATA_MIGRATION_VERSION] = OpenNativeDataMigration.VERSION
         }
     }
 
@@ -1343,11 +1374,7 @@ object PrefManager {
         get() = getPref(APP_LANGUAGE, "")
         set(value) = setPref(APP_LANGUAGE, value)
 
-    // auto-apply known config from BestConfigService on first container creation
     private val AUTO_APPLY_KNOWN_CONFIG = booleanPreferencesKey("auto_apply_known_config")
-    var autoApplyKnownConfig: Boolean
-        get() = getPref(AUTO_APPLY_KNOWN_CONFIG, true)
-        set(value) = setPref(AUTO_APPLY_KNOWN_CONFIG, value)
 
     // Game compatibility cache (JSON string)
     private val GAME_COMPATIBILITY_CACHE = stringPreferencesKey("game_compatibility_cache")
@@ -1380,6 +1407,8 @@ object PrefManager {
         set(value) {
             setPref(GPU_GAME_STATS_CACHE, value)
         }
+
+    private val OPENNATIVE_DATA_MIGRATION_VERSION = intPreferencesKey("opennative_data_migration_version")
 
     /* Security / Attestation */
     private val KEY_ATTESTATION_AVAILABLE = booleanPreferencesKey("key_attestation_available")

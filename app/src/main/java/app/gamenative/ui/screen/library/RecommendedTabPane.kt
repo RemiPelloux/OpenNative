@@ -97,14 +97,11 @@ fun RecommendedTabPane(
             }
         }
     }
-    val recState = remember(items, state.compatibilityMap, state.deviceGameStats, state.gpuGameStats) {
+    val recState = remember(items) {
         LibraryState(
             appInfoList = items,
             totalAppsInFilter = items.size,
             appInfoSortType = EnumSet.of(AppFilter.GAME),
-            compatibilityMap = state.compatibilityMap,
-            deviceGameStats = state.deviceGameStats,
-            gpuGameStats = state.gpuGameStats,
         )
     }
 

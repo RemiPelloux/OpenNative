@@ -208,7 +208,14 @@ fun LibraryOptionsPanel(
                                 .padding(horizontal = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
-                            SortOption.entries.forEachIndexed { index, option ->
+                            SortOption.entries.filterNot {
+                                it in setOf(
+                                    SortOption.FPS_HIGH,
+                                    SortOption.RUNS_HIGH,
+                                    SortOption.REVIEWS_HIGH,
+                                    SortOption.REVIEWS_GPU_HIGH,
+                                )
+                            }.forEachIndexed { index, option ->
                                 OptionRadioItem(
                                     text = stringResource(option.displayTextRes),
                                     selected = currentSortOption == option,
@@ -263,12 +270,7 @@ fun LibraryOptionsPanel(
                                 if (appFilter in listOf(
                                         AppFilter.INSTALLED,
                                         AppFilter.SHARED,
-                                        AppFilter.COMPATIBLE,
                                         AppFilter.EXPIRED,
-                                        AppFilter.PLAYABLE,
-                                        AppFilter.FIVE_STAR,
-                                        AppFilter.FIVE_STAR_GPU,
-                                        AppFilter.PROVEN_GPU,
                                     )
                                 ) {
                                     OptionListItem(
