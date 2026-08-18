@@ -5,6 +5,7 @@
 - Make Mockito and MockK tests work on restricted JDKs through an explicit ByteBuddy agent, with bounded single-worker test execution.
 - Fix locale-dependent HowLongToBeat hour formatting and update the Nexus client test for the OpenNative application header.
 - Replace completed pre-1.1 roadmaps and duplicated release documents with focused `1.5.0` and `2.0.0` plans.
+- Plan portable, redacted per-game and global settings sharing for `1.5.0`, with import previews and reversible conflict handling.
 - Simplify the main README and remove unused store API snapshots from the maintained documentation set.
 
 ## 1.1.0 - 2026-08-18

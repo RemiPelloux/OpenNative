@@ -47,13 +47,19 @@ Exit criteria: the cockpit survives 20 hot-plug/rotation cycles, every action is
 
 ## 5. Profiles and components
 
-- Make profile import/export schema-versioned, symmetric and free of device-local paths.
-- Back up a destination before migration and reject partial or incompatible imports atomically.
+- Add **Share settings** for exporting either one game's container profile or a reusable global settings preset.
+- Use a versioned, human-readable OpenNative manifest that round-trips every supported setting symmetrically.
+- Strip credentials, account identifiers, saves, game files, local paths, device serials, logs and shader binaries from every shared export.
+- Include compatibility metadata such as OpenNative version, profile schema, runtime type and required component versions without embedding those components.
+- Show an export preview and an import diff grouped by graphics, runtime, controller, display and performance settings.
+- Let recipients select categories, preserve unsupported fields for forward compatibility and choose merge or replace explicitly.
+- Back up the destination before import and reject tampered, partial or incompatible packages atomically.
+- Share through Android's system share sheet and import through the system file picker; no OpenNative account or hosted profile service is required.
 - Inventory inherited runtime archives with source, license, size and SHA-256.
 - Establish an OpenNative-controlled mirror only for components with verified redistribution rights.
 - Preserve the last known-good component when download, verification or extraction fails.
 
-Exit criteria: migration round trips preserve all supported settings, damaged components repair safely, and fresh/offline/upgrade installs have automated coverage.
+Exit criteria: profile round trips preserve all supported settings, exported packages contain no private/device-local data, import conflicts are previewed and reversible, damaged components repair safely, and fresh/offline/upgrade installs have automated coverage.
 
 ## Device validation
 

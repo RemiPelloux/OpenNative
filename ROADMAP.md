@@ -14,8 +14,9 @@ OpenNative `1.1.0` is the current stable line. The next milestones prioritize de
 1. Keep the JVM suite deterministic across supported JDKs and prevent test infrastructure failures from hiding product regressions.
 2. Profile frame delivery, shader compilation and translation-runtime stalls before changing synchronization or renderer ownership.
 3. Complete the OpenNative secondary-screen cockpit with reliable controller focus, hot-plug and rotation behavior.
-4. Make component downloads independently verifiable with immutable metadata, checksums and redistribution review.
-5. Certify releases with repeated game captures, launch/stop cycles, soak tests and migration checks.
+4. Add private-by-design exports for sharing per-game profiles and reusable settings presets with other users.
+5. Make component downloads independently verifiable with immutable metadata, checksums and redistribution review.
+6. Certify releases with repeated game captures, launch/stop cycles, soak tests and migration checks.
 
 ## Non-goals
 
