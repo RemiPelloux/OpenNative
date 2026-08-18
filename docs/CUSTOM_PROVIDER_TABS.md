@@ -74,16 +74,70 @@ Downloads stream into a per-job `.partial` file using bounded buffers. Resume re
 
 Archives are inspected before extraction. Absolute paths, `..` traversal, links escaping staging, impossible size ratios, too many entries and configured size limits are rejected. Extraction never writes directly into the final directory. After verification, OpenNative promotes staging through a same-filesystem rename when available, otherwise through a verified copy-and-swap.
 
+## Windows Installer Manager
+
+Provider entries are classified before the install action:
+
+- **Portable directory/archive**: verify, extract and let the user select the game executable.
+- **Windows executable installer**: run `.exe` interactively in a controlled Wine installation session.
+- **Windows Installer package**: run `.msi` through `msiexec /i` in the same controlled session.
+- **Unknown payload**: keep as a download and require explicit user review; never execute it automatically.
+
+Classification checks the file signature and archive structure as well as the extension. A file named `.exe` that is not a valid Windows PE executable is rejected. Silent arguments from a feed are displayed and disabled by default; OpenNative never trusts or executes arbitrary command lines received from provider metadata.
+
+Before running an installer, the manager asks the user to:
+
+1. create a new container or select an existing compatible container;
+2. select the Wine/Proton runtime, architecture and translation runtime;
+3. confirm the installer file, arguments and Windows working directory;
+4. select a managed game destination exposed to Wine as a dedicated drive;
+5. choose whether to keep the installer after verified success.
+
+The default is a new container so registry, redistributables and uninstall data stay scoped to that game. Installing into an existing container requires an explicit warning and a backup of its configuration. The original installer remains in provider staging while Wine runs it; SAF content is never executed directly from an unstable content URI.
+
+### Installation session lifecycle
+
+```text
+PREPARING_CONTAINER -> SNAPSHOTTING -> RUNNING_INSTALLER
+                    -> WAITING_FOR_CHILDREN -> DISCOVERING_GAME
+                    -> REVIEWING_RESULT -> VERIFYING_INSTALL -> READY
+
+RUNNING_INSTALLER | WAITING_FOR_CHILDREN -> USER_CANCELLED | FAILED | REBOOT_REQUIRED
+```
+
+OpenNative observes the Wine process tree and prefix activity rather than waiting only for the initial process. Many installers spawn another setup process and exit early. Completion requires the installer process family to exit and a short filesystem/registry quiescence window; timeout leaves the session in **Needs review**, not falsely successful.
+
+The session records a bounded before/after inventory of the chosen game destination plus relevant container metadata. It does not hash or scan the entire Wine prefix repeatedly. Existing `WineProcessSnapshotHelper`, pre-install command handling and executable filtering should be reused behind a dedicated installer-session API instead of duplicated in Compose.
+
+### Result review
+
+After the installer exits, OpenNative searches only the selected destination for new launch candidates. It reuses the existing executable policy to exclude uninstallers, setup programs, crash reporters and redistributables. The user sees:
+
+- installer exit status and whether child processes finished;
+- files/directories added or changed;
+- detected executable candidates with relative paths;
+- any requested reboot or missing runtime dependency;
+- **Test launch**, **Choose another executable**, **Keep for later** and **Mark failed** actions.
+
+Selecting an executable creates or updates the custom-game record and container only after confirmation. A test launch never deletes the installer. If no valid game executable is found, the job stays in **Needs review** and preserves all recovery material.
+
+### Installer library
+
+Every provider tab exposes an **Installers** view containing downloaded, queued, running, completed and failed jobs. Each row has stable progress and the relevant action: resume download, continue setup, review result, retry, open destination or clean installer. The global Downloads screen may mirror active jobs, but the provider tab remains their owner.
+
+The manager stores small install receipts with provider item ID, installer hash, container ID, selected destination, final executable and cleanup result. Receipts contain no provider secret and never claim ownership of files that existed before the session.
+
 ## Cleanup guarantees
 
 Cleanup is a post-install state, not part of download completion. `Delete after verified install` removes only the exact installer owned by that transfer job after:
 
-1. extraction/copy completed without error;
+1. extraction/copy or the Wine installer session completed without unresolved child processes;
 2. required files exist inside the selected destination;
 3. expected hashes, when supplied, match;
-4. the install record was committed successfully.
+4. a valid final executable was selected or the feed's explicit non-executable install contract was verified;
+5. the install receipt and container association were committed successfully.
 
-If any condition fails, OpenNative keeps the installer and a sanitized failure report. Cancellation deletes only the job's `.partial` file after confirmation. Provider-tab deletion cannot recursively delete the selected installation directory.
+If any condition fails, OpenNative keeps the installer and a sanitized failure report. A failed interactive setup may leave prefix changes, so OpenNative offers to discard a newly created installation container or keep it for recovery; it never rolls back an existing shared prefix automatically. Cancellation deletes only the job's `.partial` file after confirmation. Provider-tab deletion cannot recursively delete the selected installation directory.
 
 ## Performance constraints
 
@@ -99,5 +153,6 @@ If any condition fails, OpenNative keeps the installer and a sanitized failure r
 - Unit tests: URL policy, schema compatibility, secret redaction, error mapping, retry policy, cleanup guard and path confinement.
 - Repository tests: pagination, ETag/304, stale snapshot, bulk upsert and provider-tab ordering.
 - Transfer tests: resume, low space, hash mismatch, archive traversal, cancellation and process recreation.
+- Installer tests: PE/MSI classification, safe command construction, parent-exits-first process trees, quiescence timeout, reboot-required state, executable discovery and cleanup guards.
 - UI tests: `+` placement after Custom, creation flow, controller focus, edit/delete confirmation and per-job progress isolation.
 - Provider contract tests use a fake HTTPS server. CI never stores or requires a real AllDebrid key.

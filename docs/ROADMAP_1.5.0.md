@@ -85,6 +85,10 @@ Exit criteria: profile round trips preserve all supported settings, exported pac
 - Use a foreground transfer service with bounded streaming, pause/resume/retry/cancel, storage reservation and a `.partial` staging file.
 - Let each tab choose an installation directory through Android's system folder picker and persist only the granted tree URI. Never construct unrestricted filesystem paths from feed data.
 - Validate archive paths, declared sizes and optional SHA-256 before extracting into a staging directory. Promote the installed directory atomically when possible.
+- Add an Installer Manager that distinguishes portable archives, PE `.exe` installers and `.msi` packages by content, then runs Windows installers in a dedicated Wine session.
+- Let the user create/select the target container and runtime before setup. Track the whole Wine process family and prefix quiescence so a parent installer exiting early cannot produce a false success.
+- Discover final game executables inside the selected destination, exclude setup/uninstall/redist tools, and require review before creating the custom-game launch record.
+- Preserve failed or incomplete setup sessions for review. Never attempt an automatic rollback inside a pre-existing shared Wine prefix.
 - Offer cleanup policies `Keep installer`, `Delete after verified install` and `Ask after install`. Cleanup runs only after the final installed files pass verification; failures keep the installer and staging report.
 - Never auto-launch an installed executable. The user reviews the detected `.exe`, creates or links a container and confirms its settings separately.
 - Define the data contract, state machine, threat model and implementation boundaries in [`CUSTOM_PROVIDER_TABS.md`](CUSTOM_PROVIDER_TABS.md).
@@ -99,6 +103,7 @@ Exit criteria: provider tabs do not alter built-in sources, refresh has bounded 
 - One 60-minute session with FPS, p95/p99, RSS, swap and temperature recorded.
 - Generic ARM64 smoke test on at least one non-Qualcomm device before release.
 - Provider-tab tests for create/reorder/delete, offline mode, pagination, ETag, invalid JSON, hash failure, 429 backoff and persisted folder permission.
+- Installer-session tests for `.exe`/`.msi`, spawned child processes, timeout/reboot states, executable discovery and cleanup gating.
 - AllDebrid tests through a fake provider server only; CI and release tests never require a real user API key.
 
 ## Release gate
