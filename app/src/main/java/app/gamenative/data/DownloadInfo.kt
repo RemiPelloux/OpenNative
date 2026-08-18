@@ -1,13 +1,20 @@
 package app.gamenative.data
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import timber.log.Timber
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 data class DownloadInfo(
     val jobCount: Int = 1,
@@ -15,14 +22,24 @@ data class DownloadInfo(
     var downloadingAppIds: CopyOnWriteArrayList<Int>,
 ) {
     private var downloadJob: Job? = null
-    private val downloadProgressListeners = mutableListOf<((Float) -> Unit)>()
+    private val persistenceLock = Any()
+    private val downloadProgressListeners = CopyOnWriteArrayList<(Float) -> Unit>()
     private val progresses: Array<Float> = Array(jobCount) { 0f }
+
+    // Reservation-based persistence scheduler
+    private val nextWriteTime = AtomicLong(0L)
+    private var persistenceJob: Job? = null
+    private val persistenceGeneration = AtomicInteger(0)
+    internal var persistenceDebounceMs: Long = DEFAULT_PERSIST_DEBOUNCE_MS
+    @Volatile
+    private var persistenceClosed = false
 
     private val weights    = FloatArray(jobCount) { 1f }     // ⇐ new
     private var weightSum  = jobCount.toFloat()
 
     // === Bytes / speed tracking for more stable ETA ===
     private var totalExpectedBytes: Long = 0L
+    @Volatile
     private var bytesDownloaded: Long = 0L
     private var persistencePath: String? = null
 
@@ -269,21 +286,58 @@ data class DownloadInfo(
     companion object {
         private const val PERSISTENCE_DIR = ".DownloadInfo"
         private const val PERSISTENCE_FILE = "bytes_downloaded.txt"
+        internal const val DEFAULT_PERSIST_DEBOUNCE_MS = 10_000L
+        private val persistenceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     }
 
     /**
      * Persist bytesDownloaded to a file in the app directory.
+     * Debounced to write at most once every 10 seconds to reduce I/O overhead.
      */
     fun persistBytesDownloaded(appDirPath: String) {
-        try {
-            val dir = File(appDirPath, PERSISTENCE_DIR)
-            if (!dir.exists()) {
-                dir.mkdirs()
+        if (persistenceClosed) return
+        synchronized(persistenceLock) {
+            if (persistenceClosed) return
+            val now = System.currentTimeMillis()
+            val delayMs = nextWriteTime.get() - now
+
+            if (delayMs > 0) {
+                persistenceJob?.cancel()
+                val currentGeneration = persistenceGeneration.get()
+                persistenceJob = persistenceScope.launch {
+                    delay(delayMs)
+                    writePersistedBytes(appDirPath, currentGeneration)
+                }
+                return
             }
-            val file = File(dir, PERSISTENCE_FILE)
-            file.writeText(bytesDownloaded.toString())
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to persist bytes downloaded to $appDirPath")
+
+            val currentGeneration = persistenceGeneration.get()
+            nextWriteTime.set(now + persistenceDebounceMs)
+            persistenceJob?.cancel()
+            persistenceJob = null
+            persistenceScope.launch {
+                writePersistedBytes(appDirPath, currentGeneration)
+            }
+        }
+    }
+
+    /**
+     * Internal method to actually write the bytes to disk.
+     */
+    private fun writePersistedBytes(appDirPath: String, generation: Int) {
+        synchronized(persistenceLock) {
+            if (persistenceGeneration.get() != generation) return
+            try {
+                val dir = File(appDirPath, PERSISTENCE_DIR)
+                if (!dir.exists()) {
+                    dir.mkdirs()
+                }
+                val file = File(dir, PERSISTENCE_FILE)
+                file.writeText(bytesDownloaded.toString())
+                nextWriteTime.set(System.currentTimeMillis() + persistenceDebounceMs)
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to persist bytes downloaded to $appDirPath")
+            }
         }
     }
 
@@ -309,13 +363,20 @@ data class DownloadInfo(
      * Delete the persisted bytes file (called on download completion).
      */
     fun clearPersistedBytesDownloaded(appDirPath: String) {
-        try {
-            val file = File(File(appDirPath, PERSISTENCE_DIR), PERSISTENCE_FILE)
-            if (file.exists()) {
-                file.delete()
+        // Invalidate any pending persistence to prevent recreating the file
+        persistenceClosed = true
+        persistenceGeneration.incrementAndGet()
+        synchronized(persistenceLock) {
+            persistenceJob?.cancel()
+            persistenceJob = null
+            try {
+                val file = File(File(appDirPath, PERSISTENCE_DIR), PERSISTENCE_FILE)
+                if (file.exists()) {
+                    file.delete()
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to clear persisted bytes downloaded from $appDirPath")
             }
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to clear persisted bytes downloaded from $appDirPath")
         }
     }
 }

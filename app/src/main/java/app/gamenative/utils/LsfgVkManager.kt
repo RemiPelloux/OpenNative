@@ -80,11 +80,10 @@ object LsfgVkManager {
     private const val ENV_PROCESS = "LSFG_PROCESS"
 
     // Current runtime version (bumped when the bundled .so changes)
-    private const val RUNTIME_VERSION = "v1.3.2-android-arm64-v8a"
+    private const val RUNTIME_VERSION = "v1.3.3-android-arm64-v8a"
 
-    // Asset paths
+    // Asset path for manifest (still in assets)
     private const val ASSET_DIR = "lsfg_vk/android_arm64_v8a"
-    private const val ASSET_LIB = "$ASSET_DIR/$LIB_FILENAME"
     private const val ASSET_MANIFEST = "$ASSET_DIR/$MANIFEST_FILENAME"
 
     // ---- Public API --------------------------------------------------------
@@ -269,8 +268,18 @@ object LsfgVkManager {
                 localLibDir.mkdirs()
                 layerDir.mkdirs()
 
-                // Copy the layer .so from assets
-                FileUtils.copy(context, ASSET_LIB, libFile)
+                // Copy the layer .so from native library directory (jniLibs)
+                val nativeLibDir = File(context.applicationInfo.nativeLibraryDir)
+                val sourceLib = File(nativeLibDir, LIB_FILENAME)
+                if (!sourceLib.exists()) {
+                    Timber.tag(TAG).e("Native library not found: %s", sourceLib.absolutePath)
+                    return false
+                }
+                sourceLib.inputStream().use { input ->
+                    libFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
                 // Write the manifest with patched library_path
                 val manifestText = context.assets.open(ASSET_MANIFEST)
                     .bufferedReader().use { it.readText() }
@@ -432,11 +441,59 @@ object LsfgVkManager {
     /**
      * Find Lossless.dll in the Steam install directory for app 993090.
      * Returns the File if it exists, null otherwise.
+     *
+     * This function searches all possible Steam install paths directly
+     * without creating a container for the Lossless Scaling app.
      */
     private fun findSteamDll(): File? {
-        val appDir = SteamService.getAppDirPath(LOSSLESS_SCALING_APP_ID)
-        val dll = File(appDir, LOSSLESS_DLL_NAME)
-        return dll.takeIf { it.isFile }
+        return findSteamDllDirect()
+    }
+
+    /**
+     * Find Lossless.dll by searching all Steam install paths directly.
+     * This avoids creating a container for app 993090 (Lossless Scaling).
+     *
+     * Search order:
+     * 1. Check if app is already installed in any known Steam path
+     * 2. Look for common install directory names
+     *
+     * @return File pointing to Lossless.dll if found, null otherwise
+     */
+    private fun findSteamDllDirect(): File? {
+        // Get app info to find the install directory name
+        val appInfo = SteamService.getAppInfoOf(LOSSLESS_SCALING_APP_ID)
+        val installDirName = appInfo?.installDir?.takeIf { it.isNotBlank() } ?: "Lossless Scaling"
+
+        // Search all possible Steam install paths
+        val searchPaths = SteamService.allInstallPaths
+
+        for (basePath in searchPaths) {
+            val appDir = File(basePath, installDirName)
+            val dll = File(appDir, LOSSLESS_DLL_NAME)
+            if (dll.isFile) {
+                Timber.tag(TAG).d("Found Lossless.dll at: %s", dll.absolutePath)
+                return dll
+            }
+        }
+
+        // Fallback: search for any directory containing Lossless.dll in Steam paths
+        for (basePath in searchPaths) {
+            val baseDir = File(basePath)
+            if (!baseDir.exists() || !baseDir.isDirectory) continue
+
+            baseDir.listFiles()?.forEach { subDir ->
+                if (subDir.isDirectory) {
+                    val dll = File(subDir, LOSSLESS_DLL_NAME)
+                    if (dll.isFile) {
+                        Timber.tag(TAG).d("Found Lossless.dll in fallback search at: %s", dll.absolutePath)
+                        return dll
+                    }
+                }
+            }
+        }
+
+        Timber.tag(TAG).w("Lossless.dll not found in any Steam install path")
+        return null
     }
 
     // ---- Helpers -----------------------------------------------------------
@@ -507,6 +564,7 @@ object LsfgVkManager {
 
     private fun formatFlowScale(value: Float): String =
         String.format(Locale.US, "%.2f", value.coerceIn(0.25f, 1.0f))
+
     // ---- Runtime hot-reload -----------------------------------------------
 
     /**

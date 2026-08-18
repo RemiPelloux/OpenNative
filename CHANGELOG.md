@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Integrate GameNative upstream through `78bc4bbe`, retaining download I/O, service locale and LSFG 1.3.3 fixes while preserving OpenNative's independent product policy.
+- Debounce download-resume metadata writes, use thread-safe progress listeners and use bounded FileChannel writes for Epic and GOG assembly on external storage.
+- Load the LSFG native layer from Android's native library directory and discover `Lossless.dll` without creating a utility container or deleting any existing user container.
+- Keep OpenNative free of upstream membership prompts, remote feedback, personalized community recommendations and upstream README branding.
 - Make Mockito and MockK tests work on restricted JDKs through an explicit ByteBuddy agent, with bounded single-worker test execution.
 - Fix locale-dependent HowLongToBeat hour formatting and update the Nexus client test for the OpenNative application header.
 - Replace completed pre-1.1 roadmaps and duplicated release documents with focused `1.5.0` and `2.0.0` plans.
