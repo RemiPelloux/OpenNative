@@ -45,7 +45,7 @@ and targets a 2 GiB total cache budget. Game files, Wine prefixes and saves are 
 OpenNative discovers SoC identity, Adreno renderer, CPU frequency-policy topology and Android
 Performance Hint availability at runtime. Detection is not permission to force a tuning action.
 Clocks, affinity, fast-math, driver variables and presentation paths remain unchanged until an
-alternating target-device A/B passes the release gates in `docs/ROADMAP_0.3.0.md`.
+alternating target-device A/B passes the performance gates in [`PERFORMANCE.md`](PERFORMANCE.md).
 
 ## Diagnostics
 

@@ -18,6 +18,14 @@ OpenNative accepts focused bug fixes, compatibility work, tests, documentation a
 - Avoid unsafe compiler flags, clock changes and Android-global settings.
 - Add tests proportional to the changed behavior.
 
+## Test discipline
+
+- Run the smallest relevant JVM class or package while iterating.
+- Do not run concurrent Gradle builds in one worktree; Kotlin incremental caches are shared.
+- Reserve the full modern JVM suite for CI or a machine with sufficient disk and memory.
+- Use `./gradlew clean` to remove generated build and test outputs; never commit them.
+- Do not weaken assertions, hide failures or exclude a test solely to make a build green.
+
 ## Performance evidence
 
 Include device, Android build, SoC/GPU, driver, game/version, scene, resolution, frame cap, container profile and thermal starting point. Compare at least five warmed runs and report median FPS, p95/p99 frametime, RSS and temperatures. Raw logs must be scrubbed of private data.

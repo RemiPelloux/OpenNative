@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Make Mockito and MockK tests work on restricted JDKs through an explicit ByteBuddy agent, with bounded single-worker test execution.
+- Fix locale-dependent HowLongToBeat hour formatting and update the Nexus client test for the OpenNative application header.
+- Replace completed pre-1.1 roadmaps and duplicated release documents with focused `1.5.0` and `2.0.0` plans.
+- Simplify the main README and remove unused store API snapshots from the maintained documentation set.
+
 ## 1.1.0 - 2026-08-18
 
 - Complete the independent OpenNative identity with the ON launcher icon, OpenNative support links, updated privacy documentation and no inherited updater, Discord, Ko-fi, feedback or optional community API flows.

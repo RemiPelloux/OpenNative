@@ -4,47 +4,34 @@
 
 # OpenNative
 
-**Run the PC games you own on Android, with a performance-focused experience for gaming handhelds.**
+**A performance-focused Android runtime for PC games you own.**
 
 [![Release](https://img.shields.io/github/v/release/RemiPelloux/OpenNative?style=flat-square&logo=github)](https://github.com/RemiPelloux/OpenNative/releases)
-[![Build](https://img.shields.io/badge/Android-ARM64-3DDC84?style=flat-square&logo=android&logoColor=white)](#build-from-source)
+[![Android](https://img.shields.io/badge/Android-ARM64-3DDC84?style=flat-square&logo=android&logoColor=white)](#compatibility)
 [![License](https://img.shields.io/badge/license-GPL--3.0-36C5F0?style=flat-square)](LICENSE)
 
-[Features](#what-opennative-adds) · [Install](#install) · [Gamma Emerald](docs/GAMMA_EMERALD.md) · [Performance](docs/PERFORMANCE.md) · [1.0 Roadmap](docs/ROADMAP_1.0.0.md) · [Roadmap](ROADMAP.md)
+[Install](#install) · [Features](#features) · [Build](#build-from-source) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md)
 
 </div>
 
-OpenNative is an independent Android compatibility project for running owned PC games through Wine and native translation components. Development, releases, support and product decisions are managed in this repository, with a focus on frame pacing, lower background overhead, controller reliability, portable container profiles and dual-screen handhelds such as the AYN Thor.
+OpenNative combines Wine, Proton, DXVK, VKD3D, Mesa, Box64 and FEX in an Android interface designed for gaming handhelds. It focuses on stable frame delivery, low background overhead, controller reliability, portable game profiles and secondary-display controls.
 
-This project does not include games. Use it only with software and store accounts you are authorized to use.
+OpenNative does not include games, firmware or store credentials. Use it only with software and accounts you are authorized to use.
 
-## What OpenNative adds
+## Features
 
-- **Non-blocking SurfaceFlinger compatibility path:** BGRA-to-RGBA conversion is queued asynchronously, saturated pools drop stale frames instead of waiting on the presentation thread, and redundant GL state changes are cached.
-- **Lower telemetry overhead:** expensive sensors are sampled less often, `/proc` and sysfs counters use allocation-light parsers, and JSONL session logs are buffered instead of flushed every 500 ms.
-- **Dual-screen performance cockpit:** the game stays on the primary display while metrics and session shortcuts can use an Android secondary display.
-- **Portable container profiles:** versioned exports preserve relevant Wine, graphics, controller and display settings without embedding device-local paths.
-- **Controller runtime fixes:** only configured controller slots create guest-side workers; single-player containers no longer provision four players by default.
-- **Fewer database and background round trips:** Steam PICS, packages, DLC ownership and private branches plus GOG, Nexus, storage and frontend flows use chunked bulk reads and grouped writes instead of row-by-row N+1 access. Disabled compatibility and community-stat services no longer schedule library-page work.
-- **Gamma Emerald validation:** a stable 720p/30 FPS baseline with controller input and an optional low-cost shadow profile is documented separately.
-- **Measured Thor tuning:** affinity is opt-in, native and WoW64 masks are respected, repeated mod writes are batched, and duplicate custom-game icon work is suppressed during library refreshes.
-- **UE shader and memory stability:** DXVK caches now follow OpenNative's real package path, unlimited profiles receive a conservative device-aware guest-memory budget on 6-14 GB devices, and retired SurfaceFlinger buffers are reclaimed.
-- **Backend-aware shader cache:** DXVK, Mesa/Zink and VKD3D caches persist per game with independent compatibility keys. A Turnip update keeps reusable DXVK state while rotating driver-specific Vulkan caches; existing OpenNative caches migrate without a copy and custom paths remain untouched.
-- **Faster safe launches:** OpenNative no longer extracts DXVK, the graphics driver and PulseAudio on every launch. Versioned integrity sentinels reuse healthy files, repair damage automatically and preserve the previous component if staged extraction fails.
-- **Incremental shader inspection:** a clean shutdown records active-cache statistics atomically. The next launch consumes that snapshot when cache roots are unchanged, while crashes, modifications, pruning and deletion still force a real scan.
-- **Predictive local shader warmup:** a clean session records a path-safe manifest of its most recently touched cache files. The next launch can read ahead at most 16 MiB when Android reports sufficient free memory; changed files and foreign paths are rejected, and OpenNative never downloads third-party shader caches.
-- **Sustained memory governor:** the Adaptive Engine reads swap and Linux PSI on the slow metrics cadence and uses hysteresis before pausing model training or cache maintenance. It does not change clocks, kill the guest or overwrite explicit user settings.
-- **Capture-only disk telemetry:** adaptive metrics remain available in memory, while JSONL writes and periodic performance logs are disabled during normal play and enabled only for an explicit diagnostic launch.
-- **Adaptive Engine 0.3:** classifies CPU, GPU, memory, thermal and pacing pressure; predicts five-second p95/temperature; identifies per-game frame cost with bounded RLS; and stages aspect-correct resolution changes for the next launch with confidence, hysteresis, cooldown and rollback. Existing games default to observation mode.
-- **Shader Health:** shows cold/warm/growing state, active generation and cache growth in the quick menu and Thor cockpit. Explicit maintenance runs only after game exit and never removes the active Mesa, DXVK or VKD3D generation.
-- **Capability-driven Snapdragon support:** records Qualcomm/Adreno, CPU policy topology and Android Performance Hint availability from runtime capabilities. OpenNative does not force clocks, affinity, unsafe math or speculative driver variables.
-- **Sanitized diagnostics:** shared reports include performance, prediction, memory, resolution and shader state while redacting credentials and device-local paths.
+- Steam, Epic, GOG, Amazon and custom executable library flows.
+- Versioned container profiles for Wine, graphics, controller and display settings.
+- Persistent per-game DXVK, Mesa/Zink and VKD3D cache generations.
+- Safe component reuse and repair instead of unconditional extraction at every launch.
+- Local shader health, bounded warmup and per-title cache maintenance after game exit.
+- Adaptive Engine observation and opt-in resolution changes with confidence, cooldown and rollback.
+- Low-overhead performance sampling with diagnostic capture only when explicitly requested.
+- Secondary-display cockpit with an in-game drawer fallback.
+- Batched Room/store operations across previously identified N+1 paths.
+- Sanitized diagnostic reports that exclude credentials, saves and game binaries.
 
-These changes have automated coverage and device smoke testing. They are not presented as a universal FPS uplift: performance claims require controlled before/after captures on the same game, scene, driver and thermal state.
-
-The `0.3.0` architecture and safety model are documented in [`docs/ADAPTIVE_ENGINE.md`](docs/ADAPTIVE_ENGINE.md); implementation and release gates are tracked in [`docs/ROADMAP_0.3.0.md`](docs/ROADMAP_0.3.0.md).
-
-The path to a stable `1.0.0`, including renderer, translation, shader, memory, N+1, compatibility and release gates, is documented in [`docs/ROADMAP_1.0.0.md`](docs/ROADMAP_1.0.0.md). Its source audit is in [`docs/PERFORMANCE_AUDIT_1.0.0.md`](docs/PERFORMANCE_AUDIT_1.0.0.md).
+OpenNative never downloads third-party shader caches, forces device clocks, changes Android globally or promises a universal FPS gain. Performance changes must pass controlled before/after measurements.
 
 ## Compatibility
 
@@ -52,46 +39,37 @@ The path to a stable `1.0.0`, including renderer, translation, shader, memory, N
 | --- | --- |
 | Android ARM64, API 29+ (`modern`) | Primary build |
 | AYN Thor Max, Android 13 | Device-tested |
-| Steam, Epic, GOG, Amazon and custom games | Compatibility varies by title |
-| Android secondary displays | Cockpit with in-game drawer fallback |
-| Legacy 32-bit Android flavor | Buildable but not the current performance target |
+| Android secondary displays | Cockpit with drawer fallback |
+| Legacy 32-bit Android | Buildable, not the primary performance target |
+| Individual games | Depends on runtime, driver and title |
 
-OpenNative deliberately keeps the existing application ID `com.remipelloux.gamenativecustom`, historical public storage directory and internal Kotlin namespace. These are compatibility identifiers, not product branding. Changing them would orphan existing containers and saves; a future migration must include an atomic data-transfer path.
+The application ID remains `com.remipelloux.gamenativecustom` so existing OpenNative installations retain app-private containers and saves. The internal `app.gamenative` namespace and historical storage identifiers are also preserved until a tested migration exists.
 
 ## Install
 
-OpenNative `1.1.0` ships a `modernRelease` APK for Android ARM64. It preserves the
-existing application ID and signing identity so it can update the current OpenNative
-test installation without deleting private containers or saves. Do not uninstall the
-existing app before upgrading.
+Download the current ARM64 APK from [GitHub Releases](https://github.com/RemiPelloux/OpenNative/releases). Install it over an existing OpenNative build signed with the same certificate; do not uninstall first when app-private containers or saves must be preserved.
 
-The inherited bundle contains three upstream prebuilt shims marked proprietary
-without a confirmed downstream redistribution grant. Review
-[THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES) before redistributing the APK; this
-remains a supply-chain limitation, not a performance defect.
+Before redistributing an APK, review [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES). Some inherited prebuilt components have separate terms, and the remaining binary-host dependency is documented in [OpenNative Independence](docs/INDEPENDENCE.md).
 
-Developers can build the source below where permitted. Install it over the
-current OpenNative test build; do not uninstall first if you need to preserve
-app-private containers. Always verify the application ID and signing
-certificate before an in-place update.
+OpenNative has no third-party in-app updater. Releases are installed explicitly.
 
-OpenNative has no third-party in-app updater. Updates are installed explicitly from this repository.
+## Custom games
 
-## Configure a custom game
+1. Extract the game into a folder Android can access.
+2. Open **Library > Custom** and grant that folder with Android's picker.
+3. Select the actual game executable in its container settings.
+4. Start at 1280x720, 30 FPS and a compatibility-oriented translation profile.
+5. Change one setting at a time and compare a repeatable scene.
 
-1. Extract the game into a user-accessible folder.
-2. In **Library > Custom**, grant access with Android's folder picker.
-3. Open the game settings and select its actual `.exe`.
-4. Start with a conservative 1280x720 container, a 30 FPS cap and a compatibility-oriented Box64/FEX profile.
-5. Change one graphics option at a time and measure a repeatable scene.
-
-The tested Gamma Emerald recipe and shadow trade-offs are in [docs/GAMMA_EMERALD.md](docs/GAMMA_EMERALD.md).
-
-Portable local container profile import/export remains supported. OpenNative 1.1.0 removes the inherited remote "known config" lookup because no independent, verified configuration source is currently configured.
+The validated AYN Thor starting point for Gamma Emerald, including the optional shadow profile, is in [Gamma Emerald](docs/GAMMA_EMERALD.md).
 
 ## Build from source
 
-Requirements: JDK 17, Android SDK 36 and Android NDK `27.3.13750724`.
+Requirements:
+
+- JDK 17
+- Android SDK 36
+- Android NDK `27.3.13750724`
 
 ```bash
 git clone https://github.com/RemiPelloux/OpenNative.git
@@ -100,71 +78,42 @@ cd OpenNative
 ./gradlew :app:assembleModernRelease
 ```
 
-Optional API keys belong in `local.properties` or environment variables and must never be committed:
+Optional API keys belong in `local.properties` or environment variables and must never be committed.
 
-```properties
-STEAMGRIDDB_API_KEY=your_key
-```
+## Tests
 
-The `modernRelease` build is minified and resource-shrunk. The first preview release intentionally keeps the existing local signing identity so it can update the Thor test installation; it is not a Play Store signing setup.
+The Android JVM suite uses an explicit ByteBuddy agent so Mockito and MockK work on JDKs that disable dynamic self-attachment.
 
-## Test
-
-Run the focused JVM suite:
+Run a focused class while developing:
 
 ```bash
-./gradlew \
-  :app:testModernDebugUnitTest \
-  --tests '*GOGGameDaoTest' \
-  --tests '*FrontendSyncManagerTest' \
-  --tests '*ControllerManagerTest' \
-  --tests '*MetricsSamplingCadenceTest' \
-  --tests '*JsonlSessionLogTest' \
-  --tests '*PortableContainerProfileTest' \
-  --tests '*ExternalDisplayInputControllerTest'
+./gradlew :app:testModernDebugUnitTest --tests 'app.gamenative.performance.*'
 ```
 
-For the 0.3.0 engine and shader cache:
+Run the full modern JVM suite only when enough local disk and memory are available:
 
 ```bash
-./gradlew :app:testModernDebugUnitTest \
-  --tests 'app.gamenative.performance.*' \
-  --tests 'com.winlator.core.ShaderCache*' \
-  --tests 'app.gamenative.utils.DiagnosticsLogTest'
+./gradlew :app:testModernDebugUnitTest
 ```
 
-For the 1.0 release-candidate runtime paths:
+Gradle test/build outputs are disposable and can be removed with `./gradlew clean`. Performance work follows the evidence and promotion rules in [Performance Method](docs/PERFORMANCE.md).
 
-```bash
-./gradlew :app:testModernDebugUnitTest \
-  --tests 'app.gamenative.performance.runtime.ComponentInstallPolicyTest' \
-  --tests 'com.winlator.core.ShaderCacheManagerTest' \
-  --tests 'app.gamenative.performance.device.MemoryPressurePolicyTest' \
-  --tests 'app.gamenative.powercontrol.metrics.MemoryPressureReaderTest'
-```
+## Documentation
 
-For the 1.0 shader warmup policy and manifest validation:
+- [Roadmap](ROADMAP.md): active milestones and links to the `1.5.0` and `2.0.0` plans.
+- [Adaptive Engine](docs/ADAPTIVE_ENGINE.md): model, safeguards and resolution policy.
+- [Performance Method](docs/PERFORMANCE.md): capture protocol and current Thor findings.
+- [Gamma Emerald](docs/GAMMA_EMERALD.md): tested container baseline.
+- [Independence](docs/INDEPENDENCE.md): identifiers, attribution and binary-host migration.
+- [Changelog](CHANGELOG.md): released changes since `0.1.0`.
+- [Contributing](CONTRIBUTING.md): code, testing and evidence requirements.
 
-```bash
-./gradlew :app:testModernDebugUnitTest \
-  --tests 'com.winlator.core.ShaderCacheManagerTest' \
-  --tests 'app.gamenative.performance.shaders.ShaderWarmupPolicyTest'
-```
+## Privacy
 
-For performance work, follow [docs/PERFORMANCE.md](docs/PERFORMANCE.md). A change is promoted only when repeated measurements show a gain without a stability or thermal regression.
-
-## Privacy and services
-
-OpenNative does not send gameplay feedback, compatibility telemetry, device statistics or recommendations to GameNative services. Store login and library features contact the selected store provider. Component installation still uses an inherited binary host until OpenNative has a verified mirror; see [docs/INDEPENDENCE.md](docs/INDEPENDENCE.md). Review [PrivacyPolicy/README.md](PrivacyPolicy/README.md) before using online features, and never attach credentials, tokens, game files or app-private data to bug reports.
-
-## Contributing
-
-Issues and focused pull requests are welcome. Include the device, Android version, SoC/GPU, driver, game version, exact container profile, reproduction steps and logs with private paths removed. Performance pull requests must include before/after evidence.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the review and validation rules.
+OpenNative does not send gameplay feedback, compatibility telemetry, device statistics or recommendations to GameNative services. Store features communicate with the selected store provider. Read the [privacy policy](PrivacyPolicy/README.md), and remove private paths and tokens from bug reports.
 
 ## Credits and license
 
-OpenNative derives from GameNative by Utkarsh Dalal and its contributors, and uses Wine, Proton, DXVK, VKD3D, Mesa, Box64, FEX and other projects. This historical and legal attribution does not imply endorsement, shared infrastructure or shared project governance. Original copyrights and Git history are preserved.
+OpenNative derives from GameNative by Utkarsh Dalal and its contributors. It also depends on Wine, Proton, DXVK, VKD3D, Mesa, Box64, FEX and other open-source projects. Copyrights, license notices and Git history are preserved; attribution does not imply shared governance or endorsement.
 
-The application source remains licensed under [GPL-3.0](LICENSE). Bundled components can have different terms; read [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES) before redistributing an APK.
+OpenNative source is licensed under [GPL-3.0](LICENSE). Bundled components may use different licenses; consult [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
