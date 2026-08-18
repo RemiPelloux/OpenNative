@@ -1,5 +1,15 @@
 import java.util.Properties
 import java.io.FileInputStream
+import org.gradle.api.file.FileCollection
+import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.testing.Test
+import org.gradle.process.CommandLineArgumentProvider
+
+class JavaAgentArgumentProvider(
+    @get:Classpath val agentClasspath: FileCollection,
+) : CommandLineArgumentProvider {
+    override fun asArguments() = listOf("-javaagent:${agentClasspath.singleFile.absolutePath}")
+}
 
 plugins {
     alias(libs.plugins.android.application)
@@ -26,6 +36,8 @@ val posthogHost: String = project.findProperty("POSTHOG_HOST") as String? ?: Sys
 
 val metaAppId: String = project.findProperty("META_APP_ID") as String? ?: System.getenv("META_APP_ID") ?: ""
 val productSku: String = project.findProperty("PRODUCT_SKU") as String? ?: System.getenv("PRODUCT_SKU") ?: ""
+
+val testAgent by configurations.creating
 
 room {
     schemaDirectory("$projectDir/schemas")
@@ -406,6 +418,7 @@ dependencies {
     testImplementation(libs.zstd.jni)
     testImplementation(libs.orgJson)
     testImplementation(libs.mockwebserver)
+    testAgent(libs.byte.buddy.agent)
 
     // Add PostHog Android SDK dependency
     implementation("com.posthog:posthog-android:3.8.0")
@@ -417,4 +430,12 @@ dependencies {
 
     "modernXrImplementation"("com.meta.horizon.platform.sdk:core-kotlin:0.2.2")
     "modernXrImplementation"("com.meta.horizon.platform.sdk:iap-kotlin:0.2.2")
+}
+
+tasks.withType<Test>().configureEach {
+    // MockK and Mockito require instrumentation for final Android/Kotlin classes. Loading the
+    // agent explicitly also works on JVMs where dynamic self-attachment is disabled.
+    jvmArgumentProviders.add(JavaAgentArgumentProvider(testAgent))
+    maxHeapSize = "3g"
+    maxParallelForks = 1
 }

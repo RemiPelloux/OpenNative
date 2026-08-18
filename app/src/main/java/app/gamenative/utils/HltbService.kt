@@ -12,6 +12,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.Locale
 import timber.log.Timber
 
 private val NON_ALPHANUMERIC = Regex("[^\\p{L}\\p{N}]")
@@ -244,7 +245,8 @@ object HltbService {
         return distance <= distanceThreshold
     }
 
-    internal fun formatHours(seconds: Long) = if (seconds <= 0) UNKNOWN_HOURS else "%.1f".format(seconds / 3600.0)
+    internal fun formatHours(seconds: Long) =
+        if (seconds <= 0) UNKNOWN_HOURS else String.format(Locale.ROOT, "%.1f", seconds / 3600.0)
     internal fun normalize(input: String) = normalizedKey(input)
     internal fun levenshtein(left: String, right: String): Int {
         if (left == right) return 0

@@ -3,6 +3,7 @@ activityCompose = "1.10.0" # https://mvnrepository.com/artifact/androidx.activit
 agp = "8.8.0" # https://mvnrepository.com/artifact/com.android.application/com.android.application.gradle.plugin
 apache-compress = "1.28.0" # https://mvnrepository.com/artifact/org.apache.commons/commons-compress
 apng = "3.0.2" # https://mvnrepository.com/artifact/com.github.penfeizhou.android.animation/apng
+byteBuddy = "1.15.4"
 composeBom = "2025.01.01" # https://mvnrepository.com/artifact/androidx.compose/compose-bom
 coreKtx = "1.15.0" # https://mvnrepository.com/artifact/androidx.core/core-ktx
 coroutines = "1.10.2" # https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-core
@@ -102,6 +103,7 @@ androidx-runner = { group = "androidx.test", name = "runner", version.ref = "run
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+byte-buddy-agent = { group = "net.bytebuddy", name = "byte-buddy-agent", version.ref = "byteBuddy" }
 mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
 mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
