@@ -1,5 +1,7 @@
 package app.gamenative.ui.screen.library.components
 
+import app.gamenative.Constants
+
 import android.view.ViewGroup
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebView
@@ -209,7 +211,7 @@ private fun YouTubeHero(
                         }
                     }
                     loadDataWithBaseURL(
-                        "https://www.gamenative.app",
+                        Constants.Misc.GITHUB_LINK,
                         youTubeEmbedHtml(videoId),
                         "text/html",
                         "utf-8",

@@ -646,7 +646,6 @@
 
     <!-- Profile & Menu -->
     <string name="help_and_support">ヘルプ &amp; サポート</string>
-    <string name="hall_of_fame">殿堂</string>
     <string name="go_online">オンラインにする</string>
     <string name="go_offline">オフラインにする</string>
     <string name="log_out">ログアウト</string>
@@ -876,7 +875,6 @@
     <string name="select_wine_debug_channels">Wine デバッグ チャネルの選択</string>
     <string name="cpu_label">CPU%d</string>
     <string name="describe_what_happened">何が起こったのか説明してください</string>
-    <string name="get_support_on_discord">Discord でサポートを受ける</string>
 
     <!-- Driver Manager -->
     <string name="driver_manager">ドライバーマネージャー</string>
@@ -945,10 +943,6 @@
 
     <!-- Settings: Info Group -->
     <string name="settings_info_title">情報</string>
-    <string name="settings_info_send_tip_title">チップを送信する</string>
-    <string name="settings_info_send_tip_subtitle">継続的な開発に貢献する</string>
-    <string name="settings_info_ask_tip_title">起動時にヒントを求める</string>
-    <string name="settings_info_ask_tip_subtitle">ヒントメッセージの表示を停止します</string>
     <string name="settings_info_source_title">ソースコード</string>
     <string name="settings_info_source_subtitle">このプロジェクトのソースコードを表示する</string>
     <string name="settings_info_libraries_title">使用するライブラリ</string>
@@ -1122,14 +1116,7 @@
     <!-- PluviaMain: Crash & Support -->
     <string name="main_recent_crash_title">最近のクラッシュ</string>
     <string name="main_recent_crash_message">申し訳ありません!\n\' が抱えていた最近の問題について知っていただければ幸いです。\nアプリ\'s の設定で最新のクラッシュ ログを表示およびエクスポートし、プロジェクト ZESC4ZZs リポジトリの Github の問題として添付できます。\nGithub リポジトリへのリンクも設定にあります。</string>
-    <string name="main_thank_you_title">OpenNative をご利用いただきありがとうございます。</string>
-    <string name="main_thank_you_message">アプリを友達と共有するか、Ko-fi のメンバーになることで、Android でのオープンソース PC ゲームをサポートします。</string>
-    <string name="main_join_kofi">Ko-fi に参加する</string>
     <string name="main_share">共有</string>
-    <string name="main_share_text">OpenNative をチェックしてください - クラウド セーブを完全にサポートし、Android で PC Steam ゲームをプレイしましょう!\nhttps://gamenative.app\nコミュニティに参加してください: https://discord.gg/2hKv4VfZfE</string>
-    <string name="main_discord_support_title">ゲームはうまくいきましたか？</string>
-    <string name="main_discord_support_message">Discord に参加して、ゲームを修正したりパフォーマンスを向上させるためのサポートを受けてください。</string>
-    <string name="main_open_discord">Discordを開く</string>
 
     <!-- PluviaMain: Game Launch -->
     <string name="main_downloading_entry">%sをダウンロード中</string>
@@ -1197,15 +1184,6 @@
     <string name="libraries_message">Pluvia - github.com/oxters168/Pluvia\nJavaSteam - github.com/Longi94/JavaSteam\nWinlator &amp; Vortek - github.com/brunodev85/winlator\nWinlator Cmod - github.com/coffincolors/winlator\nWrapper - https://github.com/leegao/bionic-vulkan-wrapper &amp; https://github.com/pipetto-crypto/\nUbuntu RootFs - releases.ubuntu.com/focal</string>
 
     <!-- Supporters Dialog -->
-    <string name="supporters_art_credits">アートクレジット</string>
-    <string name="supporters_app_icon">アプリアイコン：ハチ</string>
-    <string name="supporters_alt_icon">代替アプリアイコン: rhapsody_mdr</string>
-    <string name="supporters_loading">サポーターを読み込み中…</string>
-    <string name="supporters_error">サポーターをロードできません</string>
-    <string name="supporters_members">メンバー</string>
-    <string name="supporters_supporters">サポーター</string>
-    <string name="supporters_none">まだサポーターはいません。</string>
-    <string name="supporters_anonymous">匿名</string>
 
     <!-- Chat Screen -->
     <string name="chat_preview_warning">チャットはまだ初期の機能です。\n問題があればプロジェクト リポジトリで報告してください。</string>
@@ -1559,14 +1537,12 @@
     <string name="game_launch_tip_7">ヒント: DirectX 12 ゲームをプレイするには Turnip ドライバーを使用してください。Turnip をサポートしていないデバイスに対する DirectX 12 のサポートは現在制限されています。</string>
     <string name="game_launch_tip_8">ヒント: コントロールが動作しない場合は、Steam Input を有効にし、アプリがプライベート スペースにインストールされていないことを確認してください。</string>
     <string name="game_launch_tip_9">ヒント: ゲームにファイルを追加するには、デバイスの Downloads フォルダーにファイルを置き、\"%s\" を押すと D: drive に表示されます。</string>
-    <string name="game_launch_tip_10">ヒント: ゲームが動作しない場合は、お使いの GPU または GPU ファミリー向けの設定を gamenative.app/compatibility からインポートしてください。</string>
     <string name="game_launch_tip_11">ヒント: ゲーム内で FPS 統計が必要な場合は、クイック メニュー パフォーマンス HUD を使用してください。</string>
     <string name="game_launch_tip_12">ヒント: ゲームに音声がない場合は、Proton 10 を使用して XAudio DLLs を自動的に展開してください。</string>
     <string name="game_launch_tip_13">ヒント: device\' の戻るキーを使用して、オンスクリーン コントローラーを有効または無効にできます。</string>
     <string name="game_launch_tip_14">ヒント: device\' の戻るキーを使用してキーボードを呼び出すことができます。</string>
     <string name="game_launch_tip_15">ヒント: コンテナ内を 2 本の指でタップして右クリックできます。</string>
     <string name="game_launch_tip_16">ヒント: オンスクリーン コントローラーを使用している場合は、マウスを無効にして誤ってタッチすることを防ぐことができます。</string>
-    <string name="game_launch_tip_17">ヒント: Discord で問題を報告してください。問題を解決できるようになります。</string>
     <string name="game_launch_tip_18">ヒント: 8 Elite デバイスをお使いの場合は、Turnip Gen8 V25/V30 または MrPurple T26 ドライバーを使用してください。</string>
     <string name="game_launch_tip_19">ヒント: 解像度を下げ、ゲーム内のクイック メニューから FSR を使用してパフォーマンスを向上させましょう。</string>
     <string name="game_launch_tip_20">ヒント: ゲームの読み込み後にアプリ全体がクラッシュする場合は、デバイスの RAM が不足しています。</string>

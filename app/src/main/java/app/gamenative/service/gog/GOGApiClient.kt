@@ -124,7 +124,7 @@ object GOGApiClient {
             val request = Request.Builder() // Returns an "owned" key with an array of ints.
                 .url(url)
                 .addHeader("Authorization", "Bearer ${credentials.accessToken}")
-                .addHeader("User-Agent", "GameNative/1.0")
+                .addHeader("User-Agent", "OpenNative/1.0")
                 .get()
                 .build()
 
@@ -208,7 +208,7 @@ object GOGApiClient {
             val request = Request.Builder()
                 .url(url)
                 .addHeader("Authorization", "Bearer ${credentials.accessToken}")
-                .addHeader("User-Agent", "GameNative/1.0")
+                .addHeader("User-Agent", "OpenNative/1.0")
                 .get()
                 .build()
 
@@ -259,7 +259,7 @@ object GOGApiClient {
             val url = "${GOGConstants.GOG_GAMESDB_URL}/platforms/gog/external_releases/$gameId"
             val request = Request.Builder()
                 .url(url)
-                .addHeader("User-Agent", "GameNative/1.0")
+                .addHeader("User-Agent", "OpenNative/1.0")
                 .get()
                 .build()
 

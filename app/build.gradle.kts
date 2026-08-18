@@ -185,8 +185,8 @@ android {
             signingConfig = signingConfigs.getByName("pluvia")
             applicationIdSuffix = ".gold"
             buildConfigField("boolean", "GOLD", "true")
-            val iconValue = "@mipmap/ic_launcher_gold"
-            val iconRoundValue = "@mipmap/ic_launcher_gold_round"
+            val iconValue = "@mipmap/ic_launcher"
+            val iconRoundValue = "@mipmap/ic_launcher_round"
             manifestPlaceholders.putAll(
                 mapOf(
                     "icon" to iconValue,

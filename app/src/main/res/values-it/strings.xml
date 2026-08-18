@@ -635,7 +635,6 @@
 
     <!-- Profile & Menu -->
     <string name="help_and_support">Aiuto &amp; Supporto</string>
-    <string name="hall_of_fame">Hall of Fame</string>
     <string name="go_online">Vai Online</string>
     <string name="go_offline">Vai Offline</string>
     <string name="log_out">Disconnetti</string>
@@ -898,7 +897,6 @@
     <string name="select_wine_debug_channels">Seleziona Canali Debug Wine</string>
     <string name="cpu_label">CPU%d</string>
     <string name="describe_what_happened">Descrivi cosa è successo</string>
-    <string name="get_support_on_discord">Ottieni supporto su Discord</string>
 
     <!-- Driver Manager -->
     <string name="driver_manager">Gestione Driver</string>
@@ -967,10 +965,6 @@
 
     <!-- Settings: Info Group -->
     <string name="settings_info_title">Info</string>
-    <string name="settings_info_send_tip_title">Invia mancia</string>
-    <string name="settings_info_send_tip_subtitle">Contribuisci allo sviluppo in corso</string>
-    <string name="settings_info_ask_tip_title">Chiedi mancia all\'avvio</string>
-    <string name="settings_info_ask_tip_subtitle">Impedisce la comparsa del messaggio mancia</string>
     <string name="settings_info_source_title">Codice sorgente</string>
     <string name="settings_info_source_subtitle">Visualizza il codice sorgente di questo progetto</string>
     <string name="settings_info_libraries_title">Librerie Usate</string>
@@ -1086,14 +1080,7 @@
     <!-- PluviaMain: Crash & Support -->
     <string name="main_recent_crash_title">Crash Recente</string>
     <string name="main_recent_crash_message">Ci dispiace!\nSarebbe utile conoscere il problema recente che hai avuto.\nPuoi visualizzare ed esportare il log del crash più recente nelle impostazioni dell\'app e allegarlo come issue GitHub nel repository del progetto.\nIl link al repository Github è anche nelle impostazioni!</string>
-    <string name="main_thank_you_title">Grazie per aver usato OpenNative!</string>
-    <string name="main_thank_you_message">Supporta il gaming PC open-source su Android condividendo l\'app con i tuoi amici o diventando membro su Ko-fi.</string>
-    <string name="main_join_kofi">Unisciti su Ko-fi</string>
     <string name="main_share">Condividi</string>
-    <string name="main_share_text">Scopri OpenNative - gioca ai tuoi giochi Steam PC su Android, con supporto completo per i salvataggi cloud!\nhttps://gamenative.app\nUnisciti alla community: https://discord.gg/2hKv4VfZfE</string>
-    <string name="main_discord_support_title">Il gioco ha funzionato?</string>
-    <string name="main_discord_support_message">Unisciti al Discord per ottenere supporto per correggere il tuo gioco o migliorare le prestazioni.</string>
-    <string name="main_open_discord">Apri Discord</string>
     <string name="main_downloading_entry">Download di %s in corso</string>
 
     <!-- PluviaMain: Game Launch -->
@@ -1156,15 +1143,6 @@
     <string name="libraries_message">Pluvia - github.com/oxters168/Pluvia\nJavaSteam - github.com/Longi94/JavaSteam\nWinlator &amp; Vortek - github.com/brunodev85/winlator\nWinlator Cmod - github.com/coffincolors/winlator\nWrapper - https://github.com/leegao/bionic-vulkan-wrapper &amp; https://github.com/pipetto-crypto/\nUbuntu RootFs - releases.ubuntu.com/focal</string>
 
     <!-- Supporters Dialog -->
-    <string name="supporters_art_credits">Crediti Artistici</string>
-    <string name="supporters_app_icon">Icona App: Hachi</string>
-    <string name="supporters_alt_icon">Icona App Alternativa: rhapsody_mdr</string>
-    <string name="supporters_loading">Caricamento sostenitori…</string>
-    <string name="supporters_error">Impossibile caricare i sostenitori</string>
-    <string name="supporters_members">Membri</string>
-    <string name="supporters_supporters">Sostenitori</string>
-    <string name="supporters_none">Nessun sostenitore ancora.</string>
-    <string name="supporters_anonymous">Anonimo</string>
 
     <!-- Chat Screen -->
     <string name="chat_preview_warning">La chat è ancora una funzione sperimentale.\nSegnala eventuali problemi nel repo del progetto.</string>
@@ -1541,14 +1519,12 @@
     <string name="game_launch_tip_7">Suggerimento: usa i driver Turnip per giocare a giochi DirectX 12. Il supporto DirectX 12 per i dispositivi che non supportano Turnip è attualmente limitato.</string>
     <string name="game_launch_tip_8">Suggerimento: se i controlli non funzionano, abilita Steam Input e verifica che la tua app non sia installata in uno spazio privato.</string>
     <string name="game_launch_tip_9">Suggerimento: per aggiungere file al gioco, mettili nella cartella Download del tuo dispositivo, premi \"%s\" e saranno nel D: drive.</string>
-    <string name="game_launch_tip_10">Suggerimento: importa una configurazione da gamenative.app/compatibility per la tua GPU o famiglia di GPU se non riesci a far funzionare il tuo gioco.</string>
     <string name="game_launch_tip_11">Suggerimento: usa l\'HUD delle prestazioni nel menu rapido quando vuoi le statistiche FPS in-game.</string>
     <string name="game_launch_tip_12">Suggerimento: se il tuo gioco non ha audio, usa Proton 10 per estrarre automaticamente le DLL XAudio.</string>
     <string name="game_launch_tip_13">Suggerimento: puoi attivare o disattivare il controller sullo schermo con il tasto indietro del tuo dispositivo.</string>
     <string name="game_launch_tip_14">Suggerimento: puoi richiamare la tastiera con il tasto indietro del tuo dispositivo.</string>
     <string name="game_launch_tip_15">Suggerimento: puoi toccare con due dita all\'interno del container per fare clic destro.</string>
     <string name="game_launch_tip_16">Suggerimento: se stai usando il controller sullo schermo, puoi disabilitare il mouse per evitare tocchi accidentali.</string>
-    <string name="game_launch_tip_17">Suggerimento: segnala i problemi su Discord in modo che possiamo risolverli.</string>
     <string name="game_launch_tip_18">Suggerimento: usa il driver Turnip Gen8 V25/V30 o MrPurple T26 se hai un dispositivo 8 Elite.</string>
     <string name="game_launch_tip_19">Suggerimento: abbassa la risoluzione e usa FSR dal menu rapido in-game per aumentare le prestazioni.</string>
     <string name="game_launch_tip_20">Suggerimento: se l\'intera app si blocca dopo aver caricato un gioco, il tuo dispositivo sta esaurendo la RAM.</string>

@@ -34,9 +34,8 @@ object Constants {
     }
 
     object Misc {
-        const val KO_FI_LINK = "https://ko-fi.com/gamenative"
         const val GITHUB_LINK = "https://github.com/RemiPelloux/OpenNative"
+        const val ISSUES_LINK = "$GITHUB_LINK/issues"
         const val PRIVACY_LINK = "https://github.com/RemiPelloux/OpenNative/tree/master/PrivacyPolicy"
-        const val UPDATE_CHECK_URL = "https://api.gamenative.app/api/update-check"
     }
 }

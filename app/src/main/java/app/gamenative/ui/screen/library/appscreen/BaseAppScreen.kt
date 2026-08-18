@@ -24,11 +24,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
-import app.gamenative.PluviaApp
+import app.gamenative.Constants
 import app.gamenative.R
 import app.gamenative.data.GameSource
 import app.gamenative.data.LibraryItem
-import app.gamenative.events.AndroidEvent
 import app.gamenative.mods.ModContainerResolver
 import app.gamenative.mods.NexusModManager
 import app.gamenative.ui.component.dialog.ContainerConfigDialog
@@ -725,23 +724,13 @@ abstract class BaseAppScreen {
     }
 
     @Composable
-    private fun getSubmitFeedbackOption(context: Context, libraryItem: LibraryItem): AppMenuOption {
-        return AppMenuOption(
-            optionType = AppOptionMenuType.SubmitFeedback,
-            onClick = {
-                PluviaApp.events.emit(AndroidEvent.ShowGameFeedback(libraryItem.appId))
-            },
-        )
-    }
-
-    @Composable
     private fun getGetSupportOption(context: Context): AppMenuOption {
         return AppMenuOption(
             optionType = AppOptionMenuType.GetSupport,
             onClick = {
                 val browserIntent = Intent(
                     Intent.ACTION_VIEW,
-                    ("https://discord.gg/2hKv4VfZfE").toUri(),
+                    Constants.Misc.ISSUES_LINK.toUri(),
                 )
                 context.startActivity(browserIntent)
             },
@@ -963,8 +952,7 @@ abstract class BaseAppScreen {
             getExportContainerOption(context, libraryItem, exportFrontendLauncher)?.let { menuOptions.add(it) }
         }
 
-        // Always available options
-        menuOptions.add(getSubmitFeedbackOption(context, libraryItem))
+        // Project support is handled through OpenNative's public issue tracker.
         menuOptions.add(getGetSupportOption(context))
 
         // Add any source-specific options

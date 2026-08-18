@@ -2,22 +2,15 @@ package app.gamenative.data
 
 import android.content.Context
 import app.gamenative.PrefManager
-import app.gamenative.utils.Net
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import timber.log.Timber
 
 object RecommendationRepository {
 
-    private const val API_URL = "https://api.gamenative.app/api/games/hero"
     private const val CACHE_TTL_MS = 24L * 60L * 60L * 1000L
-
-    private const val MOCK_HERO_RESPONSE = false
 
     internal val MOCK_HERO_JSON = """
         {
@@ -61,15 +54,7 @@ object RecommendationRepository {
      */
     suspend fun getHero(context: Context): HeroResponse =
         withContext(Dispatchers.IO) {
-            val fetched = if (MOCK_HERO_RESPONSE) parseHero(MOCK_HERO_JSON) else fetchRemote()
-            if (fetched != null) {
-                lastFeatured = fetched.featured
-                return@withContext HeroResponse(
-                    recommendation = stableRecommendation(fetched.recommendation),
-                    featured = fetched.featured,
-                )
-            }
-            // Offline: last stable recommendation (or bundled), no featured.
+            // OpenNative uses its bundled catalogue until it operates a first-party service.
             HeroResponse(
                 recommendation = loadCachedRecommendation() ?: loadBundledFallback(context),
                 featured = null,
@@ -84,26 +69,6 @@ object RecommendationRepository {
 
     fun getFeaturedGame(context: Context): RecommendedGame? =
         lastFeatured?.toRecommendedGame(context)
-
-    private fun fetchRemote(): HeroResponse? {
-        return try {
-            val mediaType = "application/json".toMediaType()
-            val body = "{}".toRequestBody(mediaType)
-            val request = Request.Builder()
-                .url(API_URL)
-                .post(body)
-                .header("Content-Type", "application/json")
-                .build()
-            Net.http.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return null
-                val responseBody = response.body?.string() ?: return null
-                parseHero(responseBody)
-            }
-        } catch (e: Exception) {
-            Timber.tag("RecommendationRepo").d(e, "Remote hero fetch failed, will try fallback")
-            null
-        }
-    }
 
     /**
      * Keeps the recommendation stable for a day: reuses the cached pick until it goes stale,

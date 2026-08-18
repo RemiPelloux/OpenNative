@@ -625,7 +625,6 @@
 
     <!-- Profile & Menu -->
     <string name="help_and_support">幫助 &amp; 支援</string>
-    <string name="hall_of_fame">名人堂</string>
     <string name="go_online">進入在線模式</string>
     <string name="go_offline">進入離線模式</string>
     <string name="log_out">登出</string>
@@ -893,7 +892,6 @@
     <string name="select_wine_debug_channels">選擇 Wine 偵錯通道</string>
     <string name="cpu_label">CPU%d</string>
     <string name="describe_what_happened">描述發生了什麼</string>
-    <string name="get_support_on_discord">在 Discord 上獲取支援</string>
 
     <!-- Driver Manager -->
     <string name="driver_manager">驅動程式管理</string>
@@ -962,10 +960,6 @@
 
     <!-- Settings: Info Group -->
     <string name="settings_info_title">資訊</string>
-    <string name="settings_info_send_tip_title">捐款支持</string>
-    <string name="settings_info_send_tip_subtitle">為持續的應用程式開發貢獻力量</string>
-    <string name="settings_info_ask_tip_title">啟動時顯示捐款訊息</string>
-    <string name="settings_info_ask_tip_subtitle">停止顯示捐款訊息</string>
     <string name="settings_info_source_title">原始碼</string>
     <string name="settings_info_source_subtitle">檢視此專案的原始碼</string>
     <string name="settings_info_libraries_title">使用的函式庫</string>
@@ -1076,14 +1070,7 @@
     <!-- PluviaMain: Crash & Support -->
     <string name="main_recent_crash_title">最近應用程式當機</string>
     <string name="main_recent_crash_message">若能了解您最近遇到的問題, 將有助於我們改善應用程式.\n您可在應用程式設定中檢視並匯出最近的崩潰日誌, 將其附加至專案原始碼儲存庫的 Github Issue中\nGithub 原始碼儲存庫的連結亦位於設定頁面內</string>
-    <string name="main_thank_you_title">感謝您使用OpenNative!</string>
-    <string name="main_thank_you_message">透過與朋友分享應用程式或在Ko-fi成為會員，支持Android平台的開源PC遊戲</string>
-    <string name="main_join_kofi">加入Ko-fi</string>
     <string name="main_share">分享</string>
-    <string name="main_share_text">試試 OpenNative - 在 Android 上暢玩您的 PC Steam 遊戲，完整支援雲端存檔！\nhttps://gamenative.app\n加入社群：https://discord.gg/2hKv4VfZfE</string>
-    <string name="main_discord_support_title">遊戲運作正常嗎?</string>
-    <string name="main_discord_support_message">加入 Discord 社群, 獲取遊戲修復與效能優化的支援</string>
-    <string name="main_open_discord">開啟 Discord</string>
 
     <!-- PluviaMain: Game Launch -->
     <string name="main_downloading_steam">正在下載 Steam...</string>
@@ -1145,15 +1132,6 @@
     <string name="libraries_message">Pluvia - github.com/oxters168/Pluvia\nJavaSteam - github.com/Longi94/JavaSteam\nWinlator &amp; Vortek - github.com/brunodev85/winlator\nWinlator Cmod - github.com/coffincolors/winlator\nWrapper - https://github.com/leegao/bionic-vulkan-wrapper &amp; https://github.com/pipetto-crypto/\nUbuntu RootFs - releases.ubuntu.com/focal</string>
 
     <!-- Supporters Dialog -->
-    <string name="supporters_art_credits">Art Credits</string>
-    <string name="supporters_app_icon">App Icon: Hachi</string>
-    <string name="supporters_alt_icon">Alternate App Icon: rhapsody_mdr</string>
-    <string name="supporters_loading">正在載入支持者…</string>
-    <string name="supporters_error">無法載入支持者</string>
-    <string name="supporters_members">會員</string>
-    <string name="supporters_supporters">Supporters</string>
-    <string name="supporters_none">No supporters yet.</string>
-    <string name="supporters_anonymous">Anonymous</string>
 
     <!-- Chat Screen -->
     <string name="chat_preview_warning">聊天功能仍處於早期階段, 請將任何問題回報至專案儲存庫</string>
@@ -1591,14 +1569,12 @@
     <string name="game_launch_tip_7">提示：使用 Turnip 驅動來執行 DirectX 12 遊戲。不支援 Turnip 的裝置對 DirectX 12 的支援目前有限。</string>
     <string name="game_launch_tip_8">提示：如果控制器無法運作，請啟用 Steam Input 並檢查你的應用程式沒有安裝到私人空間。</string>
     <string name="game_launch_tip_9">提示：若要將檔案加入遊戲，請將它們放在裝置的 Downloads 資料夾中，點擊「%s」，它們就會出現在 D: drive 中。</string>
-    <string name="game_launch_tip_10">提示：如果無法讓遊戲運作，請從 gamenative.app/compatibility 匯入適合你的 GPU 或 GPU 系列的設定。</string>
     <string name="game_launch_tip_11">提示：在遊戲中使用快速選單的效能 HUD 檢視 FPS 統計資訊。</string>
     <string name="game_launch_tip_12">提示：如果遊戲沒有聲音，請使用 Proton 10 來自動擷取 XAudio DLLs。</string>
     <string name="game_launch_tip_13">提示：你可以透過裝置的返回鍵啟用或停用螢幕手把。</string>
     <string name="game_launch_tip_14">提示：你可以透過裝置的返回鍵叫出鍵盤。</string>
     <string name="game_launch_tip_15">提示：在容器中用雙指點擊可以模擬滑鼠右鍵。</string>
     <string name="game_launch_tip_16">提示：使用螢幕手把時，可以停用滑鼠以防止誤觸。</string>
-    <string name="game_launch_tip_17">提示：在 Discord 上回報問題，以便我們修復。</string>
     <string name="game_launch_tip_18">提示：如果你使用的是 8 Elite 裝置，請使用 Turnip Gen8 V25/V30 或 MrPurple T26 驅動。</string>
     <string name="game_launch_tip_19">提示：在遊戲中降低解析度並從快速選單使用 FSR 可以提升效能。</string>
     <string name="game_launch_tip_20">提示：如果整個應用程式在載入遊戲後當機，表示你的裝置 RAM 不足。</string>

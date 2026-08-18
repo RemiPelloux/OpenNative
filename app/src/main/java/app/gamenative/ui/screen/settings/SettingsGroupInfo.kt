@@ -1,8 +1,5 @@
 package app.gamenative.ui.screen.settings
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MonetizationOn
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,35 +22,11 @@ import com.alorma.compose.settings.ui.SettingsSwitch
 fun SettingsGroupInfo() {
     SettingsGroup() {
         val uriHandler = LocalUriHandler.current
-        var askForTip by rememberSaveable { mutableStateOf(!PrefManager.tipped) }
         var showLibrariesDialog by rememberSaveable { mutableStateOf(false) }
 
         LibrariesDialog(
             visible = showLibrariesDialog,
             onDismissRequest = { showLibrariesDialog = false },
-        )
-
-        SettingsMenuLink(
-            colors = settingsTileColors(),
-            title = { Text(stringResource(R.string.settings_info_send_tip_title)) },
-            subtitle = { Text(text = stringResource(R.string.settings_info_send_tip_subtitle)) },
-            icon = { Icon(imageVector = Icons.Filled.MonetizationOn, contentDescription = "Tip") },
-            onClick = {
-                uriHandler.openUri(Constants.Misc.KO_FI_LINK)
-                askForTip = false
-                PrefManager.tipped = !askForTip
-            },
-        )
-
-        SettingsSwitch(
-            colors = settingsTileColorsAlt(),
-            state = askForTip,
-            title = { Text(stringResource(R.string.settings_info_ask_tip_title)) },
-            subtitle = { Text(text = stringResource(R.string.settings_info_ask_tip_subtitle)) },
-            onCheckedChange = {
-                askForTip = it
-                PrefManager.tipped = !askForTip
-            },
         )
 
         SettingsMenuLink(

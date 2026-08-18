@@ -630,7 +630,6 @@
 
     <!-- Profile & Menu -->
     <string name="help_and_support">Довідка та підтримка</string>
-    <string name="hall_of_fame">Зал слави</string>
     <string name="go_online">Увійти в мережу</string>
     <string name="go_offline">Вийти з мережі</string>
     <string name="log_out">Вийти з акаунта</string>
@@ -901,7 +900,6 @@
     <string name="select_wine_debug_channels">Обрати канали налагодження Wine</string>
     <string name="cpu_label">CPU%d</string>
     <string name="describe_what_happened">Опишіть, що сталось</string>
-    <string name="get_support_on_discord">Отримати допомогу в Discord</string>
 
     <!-- Driver Manager -->
     <string name="driver_manager">Менеджер драйверів</string>
@@ -970,10 +968,6 @@
 
     <!-- Settings: Info Group -->
     <string name="settings_info_title">Інформація</string>
-    <string name="settings_info_send_tip_title">Підтримати розробників</string>
-    <string name="settings_info_send_tip_subtitle">Сприяйте подальшому розвитку</string>
-    <string name="settings_info_ask_tip_title">Пропонувати підтримку розробників при запуску</string>
-    <string name="settings_info_ask_tip_subtitle">(ВИМК) Приховує повідомлення з пропозицією підтримки</string>
     <string name="settings_info_source_title">Вихідний код</string>
     <string name="settings_info_source_subtitle">Переглянути вихідний код застосунку</string>
     <string name="settings_info_libraries_title">Використані бібліотеки</string>
@@ -1089,14 +1083,7 @@
     <!-- PluviaMain: Crash & Support -->
     <string name="main_recent_crash_title">Нещодавній збій</string>
     <string name="main_recent_crash_message">Перепрошуємо!\nБуло б добре дізнатися про проблему, з якою Ви нещодавно зіткнулися.\nВи можете переглянути та експортувати останній журнал збою в налаштуваннях застосунку і додати його як проблему (issue) на GitHub у репозиторії проєкту.\nПосилання на репозиторій GitHub також знаходиться в налаштуваннях!</string>
-    <string name="main_thank_you_title">Дякуємо за користування OpenNative!</string>
-    <string name="main_thank_you_message">Підтримайте open-source ПК-ігри на Android, поділившись застосунком із друзями або ставши учасником на Ko-fi.</string>
-    <string name="main_join_kofi">Стати учасником на Ko-fi</string>
     <string name="main_share">Поділитися</string>
-    <string name="main_share_text">Спробуй OpenNative — грай у свої Steam-ігри з ПК на Android з повною підтримкою хмарних збережень!\nhttps://gamenative.app\nПриєднуйся до спільноти: https://discord.gg/2hKv4VfZfE</string>
-    <string name="main_discord_support_title">Чи працювала гра?</string>
-    <string name="main_discord_support_message">Долучайтесь до нашого Discord, щоб отримати підтримку у виправленні чи покращенні роботи ігор.</string>
-    <string name="main_open_discord">Відкрити Discord</string>
     <string name="main_downloading_entry">Завантаження %s</string>
 
     <!-- PluviaMain: Game Launch -->
@@ -1159,15 +1146,6 @@
     <string name="libraries_message">Pluvia - github.com/oxters168/Pluvia\nJavaSteam - github.com/Longi94/JavaSteam\nWinlator та Vortek - github.com/brunodev85/winlator\nWinlator Cmod - github.com/coffincolors/winlator\nWrapper - https://github.com/leegao/bionic-vulkan-wrapper та https://github.com/pipetto-crypto/\nUbuntu RootFs - releases.ubuntu.com/focal</string>
 
     <!-- Supporters Dialog -->
-    <string name="supporters_art_credits">Автори ілюстрацій</string>
-    <string name="supporters_app_icon">Іконка застосунку: Hachi</string>
-    <string name="supporters_alt_icon">Альтернативна іконка застосунку: rhapsody_mdr</string>
-    <string name="supporters_loading">Завантаження прихильників…</string>
-    <string name="supporters_error">Не вдалося завантажити прихильників</string>
-    <string name="supporters_members">Учасники</string>
-    <string name="supporters_supporters">Прихильники</string>
-    <string name="supporters_none">Прихильників поки немає.</string>
-    <string name="supporters_anonymous">Анонімно</string>
 
     <!-- Chat Screen -->
     <string name="chat_preview_warning">Чат знаходиться у ранньому доступі\nБудь ласка, повідомляйте про проблеми у репозиторії проєкту.</string>
@@ -1544,14 +1522,12 @@
     <string name="game_launch_tip_7">Порада: Використовуйте драйвери Turnip, щоб грати в ігри DirectX 12. Підтримка DirectX 12 для пристроїв, які не підтримують Turnip, наразі обмежена.</string>
     <string name="game_launch_tip_8">Порада: Якщо керування не працює, увімкніть Steam Input та перевірте, що ваш застосунок не встановлено у приватний простір.</string>
     <string name="game_launch_tip_9">Порада: Щоб додати файли до гри, помістіть їх у папку Downloads вашого пристрою, натисніть \"%s\" — і вони з\'являться на D: drive.</string>
-    <string name="game_launch_tip_10">Порада: Імпортуйте конфігурацію з gamenative.app/compatibility для вашого GPU або сімейства GPU, якщо не вдається запустити гру.</string>
     <string name="game_launch_tip_11">Порада: Використовуйте HUD продуктивності в швидкому меню, коли хочете бачити статистику FPS у грі.</string>
     <string name="game_launch_tip_12">Порада: Якщо у вашій грі немає звуку, використовуйте Proton 10 для автоматичного видобування XAudio DLLs.</string>
     <string name="game_launch_tip_13">Порада: Ви можете ввімкнути або вимкнути екранний контролер за допомогою кнопки «Назад» на вашому пристрої.</string>
     <string name="game_launch_tip_14">Порада: Ви можете викликати клавіатуру за допомогою кнопки «Назад» на вашому пристрої.</string>
     <string name="game_launch_tip_15">Порада: Ви можете натиснути двома пальцями всередині контейнера для клацання правою кнопкою миші.</string>
     <string name="game_launch_tip_16">Порада: Якщо ви використовуєте екранний контролер, ви можете вимкнути мишу, щоб запобігти випадковим дотикам.</string>
-    <string name="game_launch_tip_17">Порада: Повідомляйте про проблеми в Discord, щоб ми могли їх виправити.</string>
     <string name="game_launch_tip_18">Порада: Використовуйте драйвер Turnip Gen8 V25/V30 або MrPurple T26, якщо у вас пристрій 8 Elite.</string>
     <string name="game_launch_tip_19">Порада: Зменшіть роздільну здатність і використовуйте FSR зі швидкого меню в грі для підвищення продуктивності.</string>
     <string name="game_launch_tip_20">Порада: Якщо весь застосунок вилітає після завантаження гри, вашому пристрою бракує RAM.</string>

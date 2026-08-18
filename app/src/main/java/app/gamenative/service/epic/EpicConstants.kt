@@ -100,7 +100,7 @@ object EpicConstants {
     const val EPIC_LAUNCHER_API_URL = "https://launcher-public-service-prod06.ol.epicgames.com"
 
     // User Agent for API requests (Legendary CLI)
-    val EPIC_USER_AGENT = "Legendary/${getBuildVersion()} (GameNative)"
+    val EPIC_USER_AGENT = "Legendary/${getBuildVersion()} (OpenNative)"
 
     // Epic Games installation paths
 

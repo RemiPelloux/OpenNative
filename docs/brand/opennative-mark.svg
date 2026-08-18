@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">OpenNative monogram</title>
+  <desc id="desc">An ON monogram formed by two execution rails.</desc>
+  <rect width="512" height="512" rx="112" fill="#111418"/>
+  <path d="M202 151c-47 0-76 34-76 86v38c0 52 29 86 76 86s76-34 76-86v-38c0-52-29-86-76-86Z"
+        fill="none" stroke="#36C5F0" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M292 356V156l90 200V156"
+        fill="none" stroke="#F5F7F8" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="382" cy="132" r="24" fill="#3DDC84"/>
+</svg>

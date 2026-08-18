@@ -756,7 +756,6 @@
 
     <!-- Profile & Menu -->
     <string name="help_and_support">Help &amp; Support</string>
-    <string name="hall_of_fame">Hall of Fame</string>
     <string name="go_online">Go Online</string>
     <string name="go_offline">Go Offline</string>
     <string name="log_out">Log Out</string>
@@ -1008,7 +1007,6 @@
     <string name="select_wine_debug_channels">Select Wine Debug Channels</string>
     <string name="cpu_label">CPU%d</string>
     <string name="describe_what_happened">Describe what happened</string>
-    <string name="get_support_on_discord">Get support on Discord</string>
 
     <!-- Driver Manager -->
     <string name="driver_manager">Driver Manager</string>
@@ -1077,10 +1075,6 @@
 
     <!-- Settings: Info Group -->
     <string name="settings_info_title">Info</string>
-    <string name="settings_info_send_tip_title">Send tip</string>
-    <string name="settings_info_send_tip_subtitle">Contribute to ongoing development</string>
-    <string name="settings_info_ask_tip_title">Ask for tip on startup</string>
-    <string name="settings_info_ask_tip_subtitle">Stops the tip message from appearing</string>
     <string name="settings_info_source_title">Source code</string>
     <string name="settings_info_source_subtitle">View the source code of this project</string>
     <string name="settings_info_libraries_title">Libraries Used</string>
@@ -1253,14 +1247,7 @@
     <!-- PluviaMain: Crash & Support -->
     <string name="main_recent_crash_title">Recent Crash</string>
     <string name="main_recent_crash_message">Sorry about that!\nIt would be nice to know about the recent issue you\'ve had.\nYou can view and export the most recent crash log in the app\'s settings and attach it as a Github issue in the project\'s repository.\nLink to the Github repo is also in settings!</string>
-    <string name="main_thank_you_title">Thank you for using OpenNative!</string>
-    <string name="main_thank_you_message">Support open-source PC gaming on Android by sharing the app with your friends or becoming a member on Ko-fi.</string>
-    <string name="main_join_kofi">Join on Ko-fi</string>
     <string name="main_share">Share</string>
-    <string name="main_share_text">Check out OpenNative - play your PC Steam games on Android, with full support for cloud saves!\nhttps://gamenative.app\nJoin the community: https://discord.gg/2hKv4VfZfE</string>
-    <string name="main_discord_support_title">Did the game work?</string>
-    <string name="main_discord_support_message">Join the Discord to get support to fix your game or improve performance.</string>
-    <string name="main_open_discord">Open Discord</string>
 
     <!-- PluviaMain: Game Launch -->
     <string name="main_downloading_entry">Downloading %s</string>
@@ -1328,15 +1315,6 @@
     <string name="libraries_message">Pluvia - github.com/oxters168/Pluvia\nJavaSteam - github.com/Longi94/JavaSteam\nWinlator &amp; Vortek - github.com/brunodev85/winlator\nWinlator Cmod - github.com/coffincolors/winlator\nWrapper - https://github.com/leegao/bionic-vulkan-wrapper &amp; https://github.com/pipetto-crypto/\nUbuntu RootFs - releases.ubuntu.com/focal</string>
 
     <!-- Supporters Dialog -->
-    <string name="supporters_art_credits">Art Credits</string>
-    <string name="supporters_app_icon">App Icon: Hachi</string>
-    <string name="supporters_alt_icon">Alternate App Icon: rhapsody_mdr</string>
-    <string name="supporters_loading">Loading supporters…</string>
-    <string name="supporters_error">Unable to load supporters</string>
-    <string name="supporters_members">Members</string>
-    <string name="supporters_supporters">Supporters</string>
-    <string name="supporters_none">No supporters yet.</string>
-    <string name="supporters_anonymous">Anonymous</string>
 
     <!-- Chat Screen -->
     <string name="chat_preview_warning">Chatting is still an early feature.\nPlease report any issues in the project repo.</string>
@@ -2111,14 +2089,14 @@
     <string name="game_launch_tip_7">Tip: Use Turnip drivers to play DirectX 12 games. DirectX 12 support for devices that don\'t support Turnip is currently limited.</string>
     <string name="game_launch_tip_8">Tip: If controls don\'t work, enable Steam Input and check that your app isn\'t installed to a private space.</string>
     <string name="game_launch_tip_9">Tip: To add files to the game, place them in your device\'s Downloads folder, hit \"%s\" and they will be in D: drive.</string>
-    <string name="game_launch_tip_10">Tip: Import a config from gamenative.app/compatibility for your GPU or GPU family if you can\'t get your game working.</string>
+    <string name="game_launch_tip_10">Tip: Export a diagnostic bundle before reporting a game-specific issue.</string>
     <string name="game_launch_tip_11">Tip: Use the quick menu performance HUD when you want FPS stats in-game.</string>
     <string name="game_launch_tip_12">Tip: If your game has no audio, use Proton 10 to automatically extract XAudio DLLs.</string>
     <string name="game_launch_tip_13">Tip: You can enable or disable the onscreen controller with your device\'s back key.</string>
     <string name="game_launch_tip_14">Tip: You can bring up the keyboard with your device\'s back key.</string>
     <string name="game_launch_tip_15">Tip: You can tap with two fingers inside the container to right click.</string>
     <string name="game_launch_tip_16">Tip: If you are using the onscreen controller, you can disable the mouse to prevent accidental touches.</string>
-    <string name="game_launch_tip_17">Tip: Report issues on Discord so we can fix them.</string>
+    <string name="game_launch_tip_17">Tip: Report reproducible issues on the OpenNative issue tracker.</string>
     <string name="game_launch_tip_18">Tip: Use the Turnip Gen8 V25/V30 or MrPurple T26 driver if you are on an 8 Elite device.</string>
     <string name="game_launch_tip_19">Tip: Lower resolution and use FSR from the quick menu in-game to boost performance.</string>
     <string name="game_launch_tip_20">Tip: If the entire app is crashing after loading a game, your device is running out of RAM.</string>

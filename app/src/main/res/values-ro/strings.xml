@@ -636,7 +636,6 @@
 
     <!-- Profile & Menu -->
 	<string name="help_and_support">Ajutor &amp; Suport</string>
-	<string name="hall_of_fame">Hall of Fame</string>
 	<string name="go_online">Mergi online</string>
 	<string name="go_offline">Mergi offline</string>
 	<string name="log_out">Deconectare</string>
@@ -907,7 +906,6 @@
 	<string name="select_wine_debug_channels">Selectează canalele de debug Wine</string>
 	<string name="cpu_label">CPU%d</string>
 	<string name="describe_what_happened">Descrie ce s-a întâmplat</string>
-	<string name="get_support_on_discord">Obține suport pe Discord</string>
 
 	<!-- Driver Manager -->
 	<string name="driver_manager">Manager drivere</string>
@@ -976,10 +974,6 @@
 
 	<!-- Settings: Info Group -->
 	<string name="settings_info_title">Informații</string>
-	<string name="settings_info_send_tip_title">Trimite un tip</string>
-	<string name="settings_info_send_tip_subtitle">Contribuie la dezvoltarea continuă</string>
-	<string name="settings_info_ask_tip_title">Cere tip la pornire</string>
-	<string name="settings_info_ask_tip_subtitle">Oprește afișarea mesajului de tip</string>
 	<string name="settings_info_source_title">Cod sursă</string>
 	<string name="settings_info_source_subtitle">Vezi codul sursă al acestui proiect</string>
 	<string name="settings_info_libraries_title">Biblioteci utilizate</string>
@@ -1095,14 +1089,7 @@
 	<!-- PluviaMain: Crash & Support -->
 	<string name="main_recent_crash_title">Crash recent</string>
 	<string name="main_recent_crash_message">Ne pare rău!\nAr fi util să știm ce problemă ai întâmpinat.\nPoți vizualiza și exporta cel mai recent crash log din setările aplicației și îl poți atașa ca issue pe Github în repository-ul proiectului.\nLinkul către repo este tot în setări!</string>
-	<string name="main_thank_you_title">Mulțumim că folosești OpenNative!</string>
-	<string name="main_thank_you_message">Susține gaming-ul open‑source pe Android distribuind aplicația prietenilor sau devenind membru pe Ko‑fi.</string>
-	<string name="main_join_kofi">Alătură-te pe Ko‑fi</string>
 	<string name="main_share">Distribuie</string>
-	<string name="main_share_text">Descoperă OpenNative - joacă jocurile tale Steam pe PC pe Android, cu suport complet pentru salvări în cloud!\nhttps://gamenative.app\nAlătură-te comunității: https://discord.gg/2hKv4VfZfE</string>
-	<string name="main_discord_support_title">A funcționat jocul?</string>
-	<string name="main_discord_support_message">Alătură-te serverului de Discord pentru suport și optimizare.</string>
-	<string name="main_open_discord">Deschide Discord</string>
 	<string name="main_downloading_entry">Se descarcă %s</string>
 
 	<!-- PluviaMain: Game Launch -->
@@ -1165,15 +1152,6 @@
 	<string name="libraries_message">Pluvia - github.com/oxters168/Pluvia\nJavaSteam - github.com/Longi94/JavaSteam\nWinlator &amp; Vortek - github.com/brunodev85/winlator\nWinlator Cmod - github.com/coffincolors/winlator\nWrapper - https://github.com/leegao/bionic-vulkan-wrapper &amp; https://github.com/pipetto-crypto/\nUbuntu RootFs - releases.ubuntu.com/focal</string>
 
 	<!-- Supporters Dialog -->
-	<string name="supporters_art_credits">Credite artă</string>
-	<string name="supporters_app_icon">Icon aplicație: Hachi</string>
-	<string name="supporters_alt_icon">Icon alternativ: rhapsody_mdr</string>
-	<string name="supporters_loading">Se încarcă susținătorii…</string>
-	<string name="supporters_error">Nu s-au putut încărca susținătorii</string>
-	<string name="supporters_members">Membri</string>
-	<string name="supporters_supporters">Susținători</string>
-	<string name="supporters_none">Niciun susținător încă.</string>
-	<string name="supporters_anonymous">Anonim</string>
 
 	<!-- Chat Screen -->
 	<string name="chat_preview_warning">Funcția de chat este încă într-un stadiu incipient.\nTe rugăm să raportezi orice problemă în repo-ul proiectului.</string>
@@ -1551,14 +1529,12 @@
 	<string name="game_launch_tip_7">Sfat: Utilizați driverele Turnip pentru a juca jocuri DirectX 12. Suportul DirectX 12 pentru dispozitivele care nu acceptă Turnip este în prezent limitat.</string>
 	<string name="game_launch_tip_8">Sfat: Dacă controalele nu funcționează, activați Steam Input și verificați că aplicația dvs. nu este instalată într-un spațiu privat.</string>
 	<string name="game_launch_tip_9">Sfat: Pentru a adăuga fișiere în joc, plasați-le în folderul Downloads al dispozitivului, apăsați \"%s\" și vor fi în D: drive.</string>
-	<string name="game_launch_tip_10">Sfat: Importați o configurație de pe gamenative.app/compatibility pentru GPU-ul dvs. sau familia de GPU dacă nu reușiți să porniți jocul.</string>
 	<string name="game_launch_tip_11">Sfat: Utilizați HUD-ul de performanță din meniul rapid când doriți statistici FPS în joc.</string>
 	<string name="game_launch_tip_12">Sfat: Dacă jocul dvs. nu are sunet, utilizați Proton 10 pentru a extrage automat XAudio DLLs.</string>
 	<string name="game_launch_tip_13">Sfat: Puteți activa sau dezactiva controllerul pe ecran cu tasta de revenire a dispozitivului dvs.</string>
 	<string name="game_launch_tip_14">Sfat: Puteți afișa tastatura cu tasta de revenire a dispozitivului dvs.</string>
 	<string name="game_launch_tip_15">Sfat: Puteți atinge cu două degete în interiorul containerului pentru a face clic dreapta.</string>
 	<string name="game_launch_tip_16">Sfat: Dacă utilizați controllerul pe ecran, puteți dezactiva mouse-ul pentru a preveni atingerile accidentale.</string>
-	<string name="game_launch_tip_17">Sfat: Raportați problemele pe Discord pentru a le putea remedia.</string>
 	<string name="game_launch_tip_18">Sfat: Utilizați driverul Turnip Gen8 V25/V30 sau MrPurple T26 dacă aveți un dispozitiv 8 Elite.</string>
 	<string name="game_launch_tip_19">Sfat: Reduceți rezoluția și utilizați FSR din meniul rapid în joc pentru a crește performanța.</string>
 	<string name="game_launch_tip_20">Sfat: Dacă întreaga aplicație se blochează după încărcarea unui joc, dispozitivul dvs. rămâne fără RAM.</string>

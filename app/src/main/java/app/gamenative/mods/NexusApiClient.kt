@@ -461,9 +461,9 @@ class NexusApiClient(
         Request.Builder()
             .url(url)
             .addHeader("Accept", "application/json")
-            .addHeader("Application-Name", "GameNative")
+            .addHeader("Application-Name", "OpenNative")
             .addHeader("Application-Version", BuildConfig.VERSION_NAME)
-            .addHeader("User-Agent", "GameNative/${BuildConfig.VERSION_NAME}")
+            .addHeader("User-Agent", "OpenNative/${BuildConfig.VERSION_NAME}")
 
     private fun execute(request: Request, displayPath: String): String {
         client.newCall(request).execute().use { response ->

@@ -642,7 +642,6 @@
 
     <!-- Profile & Menu -->
     <string name="help_and_support">도움말 &amp; 지원</string>
-    <string name="hall_of_fame">명예의 전당</string>
     <string name="go_online">온라인으로 전환</string>
     <string name="go_offline">오프라인으로 전환</string>
     <string name="log_out">로그아웃</string>
@@ -907,7 +906,6 @@
     <string name="select_wine_debug_channels">Wine 디버그 채널 선택</string>
     <string name="cpu_label">CPU%d</string>
     <string name="describe_what_happened">무슨 일이 있었는지 설명해 주세요</string>
-    <string name="get_support_on_discord">Discord에서 지원 받기</string>
 
     <!-- Driver Manager -->
     <string name="driver_manager">드라이버 관리자</string>
@@ -974,10 +972,6 @@
 
     <!-- Settings: Info Group -->
     <string name="settings_info_title">정보</string>
-    <string name="settings_info_send_tip_title">팁 보내기</string>
-    <string name="settings_info_send_tip_subtitle">지속적인 개발에 기여</string>
-    <string name="settings_info_ask_tip_title">시작 시 팁 요청</string>
-    <string name="settings_info_ask_tip_subtitle">시작 시 팁 메시지가 나타나지 않도록 중지</string>
     <string name="settings_info_source_title">소스 코드</string>
     <string name="settings_info_source_subtitle">이 프로젝트의 소스 코드 보기</string>
     <string name="settings_info_libraries_title">사용된 라이브러리</string>
@@ -1091,14 +1085,7 @@
     <!-- PluviaMain: Crash & Support -->
     <string name="main_recent_crash_title">최근 충돌</string>
     <string name="main_recent_crash_message">죄송합니다!\n최근 발생한 문제에 대해 알려주시면 감사하겠습니다.\n앱 설정에서 가장 최근의 충돌 로그를 보고 내보낼 수 있으며 프로젝트 저장소에 Github 이슈로 첨부할 수 있습니다.\nGithub 저장소 링크도 설정에 있습니다!</string>
-    <string name="main_thank_you_title">OpenNative를 사용해 주셔서 감사합니다!</string>
-    <string name="main_thank_you_message">친구들과 앱을 공유하거나 Ko-fi에서 회원이 되어 Android에서 오픈 소스 PC 게임을 지원하세요.</string>
-    <string name="main_join_kofi">Ko-fi에서 참여</string>
     <string name="main_share">공유</string>
-    <string name="main_share_text">OpenNative를 확인하세요 - 클라우드 저장을 완전히 지원하며 Android에서 PC Steam 게임을 플레이하세요!\nhttps://gamenative.app\n커뮤니티 참여: https://discord.gg/2hKv4VfZfE</string>
-    <string name="main_discord_support_title">게임이 작동했나요?</string>
-    <string name="main_discord_support_message">Discord에 참여하여 게임 수정 또는 성능 향상에 대한 지원을 받으세요.</string>
-    <string name="main_open_discord">Discord 열기</string>
 
     <!-- PluviaMain: Game Launch -->
     <string name="main_downloading_steam">Steam 다운로드 중...</string>
@@ -1160,15 +1147,6 @@
     <string name="libraries_message">Pluvia - github.com/oxters168/Pluvia\nJavaSteam - github.com/Longi94/JavaSteam\nWinlator &amp; Vortek - github.com/brunodev85/winlator\nWinlator Cmod - github.com/coffincolors/winlator\nWrapper - https://github.com/leegao/bionic-vulkan-wrapper &amp; https://github.com/pipetto-crypto/\nUbuntu RootFs - releases.ubuntu.com/focal</string>
 
     <!-- Supporters Dialog -->
-    <string name="supporters_art_credits">아트 크레딧</string>
-    <string name="supporters_app_icon">앱 아이콘: Hachi</string>
-    <string name="supporters_alt_icon">대체 앱 아이콘: rhapsody_mdr</string>
-    <string name="supporters_loading">후원자 로딩 중…</string>
-    <string name="supporters_error">후원자를 불러올 수 없음</string>
-    <string name="supporters_members">회원</string>
-    <string name="supporters_supporters">후원자</string>
-    <string name="supporters_none">아직 후원자가 없습니다.</string>
-    <string name="supporters_anonymous">익명</string>
 
     <!-- Chat Screen -->
     <string name="chat_preview_warning">채팅은 아직 초기 기능입니다.\n문제가 발생하면 프로젝트 저장소에 보고해 주세요.</string>
@@ -1514,14 +1492,12 @@
     <string name="game_launch_tip_7">팁: DirectX 12 게임을 플레이하려면 Turnip 드라이버를 사용하세요. Turnip을 지원하지 않는 기기의 DirectX 12 지원은 현재 제한적입니다.</string>
     <string name="game_launch_tip_8">팁: 컨트롤이 작동하지 않으면 Steam Input을 활성화하고 앱이 비공개 공간에 설치되지 않았는지 확인하세요.</string>
     <string name="game_launch_tip_9">팁: 게임에 파일을 추가하려면 기기의 Downloads 폴더에 넣고 \"%s\"를 누르세요. 그러면 파일이 D: drive에 표시됩니다.</string>
-    <string name="game_launch_tip_10">팁: 게임이 작동하지 않으면 사용 중인 GPU 또는 GPU 계열에 맞는 구성을 gamenative.app/compatibility에서 가져오세요.</string>
     <string name="game_launch_tip_11">팁: 게임 내에서 FPS 통계를 보려면 빠른 메뉴의 성능 HUD를 사용하세요.</string>
     <string name="game_launch_tip_12">팁: 게임에 소리가 없으면 Proton 10을 사용하여 XAudio DLLs를 자동으로 추출하세요.</string>
     <string name="game_launch_tip_13">팁: 기기의 뒤로 가기 키로 화면 컨트롤러를 켜거나 끌 수 있습니다.</string>
     <string name="game_launch_tip_14">팁: 기기의 뒤로 가기 키로 키보드를 불러올 수 있습니다.</string>
     <string name="game_launch_tip_15">팁: 컨테이너 내부에서 두 손가락으로 탭하여 마우스 오른쪽 버튼을 클릭할 수 있습니다.</string>
     <string name="game_launch_tip_16">팁: 화면 컨트롤러를 사용하는 경우 마우스를 비활성화하여 실수로 터치하는 것을 방지할 수 있습니다.</string>
-    <string name="game_launch_tip_17">팁: Discord에 문제를 보고해 주시면 수정하겠습니다.</string>
     <string name="game_launch_tip_18">팁: 8 Elite 기기를 사용하는 경우 Turnip Gen8 V25/V30 또는 MrPurple T26 드라이버를 사용하세요.</string>
     <string name="game_launch_tip_19">팁: 게임 내 빠른 메뉴에서 해상도를 낮추고 FSR을 사용하여 성능을 높이세요.</string>
     <string name="game_launch_tip_20">팁: 게임을 로드한 후 앱 전체가 충돌하는 경우 기기의 RAM이 부족한 것입니다.</string>

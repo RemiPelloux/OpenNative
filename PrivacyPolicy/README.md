@@ -1,93 +1,31 @@
-# OpenNative Privacy Notes
-<sub>Last Updated: July 12, 2026</sub>
+# OpenNative Privacy Policy
 
-OpenNative is an independent GameNative fork and does not currently operate
-its own cloud service. The repository does not contain a PostHog API key, so
-official OpenNative builds do not initialize that optional analytics client.
-Inherited store, compatibility, recommendation and component-download
-features can still contact their respective store providers or
-GameNative-operated endpoints when used. The upstream policy preserved below
-describes those inherited behaviors; OpenNative does not speak for or control
-the upstream service operator.
+Last updated: August 18, 2026
 
-OpenNative adds local performance metrics, a dual-screen cockpit and portable
-container profiles. These remain on the device unless the user explicitly
-exports and shares them. Portable exports exclude device-local drive paths.
+OpenNative is an independent open-source Android application. It does not operate an account service, advertising network or gameplay telemetry backend.
 
-## Inherited GameNative policy
+## Data stored on the device
 
-GameNative is an unofficial client application that lets you access your libraries from supported PC game stores and play your owned games on your device.
+Store credentials, session tokens, container settings, saves, logs, shader caches and performance captures are stored locally in OpenNative's application storage or in folders explicitly selected by the user. OpenNative does not upload diagnostic bundles automatically. An export leaves the device only when the user shares it.
 
-## Data Collection and Usage
+## Online services
 
-**Local Storage Only**
-Sensitive data — including your login credentials and session information for the game stores you sign into (such as Steam, Epic Games, GOG, and Amazon) — is stored locally on your device. We do not collect, transmit, or store this personal information on our own servers.
+OpenNative contacts a game store only when the user signs in to or uses that store integration. Steam, Epic Games, GOG, Amazon and Nexus Mods process those requests under their own policies.
 
-**Game Store Integrations**
-When you sign into a supported store (Steam, Epic Games, GOG, or Amazon), your device communicates directly with that store's servers to authenticate your account and access your game library. Any data those stores collect, store, or process is governed by their own privacy policies and terms of service.
+OpenNative does not send gameplay feedback, compatibility reports, device statistics or recommendation requests to GameNative APIs. The application currently downloads some Wine, graphics-driver and translation components from an inherited binary host. These requests reveal ordinary network metadata such as the requesting IP address to that host, but do not include store credentials, saves or game files. This dependency is tracked in [the independence document](../docs/INDEPENDENCE.md).
 
-**Anonymous Usage Metadata**
-GameNative collects limited, non-personal technical metadata to improve compatibility and performance. This may include:
+## Local diagnostics
 
-- Game launch and close events
-- Selected configuration settings
-- Hardware category information such as GPU family or driver type
-- Performance indicators such as FPS ranges or crash flags
+Performance metrics and crash logs are generated locally. Diagnostic exports are designed to redact credentials and local paths, but users should review every file before publishing it. Never share store tokens, game files, saves, firmware or signing keys.
 
-This data:
+## Data deletion
 
-- Does not include your name, email, store credentials, IP address, or any direct identifiers
-- Cannot be used to identify you personally
-- Is used only to improve game compatibility, recommend working settings, and prioritize development fixes
+Users can remove local data by signing out, deleting individual containers, clearing the application's Android storage or uninstalling OpenNative. OpenNative has no first-party server account to delete.
 
-GameNative does not build user profiles, track browsing activity, or sell data to third parties.
+## Changes and contact
 
-## Game Recommendations
+Policy changes are published in this repository. Questions and deletion concerns can be filed through [OpenNative Issues](https://github.com/RemiPelloux/OpenNative/issues) without including private data.
 
-GameNative can suggest games you might like from GOG.com, based on the games you already play. **We do not send any of your game or account information to GOG unless you explicitly opt in by accepting an in-app consent prompt.** Until you consent, nothing about the games you play is shared with GOG. You can turn the feature off again at any time in **Settings → Interface → Show game recommendations**.
+## Historical attribution
 
-Once you have opted in:
-
-- The app looks at which games you play most and most recently on your device, and shares the corresponding game identifiers with GOG's recommendation service to generate suggestions.
-- If you are signed into GOG, your GOG account identifier is included, so recommendations can be tailored and games you already own can be excluded.
-- These identifiers are sent directly to GOG's recommendation, catalog, and games-database services. GOG's handling of them is governed by GOG's own privacy policy.
-
-Recommended games link to GOG's store through an affiliate program (Commission Junction). If you follow one of these links, the affiliate network may record the click for attribution, and GameNative may earn a commission on any resulting purchase. This does not change the price you pay.
-
-Turning recommendations off stops all of the above: no game or account information is sent to GOG for recommendations, and the recommendations section is hidden.
-
-## Third-Party Services
-
-GameNative functions as an interface to the game stores you choose to use (Steam, Epic Games, GOG, and Amazon). We have no control over or responsibility for how those platforms collect, use, or store your information. Please refer to each platform's privacy policy to understand how they handle your data.
-
-## Meta Horizon (Quest) Store Version
-
-**This section applies only to the version of GameNative distributed through the Meta Horizon Store. The free, open-source build distributed via GitHub does not collect or use any of the data described in this section.**
-
-On the Meta Horizon Store version, the app reads your Meta account ID and your subscription/entitlement status in order to confirm your access and unlock the app on that platform. This information is used only for that verification. It is processed on your device and through Meta's In-App Purchases platform, and Meta's handling of it is governed by Meta's privacy policy. We do not store it on our own servers, and we do not share or sell it.
-
-## Data Security
-
-Your login credentials and session data are stored securely on your device using your platform's standard security protocols. This data is only used to facilitate communication between your device and the game stores' servers.
-
-## Your Rights and Data Deletion
-
-You can clear all locally stored data at any time by:
-
-- Logging out of the app
-- Clearing app data through your device settings
-- Uninstalling the application
-
-We do not retain your personal information on our own servers. If you believe we hold any data associated with you — for example, support correspondence — you can request its deletion by emailing support[at]gamenative[dot]app, and we will action verified requests.
-
-## Changes to Privacy Policy
-
-We reserve the right to update this privacy policy at any time. Any changes will be effective immediately upon posting the updated policy.
-
-## Contact Information
-
-For questions about this privacy policy or GameNative's privacy practices, please contact us at support[at]gamenative[dot]app.
-
-## Age Requirements
-
-Users must be at least 13 years old to use GameNative, in accordance with the supported stores' own age requirements.
+OpenNative derives from GameNative source code. That attribution is preserved for licensing and history; GameNative does not operate OpenNative or this policy.

@@ -164,21 +164,3 @@ jobs:
           echo "$text"
           echo "$delim"
         } >>"$GITHUB_OUTPUT"
-
-    - name: Post to Discord
-      env:
-        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        # Read via env to avoid shell-quoting traps with multiline changelogs.
-        CHANGELOG: ${{ steps.changelog.outputs.log }}
-        LEGACY_URL: https://nightly.link/utkarshdalal/GameNative/actions/runs/${{ github.run_id }}/app-release-signed.zip
-        MODERN_URL: https://nightly.link/utkarshdalal/GameNative/actions/runs/${{ github.run_id }}/app-release-signed-modern.zip
-        LEGACY_XR_URL: https://nightly.link/utkarshdalal/GameNative/actions/runs/${{ github.run_id }}/app-release-signed-legacy-xr.zip
-      run: |
-        # jq -n handles JSON escaping (newlines, quotes, etc.) for us.
-        payload=$(jq -n \
-          --arg legacy "$LEGACY_URL" \
-          --arg modern "$MODERN_URL" \
-          --arg legacyXr "$LEGACY_XR_URL" \
-          --arg changes "$CHANGELOG" \
-          '{content: "**New Android build**\nRegular Build (Recommended): \($legacy)\nModern Build (Play Store, features stripped): \($modern)\nXR Build (for Quest): \($legacyXr)\n\nChanges:\n\($changes)"}')
-        curl -H 'Content-Type: application/json' -d "$payload" "$DISCORD_WEBHOOK_URL"

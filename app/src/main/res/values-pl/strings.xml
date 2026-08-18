@@ -644,7 +644,6 @@
 
     <!-- Profile & Menu -->
     <string name="help_and_support">Pomoc i wsparcie</string>
-    <string name="hall_of_fame">Aleja Sław</string>
     <string name="go_online">Przejdź online</string>
     <string name="go_offline">Przejdź offline</string>
     <string name="log_out">Wyloguj</string>
@@ -915,7 +914,6 @@
     <string name="select_wine_debug_channels">Wybierz kanały debugowania Wine</string>
     <string name="cpu_label">CPU%d</string>
     <string name="describe_what_happened">Opisz co się stało</string>
-    <string name="get_support_on_discord">Uzyskaj pomoc na Discordzie</string>
 
     <!-- Driver Manager -->
     <string name="driver_manager">Menedżer sterowników</string>
@@ -984,10 +982,6 @@
 
     <!-- Settings: Info Group -->
     <string name="settings_info_title">Informacje</string>
-    <string name="settings_info_send_tip_title">Wyślij napiwek</string>
-    <string name="settings_info_send_tip_subtitle">Wesprzyj ciągły rozwój</string>
-    <string name="settings_info_ask_tip_title">Pytaj o napiwek przy uruchomieniu</string>
-    <string name="settings_info_ask_tip_subtitle">Zatrzymuje wyświetlanie wiadomości o napiwku</string>
     <string name="settings_info_source_title">Kod źródłowy</string>
     <string name="settings_info_source_subtitle">Zobacz kod źródłowy tego projektu</string>
     <string name="settings_info_libraries_title">Użyte biblioteki</string>
@@ -1103,14 +1097,7 @@
     <!-- PluviaMain: Crash & Support -->
     <string name="main_recent_crash_title">Ostatnia awaria</string>
     <string name="main_recent_crash_message">Przykro nam!\nDobrze byłoby wiedzieć o ostatnim problemie, który wystąpił.\nMożesz zobaczyć i wyeksportować log ostatniej awarii w ustawieniach aplikacji i dołączyć go jako zgłoszenie w repozytorium projektu na Githubie.\nLink do repozytorium Github znajduje się również w ustawieniach!</string>
-    <string name="main_thank_you_title">Dziękujemy za korzystanie z OpenNative!</string>
-    <string name="main_thank_you_message">Wspieraj otwarty gaming na PC na Androidzie, udostępniając aplikację znajomym lub zostając członkiem na Ko-fi.</string>
-    <string name="main_join_kofi">Dołącz na Ko-fi</string>
     <string name="main_share">Udostępnij</string>
-    <string name="main_share_text">Sprawdź OpenNative - graj w gry Steam z PC na Androidzie, z pełnym wsparciem zapisów w chmurze!\nhttps://gamenative.app\nDołącz do społeczności: https://discord.gg/2hKv4VfZfE</string>
-    <string name="main_discord_support_title">Czy gra zadziałała?</string>
-    <string name="main_discord_support_message">Dołącz do Discorda, aby uzyskać pomoc w naprawie gry lub poprawie wydajności.</string>
-    <string name="main_open_discord">Otwórz Discord</string>
     <string name="main_downloading_entry">Pobieranie %s</string>
 
     <!-- PluviaMain: Game Launch -->
@@ -1173,15 +1160,6 @@
     <string name="libraries_message">Pluvia - github.com/oxters168/Pluvia\nJavaSteam - github.com/Longi94/JavaSteam\nWinlator &amp; Vortek - github.com/brunodev85/winlator\nWinlator Cmod - github.com/coffincolors/winlator\nWrapper - https://github.com/leegao/bionic-vulkan-wrapper &amp; https://github.com/pipetto-crypto/\nUbuntu RootFs - releases.ubuntu.com/focal</string>
 
     <!-- Supporters Dialog -->
-    <string name="supporters_art_credits">Twórcy grafiki</string>
-    <string name="supporters_app_icon">Ikona aplikacji: Hachi</string>
-    <string name="supporters_alt_icon">Alternatywna ikona: rhapsody_mdr</string>
-    <string name="supporters_loading">Ładowanie wspierających…</string>
-    <string name="supporters_error">Nie można załadować wspierających</string>
-    <string name="supporters_members">Członkowie</string>
-    <string name="supporters_supporters">Wspierający</string>
-    <string name="supporters_none">Brak wspierających.</string>
-    <string name="supporters_anonymous">Anonimowy</string>
 
     <!-- Chat Screen -->
     <string name="chat_preview_warning">Czat jest w wczesnej fazie rozwoju.\nZgłoś wszelkie problemy w repozytorium projektu.</string>
@@ -1548,14 +1526,12 @@
     <string name="game_launch_tip_7">Wskazówka: Używaj sterowników Turnip, aby grać w gry DirectX 12. Obsługa DirectX 12 dla urządzeń, które nie obsługują Turnip, jest obecnie ograniczona.</string>
     <string name="game_launch_tip_8">Wskazówka: Jeśli sterowanie nie działa, włącz Steam Input i sprawdź, czy Twoja aplikacja nie jest zainstalowana w przestrzeni prywatnej.</string>
     <string name="game_launch_tip_9">Wskazówka: Aby dodać pliki do gry, umieść je w folderze Downloads na swoim urządzeniu, naciśnij \"%s\", a znajdą się na dysku D: drive.</string>
-    <string name="game_launch_tip_10">Wskazówka: Zaimportuj konfigurację z gamenative.app/compatibility dla swojego GPU lub rodziny GPU, jeśli nie możesz uruchomić swojej gry.</string>
     <string name="game_launch_tip_11">Wskazówka: Użyj HUD-a wydajności w szybkim menu, gdy chcesz zobaczyć statystyki FPS w grze.</string>
     <string name="game_launch_tip_12">Wskazówka: Jeśli Twoja gra nie ma dźwięku, użyj Proton 10, aby automatycznie wyodrębnić biblioteki DLL XAudio.</string>
     <string name="game_launch_tip_13">Wskazówka: Możesz włączyć lub wyłączyć kontroler ekranowy za pomocą przycisku wstecz na urządzeniu.</string>
     <string name="game_launch_tip_14">Wskazówka: Możesz wywołać klawiaturę za pomocą przycisku wstecz na urządzeniu.</string>
     <string name="game_launch_tip_15">Wskazówka: Możesz dotknąć dwoma palcami wewnątrz kontenera, aby kliknąć prawym przyciskiem myszy.</string>
     <string name="game_launch_tip_16">Wskazówka: Jeśli używasz kontrolera ekranowego, możesz wyłączyć mysz, aby zapobiec przypadkowym dotknięciom.</string>
-    <string name="game_launch_tip_17">Wskazówka: Zgłaszaj problemy na Discordzie, abyśmy mogli je naprawić.</string>
     <string name="game_launch_tip_18">Wskazówka: Użyj sterownika Turnip Gen8 V25/V30 lub MrPurple T26, jeśli masz urządzenie 8 Elite.</string>
     <string name="game_launch_tip_19">Wskazówka: Obniż rozdzielczość i użyj FSR z szybkiego menu w grze, aby zwiększyć wydajność.</string>
     <string name="game_launch_tip_20">Wskazówka: Jeśli cała aplikacja ulega awarii po załadowaniu gry, Twojemu urządzeniu kończy się RAM.</string>

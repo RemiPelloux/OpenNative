@@ -37,9 +37,9 @@ recorded alongside the binary — for example in `VERSION` / `COMMIT` metadata
 inside the bundled archive, in the filename of the archive itself, or in
 `app/src/main/cpp/` for components built from source in this repository.
 
-If you cannot obtain the source from upstream, contact
-Utkarsh Dalal on our
-[Discord server](https://discord.gg/2hKv4VfZfE)) and we will supply it, in
+If you cannot obtain the source from upstream, contact the upstream copyright
+holder through the [GameNative repository](https://github.com/utkarshdalal/GameNative)
+to request it, in
 accordance with LGPL-2.1 §6, LGPL-3.0 §4, GPL-2.0 §3, and GPL-3.0 §6. This
 offer is valid for at least three years from the date on which you received
 the binary.

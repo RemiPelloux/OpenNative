@@ -623,7 +623,6 @@
 
     <!-- 个人资料与菜单 -->
     <string name="help_and_support">帮助与支持</string>
-    <string name="hall_of_fame">名人堂</string>
     <string name="go_online">进入在线模式</string>
     <string name="go_offline">进入离线模式</string>
     <string name="log_out">登出</string>
@@ -891,7 +890,6 @@
     <string name="select_wine_debug_channels">选择 Wine 调试通道</string>
     <string name="cpu_label">CPU%d</string>
     <string name="describe_what_happened">描述发生了什么</string>
-    <string name="get_support_on_discord">在 Discord 上获取支持</string>
 
     <!-- 驱动程序管理器 -->
     <string name="driver_manager">驱动程序管理</string>
@@ -960,10 +958,6 @@
 
     <!-- 设置：信息组 -->
     <string name="settings_info_title">信息</string>
-    <string name="settings_info_send_tip_title">捐款支持</string>
-    <string name="settings_info_send_tip_subtitle">为持续的应用程序开发贡献力量</string>
-    <string name="settings_info_ask_tip_title">启动时显示捐款信息</string>
-    <string name="settings_info_ask_tip_subtitle">停止显示捐款信息</string>
     <string name="settings_info_source_title">源代码</string>
     <string name="settings_info_source_subtitle">查看此项目的源代码</string>
     <string name="settings_info_libraries_title">使用的库</string>
@@ -1074,14 +1068,7 @@
     <!-- 主界面：崩溃与支持 -->
     <string name="main_recent_crash_title">最近应用程序崩溃</string>
     <string name="main_recent_crash_message">若能了解您最近遇到的问题，将有助于我们改善应用程序。\n您可在应用程序设置中查看并导出最近的崩溃日志，将其附加至项目源代码仓库的 Github Issue中\nGithub 源代码仓库的链接亦位于设置页面内</string>
-    <string name="main_thank_you_title">感谢您使用 OpenNative！</string>
-    <string name="main_thank_you_message">通过与朋友分享应用程序或在 Ko-fi 成为会员，支持 Android 平台的开源 PC 游戏</string>
-    <string name="main_join_kofi">加入 Ko-fi</string>
     <string name="main_share">分享</string>
-    <string name="main_share_text">试试 OpenNative - 在 Android 上畅玩您的 PC Steam 游戏，完整支持云存档！\nhttps://gamenative.app\n加入社区：https://discord.gg/2hKv4VfZfE</string>
-    <string name="main_discord_support_title">游戏运行正常吗？</string>
-    <string name="main_discord_support_message">加入 Discord 社区，获取游戏修复与性能优化的支持</string>
-    <string name="main_open_discord">打开 Discord</string>
 
     <!-- 主界面：游戏启动 -->
     <string name="main_downloading_steam">正在下载 Steam...</string>
@@ -1143,15 +1130,6 @@
     <string name="libraries_message">Pluvia - github.com/oxters168/Pluvia\nJavaSteam - github.com/Longi94/JavaSteam\nWinlator &amp; Vortek - github.com/brunodev85/winlator\nWinlator Cmod - github.com/coffincolors/winlator\nWrapper - https://github.com/leegao/bionic-vulkan-wrapper &amp; https://github.com/pipetto-crypto/\nUbuntu RootFs - releases.ubuntu.com/focal</string>
 
     <!-- 支持者对话框 -->
-    <string name="supporters_art_credits">美术鸣谢</string>
-    <string name="supporters_app_icon">应用图标：Hachi</string>
-    <string name="supporters_alt_icon">备用应用图标：rhapsody_mdr</string>
-    <string name="supporters_loading">正在加载支持者…</string>
-    <string name="supporters_error">无法加载支持者</string>
-    <string name="supporters_members">会员</string>
-    <string name="supporters_supporters">支持者</string>
-    <string name="supporters_none">尚无支持者。</string>
-    <string name="supporters_anonymous">匿名</string>
 
     <!-- 聊天界面 -->
     <string name="chat_preview_warning">聊天功能仍处于早期阶段，请将任何问题报告至项目仓库</string>
@@ -1600,14 +1578,12 @@
     <string name="game_launch_tip_7">提示：使用 Turnip 驱动来运行 DirectX 12 游戏。不支持 Turnip 的设备对 DirectX 12 的支持目前有限。</string>
     <string name="game_launch_tip_8">提示：如果控制器无法使用，请启用 Steam Input 并检查你的应用是否未安装到隐私空间。</string>
     <string name="game_launch_tip_9">提示：要向游戏添加文件，请将它们放入设备的 Downloads 文件夹，点击\"%s\"，它们就会出现在 D: drive 中。</string>
-    <string name="game_launch_tip_10">提示：如果游戏无法运行，可从 gamenative.app/compatibility 导入适用于你的 GPU 或 GPU 系列的配置。</string>
     <string name="game_launch_tip_11">提示：在游戏中使用快捷菜单的性能 HUD 查看 FPS 统计信息。</string>
     <string name="game_launch_tip_12">提示：如果游戏没有声音，请使用 Proton 10 自动提取 XAudio DLLs。</string>
     <string name="game_launch_tip_13">提示：你可以通过设备的返回键启用或禁用屏幕手柄。</string>
     <string name="game_launch_tip_14">提示：你可以通过设备的返回键调出键盘。</string>
     <string name="game_launch_tip_15">提示：在容器中用双指点击可以模拟鼠标右键。</string>
     <string name="game_launch_tip_16">提示：使用屏幕手柄时，可以禁用鼠标以防止误触。</string>
-    <string name="game_launch_tip_17">提示：在 Discord 上报告问题，以便我们修复。</string>
     <string name="game_launch_tip_18">提示：如果你使用的是 8 Elite 设备，请使用 Turnip Gen8 V25/V30 或 MrPurple T26 驱动。</string>
     <string name="game_launch_tip_19">提示：在游戏中通过快捷菜单降低分辨率并使用 FSR 可以提升性能。</string>
     <string name="game_launch_tip_20">提示：如果加载游戏后整个应用都崩溃，说明你的设备 RAM 不足。</string>

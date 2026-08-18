@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/brand/opennative-mark.svg" alt="OpenNative" width="112" />
+
 # OpenNative
 
 **Run the PC games you own on Android, with a performance-focused experience for gaming handhelds.**
@@ -7,13 +9,12 @@
 [![Release](https://img.shields.io/github/v/release/RemiPelloux/OpenNative?style=flat-square&logo=github)](https://github.com/RemiPelloux/OpenNative/releases)
 [![Build](https://img.shields.io/badge/Android-ARM64-3DDC84?style=flat-square&logo=android&logoColor=white)](#build-from-source)
 [![License](https://img.shields.io/badge/license-GPL--3.0-36C5F0?style=flat-square)](LICENSE)
-[![Upstream](https://img.shields.io/badge/based_on-GameNative-F4C542?style=flat-square)](https://github.com/utkarshdalal/GameNative)
 
 [Features](#what-opennative-adds) · [Install](#install) · [Gamma Emerald](docs/GAMMA_EMERALD.md) · [Performance](docs/PERFORMANCE.md) · [1.0 Roadmap](docs/ROADMAP_1.0.0.md) · [Roadmap](ROADMAP.md)
 
 </div>
 
-OpenNative is an independent, experimental fork of [GameNative](https://github.com/utkarshdalal/GameNative). It keeps the original Android/Wine stack and store integrations while concentrating on frame pacing, lower background overhead, controller reliability, portable container profiles and dual-screen handhelds such as the AYN Thor.
+OpenNative is an independent Android compatibility project for running owned PC games through Wine and native translation components. Development, releases, support and product decisions are managed in this repository, with a focus on frame pacing, lower background overhead, controller reliability, portable container profiles and dual-screen handhelds such as the AYN Thor.
 
 This project does not include games. Use it only with software and store accounts you are authorized to use.
 
@@ -51,11 +52,11 @@ The path to a stable `1.0.0`, including renderer, translation, shader, memory, N
 | --- | --- |
 | Android ARM64, API 29+ (`modern`) | Primary build |
 | AYN Thor Max, Android 13 | Device-tested |
-| Steam, Epic, GOG, Amazon and custom games | Inherited from GameNative; compatibility varies by title |
+| Steam, Epic, GOG, Amazon and custom games | Compatibility varies by title |
 | Android secondary displays | Cockpit with in-game drawer fallback |
 | Legacy 32-bit Android flavor | Buildable but not the current performance target |
 
-OpenNative deliberately keeps the existing application ID `com.remipelloux.gamenativecustom` and the historical public storage directory `GameNative`. This lets the release update the current test installation without orphaning its containers or Gamma Emerald profile. Kotlin/Java namespaces also remain `app.gamenative` to avoid a large, risk-only refactor.
+OpenNative deliberately keeps the existing application ID `com.remipelloux.gamenativecustom`, historical public storage directory and internal Kotlin namespace. These are compatibility identifiers, not product branding. Changing them would orphan existing containers and saves; a future migration must include an atomic data-transfer path.
 
 ## Install
 
@@ -74,7 +75,7 @@ current OpenNative test build; do not uninstall first if you need to preserve
 app-private containers. Always verify the application ID and signing
 certificate before an in-place update.
 
-The fork disables GameNative's built-in APK updater so an upstream package cannot silently replace OpenNative. Updates are installed explicitly from this repository.
+OpenNative has no third-party in-app updater. Updates are installed explicitly from this repository.
 
 ## Configure a custom game
 
@@ -152,7 +153,7 @@ For performance work, follow [docs/PERFORMANCE.md](docs/PERFORMANCE.md). A chang
 
 ## Privacy and services
 
-OpenNative inherits optional integrations and analytics code from GameNative. Store login, compatibility and component-download features may contact Steam, Epic, GOG, Amazon, Nexus Mods or GameNative-operated endpoints. Review [PrivacyPolicy/README.md](PrivacyPolicy/README.md) and the source before using online features. Never attach credentials, tokens, game files or app-private data to bug reports.
+OpenNative does not send gameplay feedback, compatibility telemetry, device statistics or recommendations to GameNative services. Store login and library features contact the selected store provider. Component installation still uses an inherited binary host until OpenNative has a verified mirror; see [docs/INDEPENDENCE.md](docs/INDEPENDENCE.md). Review [PrivacyPolicy/README.md](PrivacyPolicy/README.md) before using online features, and never attach credentials, tokens, game files or app-private data to bug reports.
 
 ## Contributing
 
@@ -162,6 +163,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the review and validation rules.
 
 ## Credits and license
 
-OpenNative is based on GameNative by Utkarsh Dalal and its contributors, and in turn uses Wine, Proton, DXVK, VKD3D, Mesa, Box64, FEX and other projects. Original copyrights and history are preserved.
+OpenNative derives from GameNative by Utkarsh Dalal and its contributors, and uses Wine, Proton, DXVK, VKD3D, Mesa, Box64, FEX and other projects. This historical and legal attribution does not imply endorsement, shared infrastructure or shared project governance. Original copyrights and Git history are preserved.
 
 The application source remains licensed under [GPL-3.0](LICENSE). Bundled components can have different terms; read [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES) before redistributing an APK.

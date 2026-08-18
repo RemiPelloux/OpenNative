@@ -533,7 +533,6 @@
     <string name="gesture_zoom_page_up_down">Page Up/Down</string>
     <string name="gesture_zoom_plus_minus">+/- клавиши</string>
     <string name="gesture_zoom_scroll_wheel">Колесо прокрутки</string>
-    <string name="get_support_on_discord">Получить поддержку на Discord</string>
     <string name="gog_install_confirmation_message">Устанавливаемое приложение имеет следующие требования к пространству. Вы хотите продолжить?
 
 	Размер загрузки: %1$s
@@ -550,7 +549,6 @@
     <string name="gpu_name">Имя GPU</string>
     <string name="graphics_driver">Графический драйвер</string>
     <string name="graphics_driver_version">Версия графического драйвера</string>
-    <string name="hall_of_fame">Зал славы</string>
     <string name="header_img_desc">Изображение заголовка приложения</string>
     <string name="height">Высота</string>
     <string name="help_and_support">Справка и поддержка</string>
@@ -722,19 +720,15 @@ Ubuntu RootFs - releases.ubuntu.com/focal</string>
 Вы всё ещё можете играть в эту игру, но это отключит другой сеанс от Steam и может создать конфликт сохранений, когда прогресс того сеанса синхронизируется</string>
     <string name="main_app_running_title">Приложение запущено</string>
     <string name="main_app_session_suspended">Сеанс приложения приостановлен. Пожалуйста, перезапустите приложение.</string>
-    <string name="main_discord_support_message">Присоединитесь к Discord, чтобы получить поддержку для исправления вашей игры или улучшения производительности.</string>
-    <string name="main_discord_support_title">Игра работала?</string>
     <string name="main_downloading_entry">Загрузка %s</string>
     <string name="main_downloading_steam">Загрузка Steam...</string>
     <string name="main_installing_bionic">Установка компонентов Bionic...</string>
     <string name="main_installing_glibc">Установка компонентов glibc...</string>
-    <string name="main_join_kofi">Присоединиться на Ko-fi</string>
     <string name="main_keep_local">Сохранить локальное</string>
     <string name="main_keep_remote">Сохранить удалённое</string>
     <string name="main_later_button">Позже</string>
     <string name="main_launch_anyway">Запустить в любом случае</string>
     <string name="main_loading">Загрузка...</string>
-    <string name="main_open_discord">Открыть Discord</string>
     <string name="main_pending_operation_none">Получены ожидающие удалённые операции, операция которых была \'none\'. Пожалуйста, перезапустите приложение.</string>
     <string name="main_multiple_pending_operations_message">В эту игру недавно играли на другом устройстве, и прогресс той сессии ещё не загружен в облако.\nЕсли вы продолжите, игра на том устройстве будет закрыта, а незагруженный прогресс может быть безвозвратно потерян.</string>
     <string name="main_pending_upload_message">Вы играли в %1$s на устройстве %2$s (%3$s), и это сохранение ещё не в облаке. (загрузка не началась)
@@ -757,15 +751,10 @@ Ubuntu RootFs - releases.ubuntu.com/focal</string>
     <string name="main_save_conflict_upgrade_v1_title">Выберите версию сохранения</string>
     <string name="main_save_conflict_upgrade_v1_message">Мы исправили обработку путей облачных сохранений для этой игры и обнаружили различия между локальным и облачным сохранением.\n\nЛокальное сохранение:\n\t%1$s\nОблачное сохранение:\n\t%2$s</string>
     <string name="main_share">Поделиться</string>
-    <string name="main_share_text">Проверьте OpenNative - играйте в ваши ПК игры Steam на Android, с полной поддержкой облачных сохранений!
-https://gamenative.app
-Присоединитесь к сообществу: https://discord.gg/2hKv4VfZfE</string>
     <string name="main_sync_failed">Ошибка синхронизации файлов сохранений: %s.</string>
     <string name="main_sync_in_progress">Синхронизация в процессе. Пожалуйста, попробуйте снова через момент.</string>
     <string name="main_sync_in_progress_launch_anyway_message">Синхронизация облачного сохранения для этой игры уже запущена. Вы можете подождать и попробовать снова, или запустить в любом случае без синхронизации (может вызвать конфликты сохранений).</string>
     <string name="main_sync_in_progress_retry">Операция синхронизации занимает слишком много времени. Пожалуйста, попробуйте запустить игру снова через момент.</string>
-    <string name="main_thank_you_message">Поддержите игры с открытым исходным кодом на Android, поделившись приложением с вашими друзьями или став членом на Ko-fi.</string>
-    <string name="main_thank_you_title">Спасибо за использование OpenNative!</string>
     <string name="main_update_available_message">Доступна новая версия (%1$s)!%2$s</string>
     <string name="main_update_available_title">Доступно обновление</string>
     <string name="main_update_button">Обновить</string>
@@ -1051,16 +1040,12 @@ https://gamenative.app
     <string name="settings_emulation_title">Эмуляция</string>
     <string name="settings_emulation_wine_proton_manager_subtitle">Импортировать пользовательские версии Wine/Proton (только Bionic)</string>
     <string name="settings_emulation_wine_proton_manager_title">Менеджер Wine/Proton</string>
-    <string name="settings_info_ask_tip_subtitle">Предотвращает появление сообщения совета</string>
-    <string name="settings_info_ask_tip_title">Спросить совет при запуске</string>
     <string name="settings_info_libraries_subtitle">Узнайте, какие технологии делают OpenNative возможным</string>
     <string name="settings_info_libraries_title">Используемые библиотеки</string>
     <string name="settings_info_privacy_subtitle">Открывает ссылку на политику конфиденциальности OpenNative</string>
     <string name="settings_info_privacy_title">Политика конфиденциальности</string>
     <string name="settings_info_usage_analytics_title">Аналитика использования</string>
     <string name="settings_info_usage_analytics_subtitle">Мы никогда не отслеживаем личную информацию. Отключение останавливает несущественную аналитику, однако основные данные о производительности игр по-прежнему собираются как законный интерес для улучшения совместимости.</string>
-    <string name="settings_info_send_tip_subtitle">Внесите вклад в продолжающуюся разработку</string>
-    <string name="settings_info_send_tip_title">Отправить чаевые</string>
     <string name="settings_info_source_subtitle">Просмотреть исходный код этого проекта</string>
     <string name="settings_info_source_title">Исходный код</string>
     <string name="settings_info_title">Информация</string>
@@ -1188,15 +1173,6 @@ https://gamenative.app
     <string name="steam_verify_files_title">Проверить файлы</string>
     <string name="storage_info">Информация о хранилище</string>
     <string name="summary_collapsed_preference_list">%1$s, %2$s</string>
-    <string name="supporters_alt_icon">Альтернативный значок приложения: rhapsody_mdr</string>
-    <string name="supporters_anonymous">Анонимно</string>
-    <string name="supporters_app_icon">Значок приложения: Hachi</string>
-    <string name="supporters_art_credits">Авторские права на искусство</string>
-    <string name="supporters_error">Не удалось загрузить сторонников</string>
-    <string name="supporters_loading">Загрузка сторонников…</string>
-    <string name="supporters_members">Участники</string>
-    <string name="supporters_none">Пока нет сторонников.</string>
-    <string name="supporters_supporters">Сторонники</string>
     <string name="switch_role">Переключить</string>
     <string name="sync_error_title">Ошибка синхронизации</string>
     <string name="sync_frame">Синхронизировать каждый кадр</string>
@@ -1476,14 +1452,12 @@ https://gamenative.app
     <string name="game_launch_tip_7">Совет: Используйте драйверы Turnip для игр DirectX 12. Поддержка DirectX 12 для устройств, не поддерживающих Turnip, в настоящее время ограничена.</string>
     <string name="game_launch_tip_8">Совет: Если управление не работает, включите Steam Input и убедитесь, что приложение не установлено в приватное пространство.</string>
     <string name="game_launch_tip_9">Совет: Чтобы добавить файлы в игру, поместите их в папку «Загрузки» вашего устройства, нажмите \"%s\", и они появятся на диске D:.</string>
-    <string name="game_launch_tip_10">Совет: Импортируйте конфигурацию с gamenative.app/compatibility для вашего GPU или семейства GPU, если у вас не получается запустить игру.</string>
     <string name="game_launch_tip_11">Совет: Используйте HUD производительности в быстром меню, когда хотите видеть статистику FPS в игре.</string>
     <string name="game_launch_tip_12">Совет: Если в игре нет звука, используйте Proton 10 для автоматического извлечения DLL XAudio.</string>
     <string name="game_launch_tip_13">Совет: Вы можете включить или отключить экранный контроллер с помощью кнопки «Назад» на устройстве.</string>
     <string name="game_launch_tip_14">Совет: Вы можете вызвать клавиатуру с помощью кнопки «Назад» на устройстве.</string>
     <string name="game_launch_tip_15">Совет: Вы можете нажать двумя пальцами внутри контейнера для щелчка правой кнопкой мыши.</string>
     <string name="game_launch_tip_16">Совет: Если вы используете экранный контроллер, вы можете отключить мышь, чтобы предотвратить случайные касания.</string>
-    <string name="game_launch_tip_17">Совет: Сообщайте о проблемах в Discord, чтобы мы могли их исправить.</string>
     <string name="game_launch_tip_18">Совет: Используйте драйвер Turnip Gen8 V25/V30 или MrPurple T26, если у вас устройство 8 Elite.</string>
     <string name="game_launch_tip_19">Совет: Уменьшите разрешение и используйте FSR из быстрого меню в игре для повышения производительности.</string>
     <string name="game_launch_tip_20">Совет: Если всё приложение вылетает после загрузки игры, вашему устройству не хватает RAM.</string>

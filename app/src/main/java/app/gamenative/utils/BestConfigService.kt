@@ -19,21 +19,15 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import timber.log.Timber
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Service for fetching best configurations for games from GameNative API.
+ * OpenNative container configuration parser and validator.
  */
 object BestConfigService {
-    private const val API_BASE_URL = "https://api.gamenative.app/api/best-config"
-    private val httpClient = Net.http
-
     // In-memory cache keyed by "${gameName}_${gpuName}"
     private val cache = ConcurrentHashMap<String, BestConfigResponse>()
 
@@ -87,70 +81,8 @@ object BestConfigService {
             return@withContext it
         }
 
-        try {
-            val requestBody = JSONObject().apply {
-                put("gameName", gameName)
-                put("gpuName", gpuName)
-                put("game_store", gameStore)
-                // Modern build can't run glibc containers — server should pick a config that
-                // doesn't require glibc when this is true.
-                put("modernBuild", BuildConfig.MODERN_ANDROID)
-            }
-
-            val attestation = KeyAttestationHelper.getAttestationFields("https://api.gamenative.app")
-            if (attestation != null) {
-                requestBody.put("nonce", attestation.first)
-                requestBody.put("attestationChain", org.json.JSONArray(attestation.second))
-            }
-
-            val mediaType = "application/json".toMediaType()
-            val bodyString = requestBody.toString()
-            val body = bodyString.toRequestBody(mediaType)
-
-            val integrityToken = PlayIntegrity.requestToken(bodyString.toByteArray())
-
-            val requestBuilder = Request.Builder()
-                .url(API_BASE_URL)
-                .post(body)
-                .header("Content-Type", "application/json")
-            if (integrityToken != null) {
-                requestBuilder.header("X-Integrity-Token", integrityToken)
-            }
-            val request = requestBuilder.build()
-
-            httpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    Timber.tag("BestConfigService")
-                        .w("API request failed - HTTP ${response.code}")
-                    return@withContext null
-                }
-
-                val responseBody = response.body?.string() ?: return@withContext null
-                val jsonResponse = JSONObject(responseBody)
-
-                val bestConfigJson = jsonResponse.getJSONObject("bestConfig")
-                val bestConfig = Json.parseToJsonElement(bestConfigJson.toString()).jsonObject
-
-                val bestConfigResponse = BestConfigResponse(
-                    bestConfig = bestConfig,
-                    matchType = jsonResponse.getString("matchType"),
-                    matchedGpu = jsonResponse.getString("matchedGpu"),
-                    matchedDeviceId = jsonResponse.getInt("matchedDeviceId"),
-                    matchedStore = jsonResponse.optString("matchedStore", gameStore),
-                )
-
-                cache[cacheKey] = bestConfigResponse
-
-                Timber.tag("BestConfigService")
-                    .d("Fetched best config for $gameName on $gpuName (matchType: ${bestConfigResponse.matchType})")
-
-                bestConfigResponse
-            }
-        } catch (e: Exception) {
-            Timber.tag("BestConfigService")
-                .e(e, "Error fetching best config: ${e.message}")
-            null
-        }
+        Timber.tag("BestConfigService").d("No OpenNative config source is configured for $cacheKey")
+        null
     }
 
     /**
@@ -930,4 +862,3 @@ object BestConfigService {
         }
     }
 }
-

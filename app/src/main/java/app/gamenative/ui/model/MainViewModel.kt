@@ -32,7 +32,6 @@ import app.gamenative.ui.screen.PluviaScreen
 import app.gamenative.utils.ContainerUtils
 import app.gamenative.utils.IntentLaunchManager
 import app.gamenative.utils.SteamUtils
-import app.gamenative.utils.UpdateInfo
 import app.gamenative.utils.WineProcessSnapshotHelper
 import com.materialkolor.PaletteStyle
 import com.winlator.xserver.Window
@@ -74,8 +73,6 @@ class MainViewModel @Inject constructor(
         data class ExternalGameLaunch(val appId: String) : MainUiEvent()
         data class OnLogonEnded(val result: LoginResult) : MainUiEvent()
         data class SteamDisconnected(val isTerminal: Boolean) : MainUiEvent()
-        data object ShowDiscordSupportDialog : MainUiEvent()
-        data class ShowGameFeedbackDialog(val appId: String) : MainUiEvent()
         data object ServiceReady : MainUiEvent()
     }
 
@@ -90,13 +87,6 @@ class MainViewModel @Inject constructor(
 
     fun setOffline(value: Boolean) {
         _offline.value = value
-    }
-
-    private val _updateInfo = MutableStateFlow<UpdateInfo?>(null)
-    val updateInfo: StateFlow<UpdateInfo?> = _updateInfo.asStateFlow()
-
-    fun setUpdateInfo(info: UpdateInfo?) {
-        _updateInfo.value = info
     }
 
     private val onSteamConnected: (SteamEvent.Connected) -> Unit = {
@@ -562,36 +552,6 @@ class MainViewModel @Inject constructor(
                     // Dialog handler in PluviaMain manages the save/discard logic
                 }
 
-                // After app closes, check if we need to show the feedback dialog
-                // Show feedback if: first time running this game OR config was changed
-                try {
-                    // Show feedback for all stores except custom games.
-                    val feedbackGameSource = ContainerUtils.extractGameSourceFromContainerId(appId)
-                    if (feedbackGameSource != GameSource.CUSTOM_GAME) {
-                        val container = ContainerUtils.getContainer(context, appId)
-
-                        val shown = container.getExtra("discord_support_prompt_shown", "false") == "true"
-                        val configChanged = container.getExtra("config_changed", "false") == "true"
-                        if (!shown) {
-                            container.putExtra("discord_support_prompt_shown", "true")
-                            container.saveData()
-                            _uiEvent.send(MainUiEvent.ShowGameFeedbackDialog(appId))
-                        }
-
-                        // Only show feedback if container config was changed before this game run
-                        if (configChanged) {
-                            // Clear the flag
-                            container.putExtra("config_changed", "false")
-                            container.saveData()
-                            // Show the feedback dialog
-                            _uiEvent.send(MainUiEvent.ShowGameFeedbackDialog(appId))
-                        }
-                    } else {
-                        Timber.d("Custom game detected, not showing feedback")
-                    }
-                } catch (e: Exception) {
-                    Timber.w(e, "Failed to check/update feedback dialog state for $appId")
-                }
             } finally {
                 onComplete?.invoke()
             }

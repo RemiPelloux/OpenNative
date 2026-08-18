@@ -8,8 +8,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class DialogType(val icon: ImageVector? = null) {
     CRASH,
-    SUPPORT,
-    DISCORD,
     SYNC_CONFLICT,
     SYNC_FAIL,
     SYNC_IN_PROGRESS,
@@ -30,9 +28,7 @@ enum class DialogType(val icon: ImageVector? = null) {
     UPDATE_VERIFY_CONFIRM,
     RESET_CONTAINER_CONFIRM,
     
-    GAME_FEEDBACK,
     SAVE_CONTAINER_CONFIG,
-    APP_UPDATE,
     EXECUTABLE_NOT_FOUND,
     WORKSHOP_UPDATE_PROMPT,
 

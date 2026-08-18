@@ -4,7 +4,7 @@ OpenNative accepts focused bug fixes, compatibility work, tests, documentation a
 
 ## Before coding
 
-1. Search existing issues and upstream GameNative changes.
+1. Search existing OpenNative issues and relevant upstream component changes.
 2. Describe the observed behavior and the smallest proposed change.
 3. For performance work, capture a baseline before editing code.
 4. Keep unrelated refactors out of the same pull request.
@@ -27,4 +27,3 @@ Include device, Android build, SoC/GPU, driver, game/version, scene, resolution,
 Explain the problem, root cause, implementation, risks, fallback and validation. UI changes should include screenshots from relevant screen sizes. Native changes should identify buffer/thread ownership and shutdown behavior.
 
 By submitting a contribution, you confirm that you have the right to license it under the repository's GPL-3.0 license while retaining your copyright.
-
