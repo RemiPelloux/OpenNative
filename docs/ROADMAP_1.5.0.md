@@ -19,7 +19,11 @@ Exit criteria: the modern JVM suite passes twice from clean state in CI, failure
 
 - Capture Perfetto traces around SurfaceFlinger compatibility conversion, buffer retirement, Vulkan presentation and guest frame pacing.
 - Quantify remaining BGRA-to-RGBA copies, JNI references and queue saturation before changing ownership.
+- Reuse conversion buffers by compatible dimensions and format, cap queue depth and drop obsolete frames before conversion when the producer outruns presentation.
+- Move allocation, cache inspection and diagnostic formatting out of frame callbacks; add counters proving that the steady-state presentation path allocates nothing.
+- Compare FIFO, mailbox and frame-cap interactions per title without forcing a global present mode.
 - Correlate DXVK pipeline creation, Mesa/VKD3D cache writes, Unreal asset streaming and translation-runtime stalls.
+- Persist pipeline/cache compatibility decisions once per session instead of recalculating them for every process or window.
 - Expose per-title cache generation, size, last clean shutdown and invalidation reason.
 - Keep cache repair explicit, path-confined and deferred until the guest exits.
 
@@ -29,8 +33,14 @@ Exit criteria: each promoted change improves median throughput by at least 3%, c
 
 - Add query-count regression tests to remaining Room and store-library aggregation paths.
 - Replace per-item reads/writes with bounded bulk operations where profiling confirms N+1 behavior.
+- Add query-count budgets for library refresh, source synchronization and configuration-catalog screens.
 - Cache immutable launch metadata and avoid rebuilding container state during Compose recomposition.
+- Use stable UI models and keyed lazy lists so progress updates do not recompose an entire game/source library.
 - Debounce profile/session persistence and keep diagnostics off the normal frame path.
+- Stream downloads and archive verification to disk with bounded buffers; never hold complete packages in memory.
+- Deduplicate concurrent metadata, artwork, profile and component requests through one in-flight request per cache key.
+- Use ETag/Last-Modified caches, exponential backoff and paging for every remote source.
+- Delay nonessential library scans, artwork decoding and database maintenance while a game session is active.
 - Audit executor lifecycle, cancellation and repeated launch/stop cleanup.
 
 Exit criteria: no known N+1 query remains in a library page or launch path, and 30 launch/stop cycles show no ANR, worker leak or unbounded RSS growth.
@@ -61,6 +71,24 @@ Exit criteria: the cockpit survives 20 hot-plug/rotation cycles, every action is
 
 Exit criteria: profile round trips preserve all supported settings, exported packages contain no private/device-local data, import conflicts are previewed and reversible, damaged components repair safely, and fresh/offline/upgrade installs have automated coverage.
 
+## 6. Sources and download providers
+
+- Add a top-level **Sources** library tab next to **Custom**. It contains configuration sources and user-initiated downloads; it is not a built-in game catalog.
+- Let users add an OpenNative configuration feed by HTTPS URL, refresh it manually or on a conservative interval, and disable or remove it without affecting installed games.
+- Define a versioned feed schema with profile ID, game identifier, supported OpenNative range, runtime/component requirements, author, update date, SHA-256 and optional signature.
+- Fetch only metadata first. Show source, compatibility, settings diff and trust state before a profile is downloaded or applied.
+- Cache feed pages with ETag/Last-Modified, paginate results, deduplicate concurrent refreshes and keep the last valid snapshot when a source is offline or malformed.
+- Ship no unreviewed third-party feed by default. Clearly distinguish OpenNative-verified, community and local sources.
+- Add a provider interface for resolving links supplied by the user into downloadable files, with AllDebrid as the first optional implementation.
+- Accept the AllDebrid API key in **Settings > Sources > AllDebrid**, validate it with a lightweight account endpoint and store it through Android Keystore-backed encrypted preferences.
+- Never print, export, synchronize or include the API key in diagnostics. Redact it from HTTP errors and provide explicit revoke/delete controls.
+- Use AllDebrid only for links the user adds or opens with OpenNative. Do not search for games, provide copyrighted-content indexes, bypass DRM or silently submit clipboard contents.
+- Display the original host, resolved filename, size and destination before download. Require explicit confirmation and use Android foreground-download notifications with pause, resume, retry and cancel.
+- Stream to a `.partial` staging file, enforce storage limits, verify an expected hash when available, scan archive structure safely and promote atomically after completion.
+- Keep downloaded installers separate from configuration feeds. OpenNative must not auto-install or execute an unknown package merely because a provider resolved it.
+
+Exit criteria: source refresh performs a bounded number of network/database operations, offline state preserves the last valid catalog, malicious feeds cannot escape managed storage, provider secrets never appear in exports/logs, and a cancelled or failed transfer leaves no promoted partial file.
+
 ## Device validation
 
 - AYN Thor Max: Gamma Emerald and at least two games using different rendering/runtime paths.
@@ -68,6 +96,8 @@ Exit criteria: profile round trips preserve all supported settings, exported pac
 - Cold and warm shader-cache captures.
 - One 60-minute session with FPS, p95/p99, RSS, swap and temperature recorded.
 - Generic ARM64 smoke test on at least one non-Qualcomm device before release.
+- Source/feed tests for offline mode, pagination, ETag, invalid JSON, signature/hash failure and 429 backoff.
+- AllDebrid tests through a fake provider server only; CI and release tests never require a real user API key.
 
 ## Release gate
 
