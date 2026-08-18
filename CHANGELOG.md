@@ -8,6 +8,7 @@
 - Plan portable, redacted per-game and global settings sharing for `1.5.0`, with import previews and reversible conflict handling.
 - Define `1.5.0` user-created provider tabs through a `+` after Custom, with optional secret-safe AllDebrid resolution and verified install cleanup.
 - Specify a Wine Installer Manager for provider-downloaded `.exe` and `.msi` packages, including process-tree completion, executable discovery and guarded cleanup.
+- Turn the `1.5.0` provider work into a gated delivery roadmap and publish its headline features without presenting them as shipped in `1.1.0`.
 - Expand `1.5.0` optimization work around zero-allocation frame delivery, bounded streaming, request deduplication, paging and recomposition control.
 - Simplify the main README and remove unused store API snapshots from the maintained documentation set.
 

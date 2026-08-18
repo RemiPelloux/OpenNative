@@ -4,6 +4,65 @@
 
 `1.5.0` is a stabilization and handheld-quality milestone built on the existing package and runtime architecture. It must improve confidence, frame pacing and daily usability without migrating user data or introducing unsafe device tuning.
 
+## Delivery sequence
+
+### Stage 0: contracts and foundations
+
+- Finalize Room schemas for provider tabs, feed snapshots, transfer jobs and installation receipts.
+- Add migrations, typed provider errors, HTTPS/redirect policy and bounded JSON/archive parsers.
+- Introduce the Keystore-backed secret store and prove redaction in logs, diagnostics and settings exports.
+- Build fake provider and AllDebrid servers for deterministic tests without real credentials.
+
+Gate: schemas survive upgrade/downgrade fixtures, malformed inputs fail closed and no credential reaches persistent entities or reports.
+
+### Stage 1: provider tabs and catalog
+
+- Add the `+` immediately after **Custom**, the three-step creator and persisted tab ordering.
+- Ship read-only metadata feeds first, with paging, ETag/Last-Modified, bulk upserts and stale offline snapshots.
+- Add search, refresh, trust state and provider edit/disable/delete controls.
+
+Gate: existing sources and launches are unchanged, recomposition performs no network/database request, and a 10,000-item fixture stays responsive.
+
+### Stage 2: resolution and transfers
+
+- Add the AllDebrid adapter behind the generic resolver contract.
+- Add foreground download jobs with `.partial` staging, pause/resume/retry/cancel and storage reservation.
+- Persist state transitions and recover safely after activity/process recreation.
+
+Gate: fake-server authentication, 429, timeout, redirect and malformed-response cases pass; interrupted downloads resume or fail recoverably.
+
+### Stage 3: portable installations
+
+- Classify and inspect archives, reject traversal/unsafe links and extract only into managed staging.
+- Verify hashes and required files, then promote atomically or through verified copy-and-swap.
+- Reuse custom-game executable filtering and require launch-candidate review.
+
+Gate: no archive can escape staging, failed promotion preserves the previous destination and cleanup remains locked.
+
+### Stage 4: Windows Installer Manager
+
+- Run valid PE `.exe` and `.msi` payloads in a new or explicitly selected Wine container.
+- Track spawned Wine processes and filesystem quiescence instead of trusting the initial process exit.
+- Surface reboot, timeout and needs-review states; discover but never auto-select the final game executable.
+
+Gate: parent-exits-first, child hang, user cancel, reboot-required and missing-executable fixtures all preserve recovery material.
+
+### Stage 5: cleanup, sharing and recovery
+
+- Enable cleanup policies only after verification and installation-receipt commit.
+- Add provider-job history, orphan staging detection and explicit repair/cleanup actions.
+- Complete redacted settings/profile export, diff preview, merge/replace and rollback.
+
+Gate: no automated path can delete an unverified installer or pre-existing game directory; profile round trips are symmetric.
+
+### Stage 6: polish and certification
+
+- Complete provider/controller accessibility, secondary-screen cockpit and lifecycle behavior.
+- Profile feed, transfer, hashing, install and gameplay concurrency on the AYN Thor.
+- Run the full CI, launch-cycle, soak and migration matrices before release.
+
+Gate: all release criteria at the end of this document pass with sanitized evidence.
+
 ## 1. Deterministic quality gate
 
 - Keep Mockito and MockK instrumentation explicit and compatible with the supported JDK.
@@ -44,6 +103,17 @@ Exit criteria: each promoted change improves median throughput by at least 3%, c
 - Audit executor lifecycle, cancellation and repeated launch/stop cleanup.
 
 Exit criteria: no known N+1 query remains in a library page or launch path, and 30 launch/stop cycles show no ANR, worker leak or unbounded RSS growth.
+
+### Provider and installer performance budgets
+
+- No feed refresh, database query, hashing or file copy starts from Compose recomposition.
+- At most one metadata refresh per provider tab and one resolver request per selected item.
+- Feed pages are bulk-upserted in one transaction; no per-item lookup/write loop is accepted.
+- Transfer progress is sampled for UI at a bounded cadence so byte-level callbacks cannot recompose the library.
+- Download, hash and copy stages share fixed-size buffers and never retain a complete installer/archive in memory.
+- Installer discovery walks only the selected destination and compares bounded metadata before hashing candidates.
+- Artwork and nonessential catalog work pause while a game or Wine installation session owns foreground resources.
+- Cleanup and orphan detection run after session exit with explicit I/O budgets and cancellation.
 
 ## 4. OpenNative cockpit
 

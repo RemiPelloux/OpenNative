@@ -20,18 +20,34 @@ OpenNative does not include games, firmware or store credentials. Use it only wi
 
 ## Features
 
-- Steam, Epic, GOG, Amazon and custom executable library flows.
-- Versioned container profiles for Wine, graphics, controller and display settings.
-- Persistent per-game DXVK, Mesa/Zink and VKD3D cache generations.
-- Safe component reuse and repair instead of unconditional extraction at every launch.
-- Local shader health, bounded warmup and per-title cache maintenance after game exit.
-- Adaptive Engine observation and opt-in resolution changes with confidence, cooldown and rollback.
-- Low-overhead performance sampling with diagnostic capture only when explicitly requested.
-- Secondary-display cockpit with an in-game drawer fallback.
-- Batched Room/store operations across previously identified N+1 paths.
-- Sanitized diagnostic reports that exclude credentials, saves and game binaries.
+- **Unified PC library:** Steam, Epic, GOG, Amazon and locally owned custom executables in one handheld interface.
+- **Portable game profiles:** versioned Wine, graphics, controller and display settings without embedded device paths.
+- **Persistent shader state:** independent per-game DXVK, Mesa/Zink and VKD3D cache generations with safe invalidation.
+- **Faster reliable launches:** healthy runtime components are reused and damaged installations are repaired through staging.
+- **Shader Health:** cold/warm state, bounded local warmup and per-title maintenance that runs only after game exit.
+- **Adaptive Engine:** observation-first performance diagnosis and opt-in next-launch resolution changes with rollback.
+- **Low-overhead diagnostics:** expensive metrics and disk capture remain outside normal gameplay unless requested.
+- **Handheld cockpit:** performance and session controls can move to an Android secondary display with a drawer fallback.
+- **Efficient libraries:** known Room/store N+1 paths use bulk reads and grouped writes.
+- **Private reports:** diagnostic exports redact credentials, saves, game binaries and local paths.
 
 OpenNative never downloads third-party shader caches, forces device clocks, changes Android globally or promises a universal FPS gain. Performance changes must pass controlled before/after measurements.
+
+## Coming in 1.5.0
+
+These features are planned and are **not included in the current `1.1.0` release**:
+
+- A compact `+` after **Custom** for creating named, reorderable provider tabs.
+- Versioned HTTPS feeds with pagination, offline snapshots and visible trust/compatibility metadata.
+- Optional AllDebrid link resolution with Android Keystore-backed credential storage.
+- A resumable foreground download queue with verification, storage reservation and recovery after process death.
+- A Wine Installer Manager for portable archives, `.exe` setup programs and `.msi` packages.
+- Dedicated installation containers, complete Wine process-tree tracking and final game-executable discovery.
+- Safe installer cleanup only after the installed game and launch record have been verified.
+- Shareable per-game and global settings presets with redaction, import previews and reversible conflict handling.
+- A redesigned OpenNative secondary-screen cockpit with stronger controller and hot-plug behavior.
+
+See the [1.5.0 delivery plan](docs/ROADMAP_1.5.0.md) and [provider/installer specification](docs/CUSTOM_PROVIDER_TABS.md).
 
 ## Compatibility
 

@@ -142,10 +142,16 @@ If any condition fails, OpenNative keeps the installer and a sanitized failure r
 ## Performance constraints
 
 - One in-flight metadata refresh per provider tab.
+- One in-flight AllDebrid resolution per user-selected item, deduplicated by provider item and link identity.
 - Paginated Room writes in transactions, never one query per item.
 - Stable keyed Compose rows; progress updates affect only the matching job.
+- UI progress is rate-limited independently from transfer throughput; byte callbacks never trigger whole-list recomposition.
 - Artwork decoding is bounded and paused while a game session is active.
 - Downloads and hashing use fixed-size buffers and never load a complete file into memory.
+- Hashing reuses the download stream when possible and avoids an extra full read unless final verification requires it.
+- Installer completion uses event/process snapshots and a bounded quiescence timer, not unbounded polling.
+- Executable discovery is scoped to the selected destination and excludes unchanged directories using the installation snapshot.
+- Only one interactive Wine installer session runs at a time; queued downloads may continue within thermal/storage policy.
 - Feed refresh and cleanup never run in frame-delivery or game-session critical threads.
 
 ## Validation
