@@ -15,7 +15,7 @@ OpenNative `1.1.0` is the current stable line. The next milestones prioritize de
 2. Profile frame delivery, shader compilation and translation-runtime stalls before changing synchronization or renderer ownership.
 3. Complete the OpenNative secondary-screen cockpit with reliable controller focus, hot-plug and rotation behavior.
 4. Add private-by-design exports for sharing per-game profiles and reusable settings presets with other users.
-5. Add a Sources tab for verified configuration feeds and optional user-supplied-link providers such as AllDebrid.
+5. Add user-created provider tabs through a `+` after Custom, with optional AllDebrid resolution and safe install/cleanup workflows.
 6. Make component downloads independently verifiable with immutable metadata, checksums and redistribution review.
 7. Certify releases with repeated game captures, launch/stop cycles, soak tests and migration checks.
 

@@ -71,23 +71,25 @@ Exit criteria: the cockpit survives 20 hot-plug/rotation cycles, every action is
 
 Exit criteria: profile round trips preserve all supported settings, exported packages contain no private/device-local data, import conflicts are previewed and reversible, damaged components repair safely, and fresh/offline/upgrade installs have automated coverage.
 
-## 6. Sources and download providers
+## 6. User-created provider tabs
 
-- Add a top-level **Sources** library tab next to **Custom**. It contains configuration sources and user-initiated downloads; it is not a built-in game catalog.
-- Let users add an OpenNative configuration feed by HTTPS URL, refresh it manually or on a conservative interval, and disable or remove it without affecting installed games.
-- Define a versioned feed schema with profile ID, game identifier, supported OpenNative range, runtime/component requirements, author, update date, SHA-256 and optional signature.
-- Fetch only metadata first. Show source, compatibility, settings diff and trust state before a profile is downloaded or applied.
-- Cache feed pages with ETag/Last-Modified, paginate results, deduplicate concurrent refreshes and keep the last valid snapshot when a source is offline or malformed.
-- Ship no unreviewed third-party feed by default. Clearly distinguish OpenNative-verified, community and local sources.
-- Add a provider interface for resolving links supplied by the user into downloadable files, with AllDebrid as the first optional implementation.
-- Accept the AllDebrid API key in **Settings > Sources > AllDebrid**, validate it with a lightweight account endpoint and store it through Android Keystore-backed encrypted preferences.
-- Never print, export, synchronize or include the API key in diagnostics. Redact it from HTTP errors and provide explicit revoke/delete controls.
-- Use AllDebrid only for links the user adds or opens with OpenNative. Do not search for games, provide copyrighted-content indexes, bypass DRM or silently submit clipboard contents.
-- Display the original host, resolved filename, size and destination before download. Require explicit confirmation and use Android foreground-download notifications with pause, resume, retry and cancel.
-- Stream to a `.partial` staging file, enforce storage limits, verify an expected hash when available, scan archive structure safely and promote atomically after completion.
-- Keep downloaded installers separate from configuration feeds. OpenNative must not auto-install or execute an unknown package merely because a provider resolved it.
+- Place a compact `+` action immediately after the built-in **Custom** library tab. It opens the provider-tab creator and is not itself a permanent `Sources` tab.
+- Let the user create multiple named tabs, reorder them, disable them temporarily and delete them without changing built-in store or custom-game data.
+- Keep provider tabs separate from the `GameSource` enum and store-launch contracts. Each tab owns a stable UUID, display name, feed configuration, destination and download policy.
+- Configure a tab through three focused steps: **Identity**, **Provider**, then **Install**. Show a final connection and permission check before saving.
+- Support a versioned HTTPS JSON feed for item metadata and links. Fetch metadata first, then show title, version, size, source, compatibility and expected hash before download.
+- Cache feed pages with ETag/Last-Modified, paginate results, deduplicate refreshes and preserve the last valid snapshot when a provider is offline or malformed.
+- Allow an optional AllDebrid account at app level or per tab. Validate the API key, encrypt it with an Android Keystore-backed secret store and expose test/revoke/delete actions.
+- Resolve only the link selected by the user from that provider tab. Never include the AllDebrid key in the feed URL, Room entities, exports, logs, crash reports or diagnostics.
+- Display resolution and transfer stages separately: `Resolving`, `Queued`, `Downloading`, `Verifying`, `Installing`, `Cleaning` and `Ready`.
+- Use a foreground transfer service with bounded streaming, pause/resume/retry/cancel, storage reservation and a `.partial` staging file.
+- Let each tab choose an installation directory through Android's system folder picker and persist only the granted tree URI. Never construct unrestricted filesystem paths from feed data.
+- Validate archive paths, declared sizes and optional SHA-256 before extracting into a staging directory. Promote the installed directory atomically when possible.
+- Offer cleanup policies `Keep installer`, `Delete after verified install` and `Ask after install`. Cleanup runs only after the final installed files pass verification; failures keep the installer and staging report.
+- Never auto-launch an installed executable. The user reviews the detected `.exe`, creates or links a container and confirms its settings separately.
+- Define the data contract, state machine, threat model and implementation boundaries in [`CUSTOM_PROVIDER_TABS.md`](CUSTOM_PROVIDER_TABS.md).
 
-Exit criteria: source refresh performs a bounded number of network/database operations, offline state preserves the last valid catalog, malicious feeds cannot escape managed storage, provider secrets never appear in exports/logs, and a cancelled or failed transfer leaves no promoted partial file.
+Exit criteria: provider tabs do not alter built-in sources, refresh has bounded network/database work, secrets never appear outside encrypted storage, folder access survives restart, failed/cancelled transfers are resumable or recoverable, and cleanup cannot delete an installer before a verified installation.
 
 ## Device validation
 
@@ -96,7 +98,7 @@ Exit criteria: source refresh performs a bounded number of network/database oper
 - Cold and warm shader-cache captures.
 - One 60-minute session with FPS, p95/p99, RSS, swap and temperature recorded.
 - Generic ARM64 smoke test on at least one non-Qualcomm device before release.
-- Source/feed tests for offline mode, pagination, ETag, invalid JSON, signature/hash failure and 429 backoff.
+- Provider-tab tests for create/reorder/delete, offline mode, pagination, ETag, invalid JSON, hash failure, 429 backoff and persisted folder permission.
 - AllDebrid tests through a fake provider server only; CI and release tests never require a real user API key.
 
 ## Release gate

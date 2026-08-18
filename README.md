@@ -104,6 +104,7 @@ Gradle test/build outputs are disposable and can be removed with `./gradlew clea
 - [Adaptive Engine](docs/ADAPTIVE_ENGINE.md): model, safeguards and resolution policy.
 - [Performance Method](docs/PERFORMANCE.md): capture protocol and current Thor findings.
 - [Gamma Emerald](docs/GAMMA_EMERALD.md): tested container baseline.
+- [Custom provider tabs](docs/CUSTOM_PROVIDER_TABS.md): planned dynamic tabs, AllDebrid and safe installation pipeline.
 - [Independence](docs/INDEPENDENCE.md): identifiers, attribution and binary-host migration.
 - [Changelog](CHANGELOG.md): released changes since `0.1.0`.
 - [Contributing](CONTRIBUTING.md): code, testing and evidence requirements.
