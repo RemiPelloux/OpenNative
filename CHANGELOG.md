@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0 - 2026-08-18
+
+- Complete the independent OpenNative identity with the ON launcher icon, OpenNative support links, updated privacy documentation and no inherited updater, Discord, Ko-fi, feedback or optional community API flows.
+- Stop disabled compatibility and community-stat jobs from scanning library pages, spawning coroutines and reranking recommendations in the background.
+- Remove the non-functional remote "Use known config" action and its blocking container-creation lookup while preserving portable local profile import and export.
+- Clear inherited compatibility, device-stat and GPU-stat caches once during migration. Obsolete remote filters and sorts are reset without modifying containers, game files or saves.
+- Keep GOG's local recommendation experience while removing its dependency on unavailable compatibility and community-stat data.
+- Add focused migration coverage and retain the existing local configuration parser test suite.
+- Add a polished, fully OpenNative-branded secondary-screen cockpit redesign to the next roadmap milestone.
+
+OpenNative 1.1.0 is a background-overhead and consistency release. It does not claim a universal FPS increase; game performance still depends on the title, runtime, driver, cache state and thermal conditions.
+
 ## 1.0.0 - 2026-08-16
 
 - Add a bounded predictive shader warmup based only on files observed after the previous clean session.

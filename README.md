@@ -25,7 +25,7 @@ This project does not include games. Use it only with software and store account
 - **Dual-screen performance cockpit:** the game stays on the primary display while metrics and session shortcuts can use an Android secondary display.
 - **Portable container profiles:** versioned exports preserve relevant Wine, graphics, controller and display settings without embedding device-local paths.
 - **Controller runtime fixes:** only configured controller slots create guest-side workers; single-player containers no longer provision four players by default.
-- **Fewer database round trips:** Steam PICS, packages, DLC ownership and private branches plus GOG, Nexus, storage and frontend flows use chunked bulk reads and grouped writes instead of row-by-row N+1 access.
+- **Fewer database and background round trips:** Steam PICS, packages, DLC ownership and private branches plus GOG, Nexus, storage and frontend flows use chunked bulk reads and grouped writes instead of row-by-row N+1 access. Disabled compatibility and community-stat services no longer schedule library-page work.
 - **Gamma Emerald validation:** a stable 720p/30 FPS baseline with controller input and an optional low-cost shadow profile is documented separately.
 - **Measured Thor tuning:** affinity is opt-in, native and WoW64 masks are respected, repeated mod writes are batched, and duplicate custom-game icon work is suppressed during library refreshes.
 - **UE shader and memory stability:** DXVK caches now follow OpenNative's real package path, unlimited profiles receive a conservative device-aware guest-memory budget on 6-14 GB devices, and retired SurfaceFlinger buffers are reclaimed.
@@ -60,7 +60,7 @@ OpenNative deliberately keeps the existing application ID `com.remipelloux.gamen
 
 ## Install
 
-OpenNative `1.0.0` ships a `modernRelease` APK for Android ARM64. It preserves the
+OpenNative `1.1.0` ships a `modernRelease` APK for Android ARM64. It preserves the
 existing application ID and signing identity so it can update the current OpenNative
 test installation without deleting private containers or saves. Do not uninstall the
 existing app before upgrading.
@@ -86,6 +86,8 @@ OpenNative has no third-party in-app updater. Updates are installed explicitly f
 5. Change one graphics option at a time and measure a repeatable scene.
 
 The tested Gamma Emerald recipe and shadow trade-offs are in [docs/GAMMA_EMERALD.md](docs/GAMMA_EMERALD.md).
+
+Portable local container profile import/export remains supported. OpenNative 1.1.0 removes the inherited remote "known config" lookup because no independent, verified configuration source is currently configured.
 
 ## Build from source
 

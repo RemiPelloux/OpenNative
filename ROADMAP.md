@@ -28,6 +28,7 @@ The milestone plan from the current beta through the stable `1.0.0` release is m
 
 ## Next
 
+- Rework the secondary-screen cockpit with complete OpenNative branding, a polished visual hierarchy, clearer performance and session states, and consistent touch/controller navigation.
 - Make the secondary-display cockpit resilient to hot-plug, rotation and activity recreation.
 - Add per-game performance presets with explicit inheritance and reversible overrides.
 - Export sanitized diagnostic bundles that exclude credentials, saves, game paths and protected content.
