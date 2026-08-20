@@ -16,6 +16,15 @@ class WordpressMetadataTest {
     }
 
     @Test
+    fun `parses fitgirl html and ranged repack size`() {
+        val (download, uncompressed) = WordpressMetadata.sizes(
+            "Original Size: <strong>6.9 GB</strong> Repack Size: <strong>3.6/4 GB</strong>",
+        )
+        assertEquals((4.0 * 1_073_741_824.0).toLong(), download)
+        assertEquals((6.9 * 1_073_741_824.0).toLong(), uncompressed)
+    }
+
+    @Test
     fun `keeps https hoster links and skips magnets and images`() {
         val links = WordpressMetadata.httpsLinks(
             """

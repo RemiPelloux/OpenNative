@@ -25,7 +25,8 @@
 ## Unreleased
 
 - Decode WordPress HTML entities such as `&#038;` in provider titles and game detail text.
-- Widen provider catalog cards and the game detail sheet for handheld reading and actions.
+- Open provider games with the same full-screen hero and install action as other library tabs.
+- Parse FitGirl `3.6/4 GB` size lines and hide a size label when no size is known.
 - Hide FitGirl Updates Digest posts from provider tabs.
 - Lift the Load next page action above the bottom gamepad menu so it stays tappable.
 
