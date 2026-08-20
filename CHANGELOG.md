@@ -3,6 +3,7 @@
 ## 1.2.1 - 2026-08-20
 
 - Run Windows installers with Box64 and write every magnet file next to `setup.exe` in the title folder.
+- Force Box64 on every Custom installer (`setup`/`install`/`.msi`) at container create and launch.
 - Seed `assets/opennative-provider-tabs.json` as the default provider tab on first launch.
 - Show WordPress covers from public media, Jetpack/Yoast metadata, or the first HTTPS image in post content.
 - Give provider tabs a library-style cover grid and a detail modal with Download and Install to Custom.

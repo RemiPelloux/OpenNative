@@ -5,6 +5,7 @@ import android.os.Build
 import app.gamenative.BuildConfig
 import app.gamenative.PrefManager
 import app.gamenative.data.GameSource
+import app.gamenative.provider.InstallerWineEnv
 import app.gamenative.enums.Marker
 import app.gamenative.service.SteamService
 import app.gamenative.service.amazon.AmazonService
@@ -1042,14 +1043,18 @@ object ContainerUtils {
         } else {
             Timber.w("Could not find gameFolderPath for game $appId, skipping drive mapping update")
         }
+        if (gameSource == GameSource.CUSTOM_GAME) {
+            val pack = resolvedGameFolderPath?.let(::File) ?: InstallerWineEnv.packFolder(container)
+            InstallerWineEnv.applyIfInstaller(container, pack)
+        }
         return container
     }
 
     fun getOrCreateContainerWithOverride(context: Context, appId: String): Container {
         val containerManager = ContainerManager(context)
 
-        return if (containerManager.hasContainer(appId)) {
-            val container = containerManager.getContainerById(appId)
+        val container = if (containerManager.hasContainer(appId)) {
+            val existing = containerManager.getContainerById(appId)
 
             // Apply temporary override if present (without saving to disk)
             if (IntentLaunchManager.hasTemporaryOverride(appId)) {
@@ -1057,20 +1062,20 @@ object ContainerUtils {
                 if (overrideConfig != null) {
                     // Backup original config before applying override (if not already backed up)
                     if (IntentLaunchManager.getOriginalConfig(appId) == null) {
-                        val originalConfig = toContainerData(container)
+                        val originalConfig = toContainerData(existing)
                         IntentLaunchManager.setOriginalConfig(appId, originalConfig)
                     }
 
                     // Get the effective config (merge base with override)
                     val effectiveConfig = IntentLaunchManager.getEffectiveContainerConfig(context, appId)
                     if (effectiveConfig != null) {
-                        applyToContainer(context, container, effectiveConfig, saveToDisk = false)
+                        applyToContainer(context, existing, effectiveConfig, saveToDisk = false)
                         Timber.i("Applied temporary config override to existing container for app $appId (in-memory only)")
                     }
                 }
             }
 
-            container
+            existing
         } else {
             // Create new container with override config if present
             val overrideConfig = if (IntentLaunchManager.hasTemporaryOverride(appId)) {
@@ -1081,6 +1086,10 @@ object ContainerUtils {
 
             createNewContainer(context, appId, appId, containerManager, overrideConfig)
         }
+        if (extractGameSourceFromContainerId(appId) == GameSource.CUSTOM_GAME) {
+            InstallerWineEnv.applyIfInstaller(container)
+        }
+        return container
     }
 
     /**

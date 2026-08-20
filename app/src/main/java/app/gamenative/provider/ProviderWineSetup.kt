@@ -30,12 +30,7 @@ object ProviderWineSetup {
         if (launchExe != null) {
             val container = ContainerUtils.getOrCreateContainer(context, item.appId)
             container.executablePath = launchExe.name
-            container.emulator = InstallerWineEnv.EMULATOR
-            container.isWoW64Mode = true
-            if (FitGirlPack.isPack(titleFolder)) {
-                container.execArgs = FitGirlPack.EXEC_ARGS
-                container.envVars = FitGirlPack.mergeEnv(container.envVars)
-            }
+            InstallerWineEnv.apply(container, titleFolder)
             container.saveData()
         }
         pendingAppId = item.appId

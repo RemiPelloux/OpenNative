@@ -54,7 +54,7 @@ The catalog search field filters locally. Refresh and Load more still send pagin
 
 WordPress post HTML stores file-hoster HTTPS links and the first magnet in extra JSON. Download uploads that magnet to AllDebrid, waits until it is ready, then writes every file as siblings in public GameNative/CustomGames/<slugged-title>/ (not Android/data, which Wine cannot see through FUSE). `setup.exe` and `fg-*.bin` must share that folder.
 
-FitGirl packs are Inno Setup 5.5 plus FreeArc `fg-*.bin` files (`ArC` magic). setup.exe unpacks those bins with ISDone/unarc into a temp dir, then copies the game. Install launches `setup.exe /DIR="A:\game"` with Box64 (not FEXCore), `WINEDLLOVERRIDES=isdone,unarc=n,b`, and TEMP on `C:/windows/temp`. In the wizard, leave the destination on A:\game, skip DirectX/VC redist, and enable the RAM limit. After Wine exits, a non-setup exe under `game/` becomes the Play target.
+FitGirl packs are Inno Setup 5.5 plus FreeArc `fg-*.bin` files (`ArC` magic). setup.exe unpacks those bins with ISDone/unarc into a temp dir, then copies the game. Install launches `setup.exe /DIR="A:\game"` with Box64 (not FEXCore), `WINEDLLOVERRIDES=isdone,unarc=n,b`, and TEMP on `C:/windows/temp`. Any Custom container whose exe is `setup`/`install`/`.msi` is forced to that Box64 profile on create and on launch. In the wizard, leave the destination on A:\game, skip DirectX/VC redist, and enable the RAM limit. After Wine exits, a non-setup exe under `game/` becomes the Play target.
 
 ## Tab bundle
 
@@ -86,7 +86,7 @@ OpenNative ships `app/src/main/assets/opennative-provider-tabs.json` as the defa
 
 WordPress post HTML stores file-hoster HTTPS links and the first magnet in extra JSON. Download uploads that magnet to AllDebrid, waits until it is ready, then writes every file as siblings in public GameNative/CustomGames/<slugged-title>/ (not Android/data, which Wine cannot see through FUSE). `setup.exe` and `fg-*.bin` must share that folder.
 
-FitGirl packs are Inno Setup 5.5 plus FreeArc `fg-*.bin` files (`ArC` magic). setup.exe unpacks those bins with ISDone/unarc into a temp dir, then copies the game. Install launches `setup.exe /DIR="A:\game"` with Box64 (not FEXCore), `WINEDLLOVERRIDES=isdone,unarc=n,b`, and TEMP on `C:/windows/temp`. In the wizard, leave the destination on A:\game, skip DirectX/VC redist, and enable the RAM limit. After Wine exits, a non-setup exe under `game/` becomes the Play target.
+FitGirl packs are Inno Setup 5.5 plus FreeArc `fg-*.bin` files (`ArC` magic). setup.exe unpacks those bins with ISDone/unarc into a temp dir, then copies the game. Install launches `setup.exe /DIR="A:\game"` with Box64 (not FEXCore), `WINEDLLOVERRIDES=isdone,unarc=n,b`, and TEMP on `C:/windows/temp`. Any Custom container whose exe is `setup`/`install`/`.msi` is forced to that Box64 profile on create and on launch. In the wizard, leave the destination on A:\game, skip DirectX/VC redist, and enable the RAM limit. After Wine exits, a non-setup exe under `game/` becomes the Play target.
 
 ## RSS and Atom
 

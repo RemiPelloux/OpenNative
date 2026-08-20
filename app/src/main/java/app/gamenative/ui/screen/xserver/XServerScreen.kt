@@ -121,6 +121,7 @@ import app.gamenative.ui.data.PerformanceHudSize
 import app.gamenative.ui.data.XServerState
 import app.gamenative.ui.widget.PerformanceHudView
 import app.gamenative.utils.AssetUtils
+import app.gamenative.provider.InstallerWineEnv
 import app.gamenative.utils.ContainerUtils
 import app.gamenative.utils.downloader.CoreDriverDownloader
 import app.gamenative.utils.CustomGameScanner
@@ -391,6 +392,7 @@ fun XServerScreen(
         runCatching { ContainerUtils.getContainer(context, appId) }
             .onFailure { Timber.e(it, "Container is unavailable for %s", appId) }
             .getOrNull()
+            ?.also { InstallerWineEnv.applyIfInstaller(it) }
     }
     if (container == null) {
         LaunchedEffect(appId) {
