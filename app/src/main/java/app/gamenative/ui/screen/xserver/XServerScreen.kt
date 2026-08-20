@@ -4473,8 +4473,8 @@ private fun getWineStartCommand(
             return "winhandler.exe \"wfm.exe\""
         }
 
-        // Set working directory to the game folder
-        val executableDir = gameFolderPath + "/" + executablePath.substringBeforeLast("/", "")
+        val relDir = executablePath.replace('\\', '/').substringBeforeLast('/', "")
+        val executableDir = if (relDir.isBlank()) gameFolderPath else "$gameFolderPath/$relDir"
         guestProgramLauncherComponent.workingDir = File(executableDir)
 
         // Normalize path separators (ensure Windows-style backslashes)

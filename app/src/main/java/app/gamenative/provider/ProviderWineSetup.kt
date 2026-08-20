@@ -17,27 +17,28 @@ object ProviderWineSetup {
 
     fun start(context: Context, dest: File): Launch? {
         hook(context.applicationContext)
-        val titleFolder = ProviderLocalPayload.migrateOffFuse(ProviderLocalPayload.relocatePack(dest))
-        val installer = ProviderLocalPayload.findInstaller(titleFolder)
-        val pack = ProviderLocalPayload.relocatePack(installer?.parentFile ?: titleFolder)
-        val launchExe = ProviderLocalPayload.findInstaller(pack)
+        val titleFolder = ProviderLocalPayload.flattenInstaller(
+            ProviderLocalPayload.migrateOffFuse(ProviderLocalPayload.relocatePack(dest)),
+        )
+        val launchExe = ProviderLocalPayload.findInstaller(titleFolder)
         val folders = PrefManager.customGameManualFolders.toMutableSet()
-        folders.add(pack.absolutePath)
+        folders.removeAll { !File(it).isDirectory }
+        folders.add(titleFolder.absolutePath)
         PrefManager.customGameManualFolders = folders
         CustomGameScanner.invalidateCache()
-        val item = CustomGameScanner.createLibraryItemFromFolder(pack.absolutePath) ?: return null
+        val item = CustomGameScanner.createLibraryItemFromFolder(titleFolder.absolutePath) ?: return null
         if (launchExe != null) {
             val container = ContainerUtils.getOrCreateContainer(context, item.appId)
             container.executablePath = launchExe.name
-            if (FitGirlPack.isPack(pack)) {
+            if (FitGirlPack.isPack(titleFolder)) {
                 container.execArgs = FitGirlPack.EXEC_ARGS
                 container.envVars = FitGirlPack.mergeEnv(container.envVars)
             }
             container.saveData()
         }
         pendingAppId = item.appId
-        pendingDest = pack.absolutePath
-        return Launch(item.appId, pack)
+        pendingDest = titleFolder.absolutePath
+        return Launch(item.appId, titleFolder)
     }
 
     private fun hook(appContext: Context) {

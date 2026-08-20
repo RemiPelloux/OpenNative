@@ -70,6 +70,20 @@ object ProviderLocalPayload {
         return if (pack.renameTo(target)) target else pack
     }
 
+    fun flattenInstaller(root: File): File {
+        val installer = findInstaller(root) ?: return root
+        val pack = installer.parentFile ?: return root
+        if (pack.absolutePath == root.absolutePath) return root
+        pack.listFiles()?.forEach { child ->
+            if (child.name == ".gamenative") return@forEach
+            val target = File(root, child.name)
+            if (!target.exists()) child.renameTo(target)
+        }
+        File(pack, ".gamenative").delete()
+        pack.deleteRecursively()
+        return root
+    }
+
     fun migrateOffFuse(folder: File, publicRoot: File = writeRoot()): File {
         if (!folder.exists() || !folder.absolutePath.contains("/Android/data/")) return folder
         if (!publicRoot.isDirectory && !publicRoot.mkdirs()) return folder

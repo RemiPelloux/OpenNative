@@ -71,4 +71,19 @@ class ProviderLocalPayloadTest {
         assertTrue(File(moved, "setup.exe").exists())
         tmp.deleteRecursively()
     }
+
+    @Test
+    fun `flattens a nested FitGirl pack onto the title folder`() {
+        val title = kotlin.io.path.createTempDirectory("fitgirl-flat").toFile()
+        val pack = File(title, "darkest-dungeon-fitgirl-repack").also { it.mkdirs() }
+        File(pack, "setup.exe").writeBytes(ByteArray(8))
+        File(pack, "fg-01.bin").writeBytes(byteArrayOf(0x41, 0x72, 0x43, 0x01))
+        File(pack, ".gamenative").writeText("{}")
+        val flat = ProviderLocalPayload.flattenInstaller(title)
+        assertEquals(title.absolutePath, flat.absolutePath)
+        assertTrue(File(title, "setup.exe").exists())
+        assertTrue(File(title, "fg-01.bin").exists())
+        assertTrue(!pack.exists())
+        title.deleteRecursively()
+    }
 }
