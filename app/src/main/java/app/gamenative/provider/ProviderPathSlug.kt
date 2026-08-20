@@ -14,6 +14,11 @@ object ProviderPathSlug {
     fun legacy(raw: String): String =
         raw.replace(Regex("[^A-Za-z0-9._ -]"), "").trim().ifBlank { "game" }.take(72)
 
+    fun fileName(relativePath: String): String {
+        val name = relativePath.replace('\\', '/').trim('/').substringAfterLast('/')
+        return name.ifBlank { "file" }
+    }
+
     fun slugDirectories(relativePath: String): String {
         val parts = relativePath.replace('\\', '/').trim('/').split('/').filter { it.isNotBlank() }
         if (parts.isEmpty()) return ""

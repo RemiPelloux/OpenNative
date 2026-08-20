@@ -17,6 +17,9 @@ class ProviderPathSlugTest {
         )
         assertEquals("setup.exe", ProviderPathSlug.slugDirectories("setup.exe"))
         assertEquals("MD5/QuickSFV.EXE", ProviderPathSlug.slugDirectories("MD5/QuickSFV.EXE"))
+        assertEquals("setup.exe", ProviderPathSlug.fileName("Darkest Dungeon [FitGirl Repack]/setup.exe"))
+        assertEquals("fg-01.bin", ProviderPathSlug.fileName("pack\\fg-01.bin"))
+        assertEquals("Box64", InstallerWineEnv.EMULATOR)
     }
 
     @Test

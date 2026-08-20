@@ -83,16 +83,15 @@ object ProviderMagnetDownload {
         return persist(job.copy(filename = file.relativePath, bytesDownloaded = completed + expected))
     }
 
-    private fun confinedTarget(dest: File, file: MagnetRemoteFile): File {
-        val slugged = ArchiveInspector.confinedPath(dest, ProviderPathSlug.slugDirectories(file.relativePath))
-        val legacy = ArchiveInspector.confinedPath(dest, file.relativePath)
-        if (isComplete(slugged, file.sizeBytes)) return slugged
-        if (legacy != slugged && isComplete(legacy, file.sizeBytes)) {
-            slugged.parentFile?.mkdirs()
-            if (legacy.renameTo(slugged)) return slugged
-            return legacy
+    internal fun confinedTarget(dest: File, file: MagnetRemoteFile): File {
+        val flat = ArchiveInspector.confinedPath(dest, ProviderPathSlug.fileName(file.relativePath))
+        if (isComplete(flat, file.sizeBytes)) return flat
+        val nested = ArchiveInspector.confinedPath(dest, ProviderPathSlug.slugDirectories(file.relativePath))
+        if (nested != flat && isComplete(nested, file.sizeBytes)) {
+            if (nested.renameTo(flat)) return flat
+            return nested
         }
-        return slugged
+        return flat
     }
 
     private fun isComplete(file: File, sizeBytes: Long): Boolean {
