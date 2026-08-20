@@ -38,14 +38,50 @@ class WordpressMetadataTest {
     }
 
     @Test
-    fun `preferred link falls back to the post url`() {
+    fun `preferred link does not fall back to a blog post url`() {
         val item = ProviderFeedItem(
             itemId = "1",
             title = "Game",
-            link = "https://example.com/post",
+            link = "https://fitgirl-repacks.site/cuphead/",
             extraJson = "{}",
         )
-        assertEquals("https://example.com/post", WordpressMetadata.preferredLink(item))
+        assertEquals("", WordpressMetadata.preferredLink(item))
+    }
+
+    @Test
+    fun `ranks file hosters above tag and tracker pages`() {
+        val links = WordpressMetadata.httpsLinks(
+            """
+            <a href="https://fitgirl-repacks.site/tag/arcade/">tag</a>
+            <a href="https://1337x.to/torrent/1/">tracker</a>
+            <a href="https://www.internetdownloadmanager.com/">idm</a>
+            <a href="https://datanodes.to/abc/Cuphead_--_fitgirl-repacks.site_--_.part2.rar">p2</a>
+            <a href="https://datanodes.to/abc/Cuphead_--_fitgirl-repacks.site_--_.part1.rar">p1</a>
+            """.trimIndent(),
+        )
+        assertEquals(
+            "https://datanodes.to/abc/Cuphead_--_fitgirl-repacks.site_--_.part1.rar",
+            links.first(),
+        )
+        assertFalse(links.any { it.contains("1337x") || it.contains("/tag/") })
+        assertFalse(links.any { it.contains("internetdownloadmanager") })
+    }
+
+    @Test
+    fun `preferred link uses stored hoster and skips cached tag pages`() {
+        val extra = WordpressMetadata.extraJson(
+            listOf(
+                "https://fitgirl-repacks.site/tag/arcade/",
+                "https://datanodes.to/file/part1.rar",
+            ),
+        )
+        val item = ProviderFeedItem(
+            itemId = "1",
+            title = "Game",
+            link = "https://fitgirl-repacks.site/cuphead/",
+            extraJson = extra,
+        )
+        assertEquals("https://datanodes.to/file/part1.rar", WordpressMetadata.preferredLink(item))
     }
 
     @Test

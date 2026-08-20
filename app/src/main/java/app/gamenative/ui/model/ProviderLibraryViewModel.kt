@@ -251,11 +251,12 @@ class ProviderLibraryViewModel @Inject constructor(
             val available = runCatching {
                 StorageUtils.getAvailableSpace(context.filesDir.absolutePath)
             }.getOrDefault(0L)
-            val downloadItem = item.copy(link = WordpressMetadata.preferredLink(item))
+            val links = WordpressMetadata.candidateLinks(item)
+            val downloadItem = item.copy(link = links.firstOrNull() ?: item.link)
             var job: TransferJob? = null
             runCatching {
                 job = transfers.enqueue(tab, downloadItem, available, includeWineHeadroom = true)
-                val downloaded = transfers.resolveAndDownload(tab, job!!) { false }
+                val downloaded = transfers.resolveAndDownload(tab, job!!, { false }, links, item.link)
                 val kind = PayloadClassifier.classify(File(downloaded.finalPath))
                 if (kind == PayloadKind.PORTABLE_ARCHIVE) {
                     ProviderInstallHandler.install(transfers, downloaded, item, tab)

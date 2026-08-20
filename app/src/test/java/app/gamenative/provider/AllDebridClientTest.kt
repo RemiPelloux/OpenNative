@@ -54,6 +54,24 @@ class AllDebridClientTest {
         } catch (error: ProviderException) {
             assertEquals(ProviderErrorCode.AUTHENTICATION, error.code)
             assertTrue(!error.message.orEmpty().contains("bad"))
+            assertTrue(error.message.orEmpty().contains("authentication"))
+        }
+    }
+
+    @Test
+    fun `maps unsupported host without leaking the key`() = runBlocking {
+        server.enqueue(
+            MockResponse().setBody(
+                """{"status":"error","error":{"code":"LINK_HOST_NOT_SUPPORTED","message":"Host not supported"}}""",
+            ),
+        )
+        try {
+            client.resolve("secret-key", "https://example.com/post")
+            throw AssertionError("expected failure")
+        } catch (error: ProviderException) {
+            assertEquals(ProviderErrorCode.UNSUPPORTED_HOST, error.code)
+            assertTrue(!error.message.orEmpty().contains("secret-key"))
+            assertTrue(error.message.orEmpty().contains("not supported"))
         }
     }
 

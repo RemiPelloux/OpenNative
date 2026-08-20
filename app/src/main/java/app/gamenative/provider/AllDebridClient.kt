@@ -81,14 +81,25 @@ class AllDebridClient(
     }
 
     private fun mapError(json: JSONObject, fallback: ProviderErrorCode): ProviderException {
-        val code = json.optJSONObject("error")?.optString("code").orEmpty()
+        val error = json.optJSONObject("error")
+        val code = error?.optString("code").orEmpty()
         val mapped = when (code) {
             "AUTH_BAD_APIKEY", "AUTH_MISSING_APIKEY" -> ProviderErrorCode.AUTHENTICATION
             "LINK_HOST_NOT_SUPPORTED" -> ProviderErrorCode.UNSUPPORTED_HOST
             "LINK_DOWN", "LINK_ERROR" -> ProviderErrorCode.UNAVAILABLE_LINK
             else -> fallback
         }
-        return ProviderException(mapped, "Resolver request failed")
+        return ProviderException(mapped, resolverMessage(mapped, error?.optString("message").orEmpty()))
+    }
+
+    private fun resolverMessage(code: ProviderErrorCode, detail: String): String {
+        val safe = ProviderUrlPolicy.redact(detail).trim()
+        return when {
+            code == ProviderErrorCode.AUTHENTICATION -> "Resolver authentication failed"
+            code == ProviderErrorCode.UNSUPPORTED_HOST -> "This file host is not supported"
+            safe.isNotBlank() -> safe
+            else -> "Resolver request failed"
+        }
     }
 
     companion object {

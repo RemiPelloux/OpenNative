@@ -8,6 +8,7 @@
 - Register finished portable installs in Custom and delete the installer only after a confirmed install.
 - Keep FitGirl and other user feed hosts off the restored host denylist (`google.fr`, `facebook.fr`).
 - Page WordPress REST catalogs at 20 posts so full `content` stays under the 2 MB fetch cap.
+- Unlock file-hoster HTTPS links on Install instead of catalog or tag pages, retry the next host if unlock fails, and show the resolver error.
 
 ## 1.2.0 - 2026-08-20
 

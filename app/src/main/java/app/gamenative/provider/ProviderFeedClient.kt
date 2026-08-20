@@ -36,6 +36,21 @@ class ProviderFeedClient(
         return execute(request, kindHint, page)
     }
 
+    fun fetchText(url: String): String {
+        val uri = ProviderUrlPolicy.validate(url, allowLoopbackHttp).getOrThrow()
+        val request = Request.Builder().url(uri.toString()).get().build()
+        val response = try {
+            httpClient.newCall(request).execute()
+        } catch (_: IOException) {
+            throw ProviderException(ProviderErrorCode.NETWORK, "Feed request failed")
+        }
+        return response.use { resp ->
+            if (!resp.isSuccessful) throw mapHttp(resp.code)
+            val body = resp.body?.string().orEmpty()
+            body.take(ProviderUrlPolicy.MAX_RESPONSE_BYTES)
+        }
+    }
+
     private fun execute(request: Request, kindHint: FeedKind?, page: Int): ProviderFeedPage {
         val response = try {
             httpClient.newCall(request).execute()

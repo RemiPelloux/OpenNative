@@ -9,7 +9,6 @@ object WordpressMetadata {
         RegexOption.IGNORE_CASE,
     )
     private val HREF = Regex("""https://[^\s"'<>]+""", RegexOption.IGNORE_CASE)
-    private val IMAGE_EXT = Regex("""\.(?:jpe?g|png|webp|gif|svg|ico)(?:\?|$)""", RegexOption.IGNORE_CASE)
 
     fun sizes(text: String): Pair<Long, Long> {
         var download = 0L
@@ -23,12 +22,11 @@ object WordpressMetadata {
     }
 
     fun httpsLinks(html: String): List<String> =
-        HREF.findAll(html)
-            .map { it.value.trimEnd('.', ',', ')', ']') }
-            .filter { isDownloadLink(it) }
-            .distinct()
-            .take(8)
-            .toList()
+        rankLinks(
+            HREF.findAll(html).map { it.value.trimEnd('.', ',', ')', ']') }.toList(),
+        )
+
+    fun rankLinks(urls: List<String>): List<String> = WordpressDownloadLinks.rank(urls)
 
     fun extraJson(links: List<String>): String {
         if (links.isEmpty()) return "{}"
@@ -45,25 +43,19 @@ object WordpressMetadata {
         return buildList {
             for (index in 0 until array.length()) {
                 val link = array.optString(index)
-                if (isDownloadLink(link)) add(link)
+                if (link.isNotBlank()) add(link)
             }
-        }
+        }.let { rankLinks(it) }
+    }
+
+    fun candidateLinks(item: ProviderFeedItem): List<String> {
+        val stored = linksFrom(item.extraJson)
+        if (stored.isNotEmpty()) return stored
+        return rankLinks(listOf(item.link))
     }
 
     fun preferredLink(item: ProviderFeedItem): String =
-        linksFrom(item.extraJson).firstOrNull() ?: item.link
-
-    private fun isDownloadLink(url: String): Boolean {
-        if (!url.startsWith("https://", ignoreCase = true)) return false
-        if (url.contains("magnet:", ignoreCase = true)) return false
-        if (IMAGE_EXT.containsMatchIn(url)) return false
-        val host = runCatching { java.net.URI(url).host?.lowercase().orEmpty() }.getOrDefault("")
-        if (host.isBlank()) return false
-        if (host.endsWith("imageban.ru") || host.endsWith("tenor.com") || host.endsWith("gravatar.com")) {
-            return false
-        }
-        return ProviderUrlPolicy.validate(url).isSuccess
-    }
+        candidateLinks(item).firstOrNull().orEmpty()
 
     private fun bytes(match: MatchResult): Long {
         val first = amount(match.groupValues[2], match.groupValues[4])

@@ -26,6 +26,7 @@ class ProviderTransferCoordinator @Inject constructor(
     private val secrets: ProviderSecretStore,
     private val resolver: AllDebridResolver,
     private val downloader: StreamingDownloader,
+    private val feedClient: ProviderFeedClient,
     @Named("providerStagingRoot") private val stagingRoot: File,
 ) {
     private val resolveGuard = InFlightGuard()
@@ -72,10 +73,16 @@ class ProviderTransferCoordinator @Inject constructor(
         return job
     }
 
-    suspend fun resolveAndDownload(tab: ProviderTab, job: TransferJob, cancelled: () -> Boolean): TransferJob {
+    suspend fun resolveAndDownload(
+        tab: ProviderTab,
+        job: TransferJob,
+        cancelled: () -> Boolean,
+        candidates: List<String> = emptyList(),
+        pageUrl: String = "",
+    ): TransferJob {
         val key = job.identity
         val running = resolveGuard.withKey(key) {
-            val resolved = resolve(tab, job)
+            val resolved = resolve(tab, job, candidates, pageUrl)
             download(resolved, cancelled)
         }
         return running ?: job
@@ -156,15 +163,61 @@ class ProviderTransferCoordinator @Inject constructor(
         job.copy(state = TransferState.FAILED, errorCode = ProviderErrorCode.NETWORK, errorMessage = message),
     )
 
-    private suspend fun resolve(tab: ProviderTab, job: TransferJob): TransferJob {
+    private suspend fun resolve(
+        tab: ProviderTab,
+        job: TransferJob,
+        candidates: List<String>,
+        pageUrl: String,
+    ): TransferJob {
         val apiKey = secrets.read(tab.credentialRef)
             ?: throw ProviderException(ProviderErrorCode.AUTHENTICATION, "Resolver credential is missing")
         persist(job.copy(state = TransferState.RESOLVING))
-        val resolved = resolver.resolve(apiKey, job.selectedLink)
+        return unlockFirst(apiKey, job, unlockTargets(job.selectedLink, candidates, pageUrl))
+    }
+
+    private suspend fun unlockFirst(
+        apiKey: String,
+        job: TransferJob,
+        links: List<String>,
+    ): TransferJob {
+        var lastError: ProviderException? = null
+        for (link in links) {
+            try {
+                return persistResolved(job, link, resolver.resolve(apiKey, link))
+            } catch (error: ProviderException) {
+                if (isFatalResolver(error)) throw error
+                lastError = error
+            }
+        }
+        throw lastError ?: ProviderException(
+            ProviderErrorCode.UNAVAILABLE_LINK,
+            "No file hoster link in this post",
+        )
+    }
+
+    private fun isFatalResolver(error: ProviderException): Boolean =
+        error.code == ProviderErrorCode.AUTHENTICATION || error.code == ProviderErrorCode.RATE_LIMIT
+
+    private fun unlockTargets(selected: String, candidates: List<String>, pageUrl: String): List<String> {
+        val ranked = WordpressMetadata.rankLinks(
+            (candidates + selected).filter { it.isNotBlank() },
+        )
+        if (ranked.isNotEmpty()) return ranked
+        if (pageUrl.isBlank()) return emptyList()
+        val html = runCatching { feedClient.fetchText(pageUrl) }.getOrDefault("")
+        return WordpressMetadata.httpsLinks(html)
+    }
+
+    private suspend fun persistResolved(
+        job: TransferJob,
+        selectedLink: String,
+        resolved: ResolvedDownload,
+    ): TransferJob {
         val partial = File(stagingRoot, "${job.jobId}/${resolved.filename}.partial")
         return persist(
             job.copy(
                 state = TransferState.DOWNLOADING,
+                selectedLink = selectedLink,
                 resolvedUrl = resolved.url,
                 filename = resolved.filename,
                 partialPath = partial.absolutePath,

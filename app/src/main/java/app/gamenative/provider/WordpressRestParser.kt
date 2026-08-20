@@ -5,7 +5,7 @@ import org.json.JSONObject
 
 /**
  * Generic WordPress REST post list. Maps public title, link, excerpt and cover media.
- * It does not extract download links or magnets from post HTML.
+ * File-hoster HTTPS links are stored in extraJson; magnets and blog pages are ignored.
  */
 object WordpressRestParser {
     fun looksLike(body: String): Boolean {
