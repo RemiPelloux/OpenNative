@@ -116,6 +116,7 @@ object FeedPaginator {
         "page", "per_page", "paged", "orderby", "order", "cursor", "search", "s",
         "_fields", "_embed", "embed",
     )
-    private const val WP_REST_FIELDS = "id,slug,link,title,excerpt,jetpack_featured_media_url"
+    private const val WP_REST_FIELDS =
+        "id,slug,link,title,excerpt,content,jetpack_featured_media_url,featured_media"
     private val ORDER_BY = setOf("date", "modified", "title", "id", "relevance")
 }

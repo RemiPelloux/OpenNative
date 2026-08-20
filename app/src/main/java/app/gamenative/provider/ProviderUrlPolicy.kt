@@ -25,6 +25,9 @@ object ProviderUrlPolicy {
     fun validateUri(uri: URI, allowLoopbackHttp: Boolean = false): Result<URI> {
         val scheme = uri.scheme?.lowercase()
         val host = uri.host?.lowercase().orEmpty()
+        if (host in blockedHosts) {
+            return Result.failure(ProviderException(ProviderErrorCode.UNSAFE_URL, "This host is not allowed"))
+        }
         val https = scheme == "https"
         val loopbackHttp = allowLoopbackHttp && scheme == "http" && isLoopback(host)
         if (!https && !loopbackHttp) {

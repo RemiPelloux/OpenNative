@@ -2248,6 +2248,7 @@
     <string name="provider_stale">Showing last good snapshot</string>
     <string name="provider_refresh">Refresh feed</string>
     <string name="provider_download">Download</string>
+    <string name="provider_install">Install to Custom</string>
     <string name="provider_download_blocked">Add an AllDebrid key to download</string>
     <string name="provider_key_title">AllDebrid required</string>
     <string name="provider_key_body">Enter an AllDebrid API key to resolve the selected link. You can dismiss this and keep browsing. Download stays disabled until a key is saved.</string>

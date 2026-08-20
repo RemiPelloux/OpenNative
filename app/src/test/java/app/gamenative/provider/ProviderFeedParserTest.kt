@@ -92,16 +92,18 @@ class ProviderFeedParserTest {
                 "link": "https://example.com/hello",
                 "title": { "rendered": "Hello" },
                 "excerpt": { "rendered": "<p>Hi</p>" },
-                "content": { "rendered": "<p>magnet:not-used</p>" }
+                "content": { "rendered": "<p><img src=\"https://cdn.example.com/cover.jpg\" />magnet:not-used</p>" }
               }
             ]
             """.trimIndent(),
         )
-        assertEquals("9", page.items.single().itemId)
-        assertEquals("Hello", page.items.single().title)
-        assertEquals("https://example.com/hello", page.items.single().link)
-        assertEquals("Hi", page.items.single().description)
-        assertEquals("{}", page.items.single().extraJson)
+        val item = page.items.single()
+        assertEquals("9", item.itemId)
+        assertEquals("Hello", item.title)
+        assertEquals("https://example.com/hello", item.link)
+        assertEquals("https://cdn.example.com/cover.jpg", item.artworkUrl)
+        assertEquals("Hi", item.description)
+        assertEquals("{}", item.extraJson)
     }
 
     @Test

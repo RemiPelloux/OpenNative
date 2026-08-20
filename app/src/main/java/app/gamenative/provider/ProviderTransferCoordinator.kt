@@ -81,13 +81,18 @@ class ProviderTransferCoordinator @Inject constructor(
         return running ?: job
     }
 
-    suspend fun completePortableInstall(job: TransferJob, selectedExe: File, policy: CleanupPolicy): TransferJob {
+    suspend fun completePortableInstall(
+        job: TransferJob,
+        selectedExe: File,
+        policy: CleanupPolicy,
+        confirmed: Boolean = false,
+    ): TransferJob {
         val installer = File(job.finalPath)
-        val hash = StreamingHasher.sha256(installer)
-        if (!StreamingHasher.matches(job.expectedSha256, hash)) {
+        val hash = if (installer.isFile) StreamingHasher.sha256(installer) else job.actualSha256.orEmpty()
+        if (installer.isFile && !StreamingHasher.matches(job.expectedSha256, hash)) {
             throw ProviderException(ProviderErrorCode.HASH_MISMATCH, "Installer hash did not match")
         }
-        val destination = File(job.destinationPath)
+        val destination = File(job.destinationPath.ifBlank { selectedExe.parent.orEmpty() })
         val receipt = InstallReceipt(
             receiptId = UUID.randomUUID().toString(),
             jobId = job.jobId,
@@ -110,12 +115,15 @@ class ProviderTransferCoordinator @Inject constructor(
             hashesMatch = true,
             executableSelected = selectedExe.exists(),
             receiptCommitted = true,
-            installerOwnedByJob = installer.exists() && installer.absolutePath == job.finalPath,
+            installerOwnedByJob = !installer.exists() || installer.absolutePath == job.finalPath,
         )
-        if (decision.canDelete) installer.delete()
+        if (confirmed || decision.canDelete) {
+            InstallerCleanup.remove(job, destination, stagingRoot)
+        }
         return persist(
             job.copy(
                 state = TransferState.READY,
+                destinationPath = destination.absolutePath,
                 executablePath = selectedExe.absolutePath,
                 actualSha256 = hash,
                 updatedAtEpochMs = System.currentTimeMillis(),
@@ -143,6 +151,10 @@ class ProviderTransferCoordinator @Inject constructor(
         }
         persist(job.copy(state = TransferState.INSTALLING, destinationPath = dest.absolutePath))
     }
+
+    suspend fun markFailed(job: TransferJob, message: String): TransferJob = persist(
+        job.copy(state = TransferState.FAILED, errorCode = ProviderErrorCode.NETWORK, errorMessage = message),
+    )
 
     private suspend fun resolve(tab: ProviderTab, job: TransferJob): TransferJob {
         val apiKey = secrets.read(tab.credentialRef)

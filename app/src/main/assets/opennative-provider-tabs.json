@@ -1,0 +1,17 @@
+{
+  "schema": "opennative.provider.tabs/v1",
+  "exportedAtEpochMs": 1755705600000,
+  "tabs": [
+    {
+      "name": "FitGirl",
+      "feedUrl": "https://fitgirl-repacks.site/wp-json/wp/v2/posts",
+      "feedKind": "JSON",
+      "perPage": 20,
+      "orderBy": "date",
+      "order": "desc",
+      "refreshPolicy": "DAILY",
+      "cleanupPolicy": "DELETE_AFTER_VERIFIED_INSTALL",
+      "enabled": true
+    }
+  ]
+}

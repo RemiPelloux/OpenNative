@@ -98,6 +98,10 @@ class LibraryViewModel @Inject constructor(
         onFilterApps(paginationCurrentPage)
     }
 
+    private val onCustomGameFolderAdded: (AndroidEvent.CustomGameFolderAdded) -> Unit = { event ->
+        addCustomGameFolder(event.path)
+    }
+
     private val onRecommendationToggleChanged: (AndroidEvent.RecommendationToggleChanged) -> Unit = {
         refreshRecommendationHero()
     }
@@ -233,6 +237,7 @@ class LibraryViewModel @Inject constructor(
 
         PluviaApp.events.on<AndroidEvent.LibraryInstallStatusChanged, Unit>(onInstallStatusChanged)
         PluviaApp.events.on<AndroidEvent.CustomGameImagesFetched, Unit>(onCustomGameImagesFetched)
+        PluviaApp.events.on<AndroidEvent.CustomGameFolderAdded, Unit>(onCustomGameFolderAdded)
         PluviaApp.events.on<AndroidEvent.RecommendationToggleChanged, Unit>(onRecommendationToggleChanged)
 
         refreshRecommendationHero()
@@ -268,6 +273,7 @@ class LibraryViewModel @Inject constructor(
         searchDebounceJob?.cancel()
         PluviaApp.events.off<AndroidEvent.LibraryInstallStatusChanged, Unit>(onInstallStatusChanged)
         PluviaApp.events.off<AndroidEvent.CustomGameImagesFetched, Unit>(onCustomGameImagesFetched)
+        PluviaApp.events.off<AndroidEvent.CustomGameFolderAdded, Unit>(onCustomGameFolderAdded)
         PluviaApp.events.off<AndroidEvent.RecommendationToggleChanged, Unit>(onRecommendationToggleChanged)
         super.onCleared()
     }

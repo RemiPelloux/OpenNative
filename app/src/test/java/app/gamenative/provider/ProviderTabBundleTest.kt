@@ -48,17 +48,54 @@ class ProviderTabBundleTest {
     }
 
     @Test(expected = ProviderException::class)
-    fun `blocked catalog host cannot be imported`() {
+    fun `non https catalog host cannot be imported`() {
         ProviderTabCodec.decode(
             """
             {
               "schema": "opennative.provider.tabs/v1",
               "tabs": [{
                 "name": "Blocked",
-                "feedUrl": "https://fitgirl-repacks.site/wp-json/wp/v2/posts"
+                "feedUrl": "http://blog.example/wp-json/wp/v2/posts"
               }]
             }
             """.trimIndent(),
         )
+    }
+
+    @Test
+    fun `shipped default asset matches the public tab bundle`() {
+        val example = java.io.File("../docs/examples/opennative-provider-tabs.json").readText()
+        val asset = java.io.File("src/main/assets/opennative-provider-tabs.json").readText()
+        val fromExample = ProviderTabCodec.decode(example).single()
+        val fromAsset = ProviderTabCodec.decode(asset).single()
+        assertEquals(fromExample.name, fromAsset.name)
+        assertEquals(fromExample.feedUrl, fromAsset.feedUrl)
+        assertEquals(20, fromAsset.perPage)
+        assertEquals(FeedKind.JSON, fromAsset.feedKind)
+    }
+
+    @Test
+    fun `imports fitgirl wordpress tab bundle`() {
+        val decoded = ProviderTabCodec.decode(
+            """
+            {
+              "schema": "opennative.provider.tabs/v1",
+              "tabs": [{
+                "name": "FitGirl",
+                "feedUrl": "https://fitgirl-repacks.site/wp-json/wp/v2/posts?per_page=100&page=1&orderby=date&order=desc&_embed=1",
+                "feedKind": "JSON",
+                "perPage": 20,
+                "orderBy": "date",
+                "order": "desc"
+              }]
+            }
+            """.trimIndent(),
+        ).single()
+        assertEquals("FitGirl", decoded.name)
+        assertEquals("https://fitgirl-repacks.site/wp-json/wp/v2/posts", decoded.feedUrl)
+        assertEquals(20, decoded.perPage)
+        assertEquals("date", decoded.orderBy)
+        assertEquals("desc", decoded.order)
+        assertEquals(FeedKind.JSON, decoded.feedKind)
     }
 }

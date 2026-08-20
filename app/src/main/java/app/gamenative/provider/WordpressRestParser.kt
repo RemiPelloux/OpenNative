@@ -4,8 +4,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Generic WordPress REST post list. Maps public title/link/media only.
- * It does not read post HTML or extract download links from content.
+ * Generic WordPress REST post list. Maps public title, link, excerpt and cover media.
+ * It does not extract download links or magnets from post HTML.
  */
 object WordpressRestParser {
     fun looksLike(body: String): Boolean {
@@ -32,14 +32,19 @@ object WordpressRestParser {
         val link = obj.optString("link")
         val id = obj.opt("id")?.toString().orEmpty().ifBlank { link }
         if (title.isBlank() || link.isBlank()) return null
+        val excerpt = rendered(obj, "excerpt")
+        val content = rendered(obj, "content")
+        val (download, uncompressed) = WordpressMetadata.sizes("$excerpt $content")
         return ProviderFeedItem(
             itemId = id,
             title = title,
-            description = strip(rendered(obj, "excerpt")),
+            description = strip(excerpt),
             link = link,
-            artworkUrl = artwork(obj),
+            artworkUrl = WordpressArtwork.from(obj),
+            downloadSizeBytes = download,
+            uncompressedSizeBytes = uncompressed,
             publishedAtEpochMs = 0L,
-            extraJson = "{}",
+            extraJson = WordpressMetadata.extraJson(WordpressMetadata.httpsLinks(content)),
         )
     }
 
@@ -47,14 +52,6 @@ object WordpressRestParser {
         val value = obj.opt(key)
         if (value is JSONObject) return value.optString("rendered")
         return obj.optString(key)
-    }
-
-    private fun artwork(obj: JSONObject): String? {
-        val jetpack = obj.optString("jetpack_featured_media_url")
-        if (jetpack.isNotBlank()) return jetpack
-        val embedded = obj.optJSONObject("_embedded") ?: return null
-        val media = embedded.optJSONArray("wp:featuredmedia")?.optJSONObject(0)
-        return media?.optString("source_url")?.ifBlank { null }
     }
 
     private fun strip(html: String): String =

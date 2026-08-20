@@ -12,10 +12,13 @@ import app.gamenative.provider.CatalogFilter
 import app.gamenative.provider.PayloadClassifier
 import app.gamenative.provider.PayloadKind
 import app.gamenative.provider.ProviderCatalogRepository
+import app.gamenative.provider.ProviderDefaultTabs
 import app.gamenative.provider.ProviderDeviceKeyImport
 import app.gamenative.provider.ProviderException
 import app.gamenative.provider.ProviderFeedItem
+import app.gamenative.provider.ProviderInstallHandler
 import app.gamenative.provider.ProviderRefreshCoordinator
+import app.gamenative.provider.WordpressMetadata
 import app.gamenative.provider.ProviderSecretStore
 import app.gamenative.provider.ProviderTab
 import app.gamenative.provider.ProviderTabBundle
@@ -84,6 +87,9 @@ class ProviderLibraryViewModel @Inject constructor(
     fun onAppOpen() {
         viewModelScope.launch {
             runCatching { ProviderDeviceKeyImport.consume(context, secrets, resolver) }
+            runCatching {
+                ProviderDefaultTabs.seedIfEmpty(catalog, ProviderDefaultTabs.readAsset(context))
+            }
             syncGlobalFlag()
             refreshCoordinator.refreshOnOpen()
         }
@@ -185,6 +191,17 @@ class ProviderLibraryViewModel @Inject constructor(
         startDownload(resolved, item)
     }
 
+    fun onInstallClick(tab: ProviderTab, item: ProviderFeedItem) {
+        val job = _ui.value.jobs.lastOrNull { it.itemId == item.itemId } ?: return
+        viewModelScope.launch {
+            runCatching {
+                ProviderInstallHandler.install(transfers, job, item, tab.withGlobalCredential())
+            }.onFailure { error ->
+                transfers.markFailed(job, error.message ?: error.toString())
+            }
+        }
+    }
+
     fun saveKey(rawKey: String) = persistGlobalKey(rawKey, fromDownloadPrompt = true)
 
     fun saveGlobalKey(rawKey: String) = persistGlobalKey(rawKey, fromDownloadPrompt = false)
@@ -225,7 +242,7 @@ class ProviderLibraryViewModel @Inject constructor(
 
     fun completeInstall(job: TransferJob, exe: File, tab: ProviderTab) {
         viewModelScope.launch {
-            runCatching { transfers.completePortableInstall(job, exe, tab.cleanupPolicy) }
+            runCatching { transfers.completePortableInstall(job, exe, tab.cleanupPolicy, confirmed = true) }
         }
     }
 
@@ -234,13 +251,17 @@ class ProviderLibraryViewModel @Inject constructor(
             val available = runCatching {
                 StorageUtils.getAvailableSpace(context.filesDir.absolutePath)
             }.getOrDefault(0L)
-            val job = transfers.enqueue(tab, item, available, includeWineHeadroom = true)
-            val downloaded = transfers.resolveAndDownload(tab, job) { false }
+            val downloadItem = item.copy(link = WordpressMetadata.preferredLink(item))
+            var job: TransferJob? = null
             runCatching {
+                job = transfers.enqueue(tab, downloadItem, available, includeWineHeadroom = true)
+                val downloaded = transfers.resolveAndDownload(tab, job!!) { false }
                 val kind = PayloadClassifier.classify(File(downloaded.finalPath))
                 if (kind == PayloadKind.PORTABLE_ARCHIVE) {
-                    transfers.extractPortable(downloaded)
+                    ProviderInstallHandler.install(transfers, downloaded, item, tab)
                 }
+            }.onFailure { error ->
+                job?.let { transfers.markFailed(it, error.message ?: error.toString()) }
             }
         }
     }

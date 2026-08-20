@@ -9,7 +9,10 @@ import app.gamenative.db.dao.AmazonGameDao
 import app.gamenative.db.dao.GOGGameDao
 import app.gamenative.events.EventDispatcher
 import app.gamenative.provider.AllDebridResolver
+import app.gamenative.provider.ProviderCatalogRepository
+import app.gamenative.provider.ProviderDefaultTabs
 import app.gamenative.provider.ProviderDeviceKeyImport
+import app.gamenative.provider.ProviderDeviceTabImport
 import app.gamenative.provider.ProviderSecretStore
 import app.gamenative.powercontrol.PowerManager
 import app.gamenative.performance.shaders.ShaderHealthMonitor
@@ -53,6 +56,7 @@ class PluviaApp : SplitCompatApplication() {
     @Inject lateinit var amazonGameDao: AmazonGameDao
     @Inject lateinit var providerSecrets: ProviderSecretStore
     @Inject lateinit var allDebridResolver: AllDebridResolver
+    @Inject lateinit var providerCatalog: ProviderCatalogRepository
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -98,6 +102,22 @@ class PluviaApp : SplitCompatApplication() {
                 }.onFailure { error ->
                     Timber.tag("ProviderKey").e(error, "Device AllDebrid import failed")
                 }
+                runCatching {
+                    ProviderDeviceTabImport.consume(this@PluviaApp, providerCatalog)
+                }.onFailure { error ->
+                    Timber.tag("ProviderTabs").e(error, "Device provider tab import failed")
+                }
+            }
+        }
+        appScope.launch {
+            runCatching {
+                val created = ProviderDefaultTabs.seedIfEmpty(
+                    providerCatalog,
+                    ProviderDefaultTabs.readAsset(this@PluviaApp),
+                )
+                created.forEach { tab -> providerCatalog.refreshTab(tab) }
+            }.onFailure { error ->
+                Timber.tag("ProviderTabs").e(error, "Default provider tab seed failed")
             }
         }
 

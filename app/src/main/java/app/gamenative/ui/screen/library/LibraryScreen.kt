@@ -204,6 +204,10 @@ fun HomeLibraryScreen(
             val tab = providerTabs.find { it.id == state.selectedProviderTabId }
             if (tab != null) providerViewModel.onDownloadClick(tab, item)
         },
+        onProviderInstall = { item ->
+            val tab = providerTabs.find { it.id == state.selectedProviderTabId }
+            if (tab != null) providerViewModel.onInstallClick(tab, item)
+        },
         providerItems = providerUi.visibleItems,
         providerSearchQuery = providerUi.searchQuery,
         providerJobs = providerUi.jobs,
@@ -261,6 +265,7 @@ private fun LibraryScreenContent(
     onProviderDelete: () -> Unit = {},
     onProviderSearch: (String) -> Unit = {},
     onProviderDownload: (app.gamenative.provider.ProviderFeedItem) -> Unit = {},
+    onProviderInstall: (app.gamenative.provider.ProviderFeedItem) -> Unit = {},
     providerItems: List<app.gamenative.provider.ProviderFeedItem> = emptyList(),
     providerSearchQuery: String = "",
     providerJobs: List<app.gamenative.provider.TransferJob> = emptyList(),
@@ -1015,6 +1020,7 @@ private fun LibraryScreenContent(
                         onRefresh = onProviderRefresh,
                         onLoadMore = onProviderLoadMore,
                         onDownload = onProviderDownload,
+                        onInstall = onProviderInstall,
                         onDeleteTab = onProviderDelete,
                         modifier = Modifier.fillMaxSize(),
                     )

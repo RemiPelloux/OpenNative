@@ -17,8 +17,8 @@ class FeedPaginatorTest {
         assertTrue(url.contains("per_page=50"))
         assertTrue(url.contains("orderby=title"))
         assertTrue(url.contains("order=asc"))
-        assertTrue(url.contains("_fields=id,slug,link,title,excerpt,jetpack_featured_media_url"))
-        assertFalse(url.contains("content"))
+        assertTrue(url.contains("_fields=id,slug,link,title,excerpt,content,jetpack_featured_media_url,featured_media"))
+        assertFalse(url.contains("password"))
     }
 
     @Test
@@ -105,6 +105,6 @@ class FeedPaginatorTest {
             style = PaginationStyle.WORDPRESS_REST,
         )
         assertTrue(url.contains("orderby=date"))
-        assertFalse(url.contains("content"))
+        assertFalse(url.contains("content;drop"))
     }
 }

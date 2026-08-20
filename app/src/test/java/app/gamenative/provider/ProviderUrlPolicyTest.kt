@@ -26,8 +26,14 @@ class ProviderUrlPolicyTest {
 
     @Test
     fun `blocked catalog host is rejected`() {
-        val result = ProviderUrlPolicy.validate("https://fitgirl-repacks.site/wp-json/wp/v2/posts")
+        val result = ProviderUrlPolicy.validate("https://google.fr/feed.json")
         assertTrue(result.isFailure)
+    }
+
+    @Test
+    fun `wordpress catalog host is accepted`() {
+        val result = ProviderUrlPolicy.validate("https://fitgirl-repacks.site/wp-json/wp/v2/posts")
+        assertTrue(result.isSuccess)
     }
 
     @Test

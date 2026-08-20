@@ -1,18 +1,28 @@
 package app.gamenative.ui.screen.library.provider
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -32,23 +42,40 @@ fun ProviderCatalogScreen(
     onRefresh: () -> Unit,
     onLoadMore: () -> Unit = {},
     onDownload: (ProviderFeedItem) -> Unit,
+    onInstall: (ProviderFeedItem) -> Unit = {},
     onDeleteTab: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val jobsByItem = jobs.associateBy { it.itemId }
+    var selected by remember { mutableStateOf<ProviderFeedItem?>(null) }
+    val colors = MaterialTheme.colorScheme
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(colors.background)
             .padding(top = 72.dp),
     ) {
-        Text(
-            text = tab.name,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(text = tab.name, color = colors.onBackground, style = MaterialTheme.typography.titleLarge)
+            Row {
+                TextButton(onClick = onRefresh) {
+                    Text(stringResource(R.string.provider_refresh), color = colors.primary)
+                }
+                TextButton(onClick = onDeleteTab) {
+                    Text(stringResource(R.string.provider_delete), color = colors.primary)
+                }
+            }
+        }
         if (tab.stale) {
             Text(
                 text = stringResource(R.string.provider_stale),
+                color = colors.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
@@ -61,40 +88,52 @@ fun ProviderCatalogScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             singleLine = true,
             label = { Text(stringResource(R.string.provider_search)) },
+            colors = TextFieldDefaults.colors(
+                focusedTextColor = colors.onSurface,
+                unfocusedTextColor = colors.onSurface,
+                focusedContainerColor = colors.surface,
+                unfocusedContainerColor = colors.surface,
+            ),
         )
-        TextButton(onClick = onRefresh, modifier = Modifier.padding(horizontal = 8.dp)) {
-            Text(stringResource(R.string.provider_refresh))
-        }
-        TextButton(onClick = onDeleteTab, modifier = Modifier.padding(horizontal = 8.dp)) {
-            Text(stringResource(R.string.provider_delete))
-        }
         if (items.isEmpty()) {
             Text(
                 text = stringResource(R.string.provider_empty),
+                color = colors.onSurfaceVariant,
                 modifier = Modifier.padding(16.dp),
             )
         } else {
-            LazyColumn(
-                contentPadding = PaddingValues(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(148.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(items, key = { it.itemId }) { item ->
                     ProviderCatalogRow(
                         item = item,
                         job = jobsByItem[item.itemId],
-                        downloadEnabled = downloadEnabled,
-                        onDownload = { onDownload(item) },
+                        onClick = { selected = item },
                     )
                 }
                 if (canLoadMore(tab)) {
-                    item(key = "load-more") {
+                    item(key = "load-more", span = { GridItemSpan(maxLineSpan) }) {
                         TextButton(onClick = onLoadMore, modifier = Modifier.padding(16.dp)) {
-                            Text(stringResource(R.string.provider_load_more))
+                            Text(stringResource(R.string.provider_load_more), color = colors.primary)
                         }
                     }
                 }
             }
         }
+    }
+    selected?.let { item ->
+        ProviderGameDialog(
+            item = item,
+            job = jobsByItem[item.itemId],
+            downloadEnabled = downloadEnabled,
+            onDismiss = { selected = null },
+            onDownload = { onDownload(item) },
+            onInstall = { onInstall(item) },
+        )
     }
 }
 

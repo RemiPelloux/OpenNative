@@ -1,6 +1,6 @@
 # Provider feed contract
 
-OpenNative `1.2.0` reads **user-supplied** HTTPS catalogs. The application does not ship a catalog, default feed, or third-party index.
+OpenNative `1.2.1` reads **user-supplied** HTTPS catalogs. First launch can seed `assets/opennative-provider-tabs.json` as a default tab; the application does not embed a game catalog.
 
 A provider tab accepts one of:
 
@@ -78,7 +78,9 @@ Settings can export and import provider tabs. The file is public metadata only:
 }
 ```
 
-A WordPress REST posts URL may include `page`, `per_page`, `orderby`, `order`, or `_embed`. OpenNative stores the canonical path and then requests `page` / `per_page` / `orderby` / `order` / `_fields` only. Credentials and install folders are never written to the bundle.
+A WordPress REST posts URL may include `page`, `per_page`, `orderby`, `order`, or `_embed`. OpenNative stores the canonical path and then requests `page` / `per_page` / `orderby` / `order` / `_fields` only. Covers come from Jetpack media, embedded featured media, Yoast `og:image`, or the first HTTPS image in excerpt/content. Credentials and install folders are never written to the bundle.
+
+OpenNative ships `app/src/main/assets/opennative-provider-tabs.json` as the default tab bundle and seeds it on first launch. The same file is copied at `docs/examples/opennative-provider-tabs.json` for Settings import. Use `perPage` 20 or lower when the site returns full post HTML, so a page stays under the 2 MB feed cap. OpenNative still pages with `X-WP-TotalPages`.
 
 OpenNative still does not scrape HTML bodies or extract magnets.
 

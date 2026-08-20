@@ -1,70 +1,88 @@
 package app.gamenative.ui.screen.library.provider
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.gamenative.R
 import app.gamenative.provider.ProviderFeedItem
 import app.gamenative.provider.TransferJob
-import app.gamenative.utils.StorageUtils
+import app.gamenative.provider.TransferState
+import com.skydoves.landscapist.ImageOptions
+import com.skydoves.landscapist.coil.CoilImage
 
 @Composable
 fun ProviderCatalogRow(
     item: ProviderFeedItem,
     job: TransferJob?,
-    downloadEnabled: Boolean,
-    onDownload: () -> Unit,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(item.title, style = MaterialTheme.typography.titleSmall, maxLines = 2)
-            Text(sizeLabel(item), style = MaterialTheme.typography.bodySmall)
-            if (item.architecture.isNotBlank()) {
-                Text(
-                    stringResource(R.string.provider_arch, item.architecture),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            if (job != null && job.progressPercent in 1..99) {
+        Box(modifier = Modifier.aspectRatio(2f / 3f)) {
+            CoilImage(
+                modifier = Modifier.fillMaxSize(),
+                imageModel = { item.artworkUrl },
+                imageOptions = ImageOptions(
+                    contentScale = ContentScale.Crop,
+                    contentDescription = item.title,
+                ),
+                previewPlaceholder = painterResource(R.drawable.ic_logo_color),
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)),
+                        ),
+                    ),
+            )
+            Text(
+                text = item.title,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(10.dp),
+            )
+            if (job != null && job.state != TransferState.IDLE && job.progressPercent in 1..99) {
                 LinearProgressIndicator(
                     progress = { job.progressPercent / 100f },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth(),
                 )
             }
         }
-        TextButton(onClick = onDownload, enabled = downloadEnabled) {
-            Text(
-                if (downloadEnabled) stringResource(R.string.provider_download)
-                else stringResource(R.string.provider_download_blocked),
-            )
-        }
-    }
-}
-
-private fun sizeLabel(item: ProviderFeedItem): String {
-    val download = StorageUtils.formatBinarySize(item.downloadSizeBytes.coerceAtLeast(0L))
-    return if (item.uncompressedSizeBytes > 0L) {
-        val full = StorageUtils.formatBinarySize(item.uncompressedSizeBytes)
-        "$download · $full"
-    } else {
-        download
     }
 }

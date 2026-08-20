@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.1 - 2026-08-20
+
+- Seed `assets/opennative-provider-tabs.json` as the default provider tab on first launch.
+- Show WordPress covers from public media, Jetpack/Yoast metadata, or the first HTTPS image in post content.
+- Give provider tabs a library-style cover grid and a detail modal with Download and Install to Custom.
+- Register finished portable installs in Custom and delete the installer only after a confirmed install.
+- Keep FitGirl and other user feed hosts off the restored host denylist (`google.fr`, `facebook.fr`).
+- Page WordPress REST catalogs at 20 posts so full `content` stays under the 2 MB fetch cap.
+
 ## 1.2.0 - 2026-08-20
 
 - Add user-created provider tabs after Custom. Each tab is backed by a user-supplied HTTPS JSON envelope or optional RSS/Atom URL. OpenNative still ships no built-in catalog.
