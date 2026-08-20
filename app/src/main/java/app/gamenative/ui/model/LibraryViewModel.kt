@@ -39,9 +39,10 @@ import app.gamenative.steam.SteamCollectionFilter
 import app.gamenative.ui.data.LibraryState
 import app.gamenative.ui.data.statsFor
 import app.gamenative.ui.enums.AppFilter
+import app.gamenative.provider.ProviderCatalogRepository
+import app.gamenative.ui.data.LibrarySelection
+import app.gamenative.ui.data.toChip
 import app.gamenative.ui.enums.LibraryTab
-import app.gamenative.ui.enums.LibraryTab.Companion.next
-import app.gamenative.ui.enums.LibraryTab.Companion.previous
 import app.gamenative.ui.enums.SortOption
 import app.gamenative.ui.util.SnackbarManager
 import app.gamenative.utils.CustomGameImporter
@@ -77,6 +78,7 @@ class LibraryViewModel @Inject constructor(
     private val gogGameDao: GOGGameDao,
     private val epicGameDao: EpicGameDao,
     private val amazonGameDao: AmazonGameDao,
+    private val providerCatalog: ProviderCatalogRepository,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -153,6 +155,15 @@ class LibraryViewModel @Inject constructor(
                     onFilterApps(paginationCurrentPage)
                 }
             }
+        }
+
+        viewModelScope.launch {
+            providerCatalog.observeTabs()
+                .map { tabs -> tabs.filter { it.enabled }.map { it.toChip() } }
+                .distinctUntilChanged()
+                .collect { chips ->
+                    _state.update { it.copy(providerTabs = chips) }
+                }
         }
 
         // Collect GOG games
@@ -316,26 +327,43 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun onTabChanged(tab: LibraryTab) {
-        _state.update { it.copy(currentTab = tab) }
+        _state.update { it.copy(currentTab = tab, selectedProviderTabId = null) }
         onFilterApps(0) // Reset to first page and refresh
     }
 
+    fun onProviderTabSelected(tabId: String) {
+        _state.update { it.copy(selectedProviderTabId = tabId) }
+    }
+
     fun onNextTab() {
-        _state.update { currentState ->
-            val nextTab = currentState.currentTab.next()
-            Timber.tag("LibraryViewModel").d("Tab next via bumper: ${currentState.currentTab} -> $nextTab")
-            currentState.copy(currentTab = nextTab)
-        }
+        _state.update { currentState -> applySelection(currentState, stepSelection(currentState, +1)) }
         onFilterApps(0)
     }
 
     fun onPreviousTab() {
-        _state.update { currentState ->
-            val previousTab = currentState.currentTab.previous()
-            Timber.tag("LibraryViewModel").d("Tab previous via bumper: ${currentState.currentTab} -> $previousTab")
-            currentState.copy(currentTab = previousTab)
-        }
+        _state.update { currentState -> applySelection(currentState, stepSelection(currentState, -1)) }
         onFilterApps(0)
+    }
+
+    private fun stepSelection(state: LibraryState, delta: Int): LibrarySelection {
+        val builtIn = LibraryTab.visibleEntries.map { LibrarySelection.BuiltIn(it) }
+        val providers = state.providerTabs.map { LibrarySelection.Provider(it.id) }
+        val all = builtIn + providers
+        val current = if (state.selectedProviderTabId != null) {
+            LibrarySelection.Provider(state.selectedProviderTabId)
+        } else {
+            LibrarySelection.BuiltIn(state.currentTab)
+        }
+        val index = all.indexOf(current).coerceAtLeast(0)
+        val next = (index + delta).mod(all.size)
+        return all[next]
+    }
+
+    private fun applySelection(state: LibraryState, selection: LibrarySelection): LibraryState {
+        return when (selection) {
+            is LibrarySelection.BuiltIn -> state.copy(currentTab = selection.tab, selectedProviderTabId = null)
+            is LibrarySelection.Provider -> state.copy(selectedProviderTabId = selection.tabId)
+        }
     }
 
     fun onSearchQuery(value: String) {

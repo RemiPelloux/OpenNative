@@ -1280,6 +1280,10 @@ fun PluviaMain(
 
                 /** Game Screen **/
                 composable(route = PluviaScreen.XServer.route) {
+                    DisposableEffect(Unit) {
+                        app.gamenative.provider.ProviderSessionGate.setActive(true)
+                        onDispose { app.gamenative.provider.ProviderSessionGate.setActive(false) }
+                    }
                     val xServerIsOffline by viewModel.isOffline.collectAsStateWithLifecycle()
                     XServerScreen(
                         appId = state.launchedAppId,

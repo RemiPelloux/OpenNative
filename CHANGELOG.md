@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.0 - 2026-08-20
+
+- Add user-created provider tabs after Custom. Each tab is backed by a user-supplied HTTPS JSON envelope or optional RSS/Atom URL. OpenNative still ships no built-in catalog.
+- Refresh the latest three feed pages on app open when a tab is set to daily refresh, and add a manual refresh-all action in Settings.
+- Paginate user feeds with `page` / `per_page` / `orderby` / `order`, WordPress REST `X-WP-TotalPages`, and WordPress RSS `paged`.
+- Add a provider-tab search field that filters locally and sends WordPress `search=` or RSS `s=`.
+- Batch provider feed upserts into one Room transaction, combine catalog collectors on tab change, rate-limit transfer progress updates, and request only public WordPress REST fields.
+- Store optional AllDebrid keys in a dedicated Keystore alias. The first download click can prompt for a key; dismiss is allowed and Download stays disabled until validation succeeds.
+- Download selected links with Range resume, size/space reservation, SHA-256 verification, portable archive extraction, and installer deletion only after a committed install receipt.
+- Bound feed refresh and AllDebrid resolve to one in-flight request each, keep job progress on keyed rows, and pause catalog work during an active game session.
+
 ## Unreleased
 
 - Integrate GameNative upstream through `78bc4bbe`, retaining download I/O, service locale and LSFG 1.3.3 fixes while preserving OpenNative's independent product policy.

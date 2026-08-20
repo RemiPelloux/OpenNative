@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import app.gamenative.R
 import app.gamenative.ui.component.focusRing
+import app.gamenative.ui.data.ProviderTabChip
 import app.gamenative.ui.enums.LibraryTab
 import app.gamenative.ui.theme.PluviaTheme
 import app.gamenative.ui.util.WindowWidthClass
@@ -79,6 +80,10 @@ fun LibraryTabBar(
     onNavigateDownToGrid: () -> Unit,
     onPreviousTab: () -> Unit = {},
     onNextTab: () -> Unit = {},
+    providerTabs: List<ProviderTabChip> = emptyList(),
+    selectedProviderTabId: String? = null,
+    onProviderTabSelected: (String) -> Unit = {},
+    onAddProviderTabClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val widthClass = rememberWindowWidthClass()
@@ -95,6 +100,10 @@ fun LibraryTabBar(
             onNavigateDownToGrid = onNavigateDownToGrid,
             onPreviousTab = onPreviousTab,
             onNextTab = onNextTab,
+            providerTabs = providerTabs,
+            selectedProviderTabId = selectedProviderTabId,
+            onProviderTabSelected = onProviderTabSelected,
+            onAddProviderTabClick = onAddProviderTabClick,
             modifier = modifier,
         )
 
@@ -109,6 +118,10 @@ fun LibraryTabBar(
             onNavigateDownToGrid = onNavigateDownToGrid,
             onPreviousTab = onPreviousTab,
             onNextTab = onNextTab,
+            providerTabs = providerTabs,
+            selectedProviderTabId = selectedProviderTabId,
+            onProviderTabSelected = onProviderTabSelected,
+            onAddProviderTabClick = onAddProviderTabClick,
             modifier = modifier,
         )
     }
@@ -130,6 +143,10 @@ private fun CompactLibraryTabBar(
     onNavigateDownToGrid: () -> Unit,
     onPreviousTab: () -> Unit,
     onNextTab: () -> Unit,
+    providerTabs: List<ProviderTabChip>,
+    selectedProviderTabId: String?,
+    onProviderTabSelected: (String) -> Unit,
+    onAddProviderTabClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val tabs = LibraryTab.visibleEntries
@@ -205,7 +222,7 @@ private fun CompactLibraryTabBar(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 tabs.forEachIndexed { index, tab ->
-                    val isSelected = tab == currentTab
+                    val isSelected = tab == currentTab && selectedProviderTabId == null
                     val tabInteractionSource = remember { MutableInteractionSource() }
                     val isTabFocused by tabInteractionSource.collectIsFocusedAsState()
                     Box(
@@ -260,6 +277,14 @@ private fun CompactLibraryTabBar(
                                 color = tabColor,
                             )
                         }
+                    }
+                    if (tab == LibraryTab.LOCAL) {
+                        ProviderTabExtras(
+                            providerTabs = providerTabs,
+                            selectedProviderTabId = selectedProviderTabId,
+                            onProviderTabSelected = onProviderTabSelected,
+                            onAddProviderTabClick = onAddProviderTabClick,
+                        )
                     }
                 }
             }
@@ -344,6 +369,10 @@ private fun ExpandedLibraryTabBar(
     onNavigateDownToGrid: () -> Unit,
     onPreviousTab: () -> Unit,
     onNextTab: () -> Unit,
+    providerTabs: List<ProviderTabChip>,
+    selectedProviderTabId: String?,
+    onProviderTabSelected: (String) -> Unit,
+    onAddProviderTabClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val tabs = LibraryTab.visibleEntries
@@ -471,13 +500,21 @@ private fun ExpandedLibraryTabBar(
                         TabItem(
                             tab = tab,
                             count = tabCounts[tab],
-                            isSelected = tab == currentTab,
+                            isSelected = tab == currentTab && selectedProviderTabId == null,
                             onClick = { onTabSelected(tab) },
                             onPositioned = { position, width ->
                                 tabPositions[index] = position
                                 tabWidths[index] = width
                             },
                         )
+                        if (tab == LibraryTab.LOCAL) {
+                            ProviderTabExtras(
+                                providerTabs = providerTabs,
+                                selectedProviderTabId = selectedProviderTabId,
+                                onProviderTabSelected = onProviderTabSelected,
+                                onAddProviderTabClick = onAddProviderTabClick,
+                            )
+                        }
                     }
                 }
             }
@@ -576,6 +613,56 @@ private fun IconActionButton(
                 MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
             },
             modifier = Modifier.size(22.dp),
+        )
+    }
+}
+
+@Composable
+private fun ProviderTabExtras(
+    providerTabs: List<ProviderTabChip>,
+    selectedProviderTabId: String?,
+    onProviderTabSelected: (String) -> Unit,
+    onAddProviderTabClick: () -> Unit,
+) {
+    CompactIconButton(
+        icon = Icons.Default.Add,
+        contentDescription = stringResource(R.string.provider_add_tab),
+        onClick = onAddProviderTabClick,
+    )
+    providerTabs.forEach { chip ->
+        val selected = chip.id == selectedProviderTabId
+        TextButtonTab(label = chip.name, selected = selected, onClick = { onProviderTabSelected(chip.id) })
+    }
+}
+
+@Composable
+private fun TextButtonTab(label: String, selected: Boolean, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+            )
+            .selectable(
+                selected = selected,
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            color = if (selected) {
+                MaterialTheme.colorScheme.onPrimary
+            } else {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            },
         )
     }
 }

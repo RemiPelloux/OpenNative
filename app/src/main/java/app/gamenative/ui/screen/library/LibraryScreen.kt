@@ -95,6 +95,10 @@ import app.gamenative.ui.enums.PaneType
 import app.gamenative.ui.enums.SortOption
 import app.gamenative.ui.internal.fakeAppInfo
 import app.gamenative.ui.model.LibraryViewModel
+import app.gamenative.ui.model.ProviderLibraryViewModel
+import app.gamenative.ui.screen.library.provider.AddProviderTabDialog
+import app.gamenative.ui.screen.library.provider.AllDebridKeyDialog
+import app.gamenative.ui.screen.library.provider.ProviderCatalogScreen
 import app.gamenative.service.SteamService
 import app.gamenative.ui.screen.library.components.LibraryCarouselPane
 import app.gamenative.ui.screen.library.components.LibraryDetailPane
@@ -124,6 +128,7 @@ import android.os.SystemClock
 @Composable
 fun HomeLibraryScreen(
     viewModel: LibraryViewModel = hiltViewModel(),
+    providerViewModel: ProviderLibraryViewModel = hiltViewModel(),
     onClickPlay: (String, Boolean) -> Unit,
     onTestGraphics: (String) -> Unit,
     onPlayWithDiagnostics: (String) -> Unit,
@@ -136,7 +141,30 @@ fun HomeLibraryScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val importState by viewModel.importState.collectAsStateWithLifecycle()
+    val providerUi by providerViewModel.ui.collectAsStateWithLifecycle()
+    val providerTabs by providerViewModel.tabs.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    LaunchedEffect(Unit) {
+        providerViewModel.onAppOpen()
+    }
+    LaunchedEffect(state.selectedProviderTabId) {
+        providerViewModel.selectTab(state.selectedProviderTabId)
+    }
+
+    AddProviderTabDialog(
+        visible = providerUi.showCreate,
+        errorText = providerUi.createError,
+        onDismiss = providerViewModel::closeCreate,
+        onSave = providerViewModel::createTab,
+    )
+    AllDebridKeyDialog(
+        visible = providerUi.showKeyDialog,
+        busy = providerUi.keyBusy,
+        errorText = providerUi.keyError,
+        onDismiss = providerViewModel::dismissKeyDialog,
+        onSave = providerViewModel::saveKey,
+    )
 
     LibraryScreenContent(
         state = state,
@@ -166,6 +194,21 @@ fun HomeLibraryScreen(
         onTabChanged = viewModel::onTabChanged,
         onPreviousTab = viewModel::onPreviousTab,
         onNextTab = viewModel::onNextTab,
+        onProviderTabSelected = viewModel::onProviderTabSelected,
+        onAddProviderTabClick = providerViewModel::openCreate,
+        onProviderRefresh = providerViewModel::refreshActive,
+        onProviderLoadMore = providerViewModel::loadMore,
+        onProviderDelete = providerViewModel::deleteActive,
+        onProviderSearch = providerViewModel::onSearchQuery,
+        onProviderDownload = { item ->
+            val tab = providerTabs.find { it.id == state.selectedProviderTabId }
+            if (tab != null) providerViewModel.onDownloadClick(tab, item)
+        },
+        providerItems = providerUi.visibleItems,
+        providerSearchQuery = providerUi.searchQuery,
+        providerJobs = providerUi.jobs,
+        providerDownloadEnabled = providerTabs.find { it.id == state.selectedProviderTabId }
+            ?.hasCredential() == true || !providerUi.keyPromptDismissed,
         isOffline = isOffline,
         isSteamConnected = isSteamConnected,
     )
@@ -209,6 +252,17 @@ private fun LibraryScreenContent(
     onTabChanged: (LibraryTab) -> Unit,
     onPreviousTab: () -> Unit,
     onNextTab: () -> Unit,
+    onProviderTabSelected: (String) -> Unit = {},
+    onAddProviderTabClick: () -> Unit = {},
+    onProviderRefresh: () -> Unit = {},
+    onProviderLoadMore: () -> Unit = {},
+    onProviderDelete: () -> Unit = {},
+    onProviderSearch: (String) -> Unit = {},
+    onProviderDownload: (app.gamenative.provider.ProviderFeedItem) -> Unit = {},
+    providerItems: List<app.gamenative.provider.ProviderFeedItem> = emptyList(),
+    providerSearchQuery: String = "",
+    providerJobs: List<app.gamenative.provider.TransferJob> = emptyList(),
+    providerDownloadEnabled: Boolean = false,
     isOffline: Boolean = false,
     isSteamConnected: Boolean = false,
 ) {
@@ -939,7 +993,30 @@ private fun LibraryScreenContent(
             // Use Box to allow content to scroll behind the tab bar
             Box(modifier = Modifier.fillMaxSize()) {
                 // When on Steam/GOG/Epic/Amazon tab and not logged in, or LOCAL tab with no custom games, show splash
-                if (state.currentTab == LibraryTab.RECOMMENDED) {
+                val selectedProvider = state.providerTabs.find { it.id == state.selectedProviderTabId }
+                if (selectedProvider != null) {
+                    ProviderCatalogScreen(
+                        tab = app.gamenative.provider.ProviderTab(
+                            id = selectedProvider.id,
+                            name = selectedProvider.name,
+                            position = 0,
+                            feedUrl = "",
+                            stale = selectedProvider.stale,
+                            lastFetchedPage = selectedProvider.lastFetchedPage,
+                            totalPages = selectedProvider.totalPages,
+                        ),
+                        items = providerItems,
+                        jobs = providerJobs,
+                        downloadEnabled = providerDownloadEnabled,
+                        searchQuery = providerSearchQuery,
+                        onSearchQuery = onProviderSearch,
+                        onRefresh = onProviderRefresh,
+                        onLoadMore = onProviderLoadMore,
+                        onDownload = onProviderDownload,
+                        onDeleteTab = onProviderDelete,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else if (state.currentTab == LibraryTab.RECOMMENDED) {
                     if (recDisclosureShown) {
                         RecommendedTabPane(
                             currentPaneType = currentPaneType,
@@ -1083,6 +1160,10 @@ private fun LibraryScreenContent(
                         onOptionsClick = { onOptionsPanelToggle(true) },
                         onSearchClick = { onIsSearching(true) },
                         onAddGameClick = onAddCustomGameClick,
+                        providerTabs = state.providerTabs,
+                        selectedProviderTabId = state.selectedProviderTabId,
+                        onProviderTabSelected = onProviderTabSelected,
+                        onAddProviderTabClick = onAddProviderTabClick,
                         onMenuClick = { isSystemMenuOpen = true },
                         onNavigateDownToGrid = {
                             if (isListFocusable()) {

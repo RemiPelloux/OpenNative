@@ -2,7 +2,7 @@
 
 ## Product contract
 
-OpenNative `1.5.0` will place a compact `+` action immediately after the built-in **Custom** tab. Selecting it creates a user-owned library tab backed by a configurable metadata provider. The feature does not add values to `GameSource`, impersonate a store, or change existing Steam, Epic, GOG, Amazon and Custom launch behavior.
+OpenNative `1.2.0` places a compact `+` action immediately after the built-in **Custom** tab. Selecting it creates a user-owned library tab backed by a configurable metadata provider (HTTPS JSON envelope or optional RSS/Atom URL). The feature does not add values to `GameSource`, impersonate a store, ship a catalog, or change existing Steam, Epic, GOG, Amazon and Custom launch behavior.
 
 Each provider tab can discover entries from a user-configured HTTPS feed, resolve a selected link through an optional AllDebrid account, download into staging, install into a user-granted directory and clean the installer after verified success.
 

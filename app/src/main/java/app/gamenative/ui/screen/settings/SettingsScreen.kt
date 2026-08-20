@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Gamepad
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -131,6 +132,14 @@ private fun SettingsScreenContent(
                 }
 
                 // Interface section
+                SettingsSection(
+                    title = stringResource(R.string.settings_providers_title),
+                    icon = Icons.Default.Sync,
+                    iconTint = PluviaTheme.colors.accentCyan,
+                ) {
+                    SettingsGroupProviders()
+                }
+
                 SettingsSection(
                     title = stringResource(R.string.settings_interface_title),
                     icon = Icons.Default.Palette,

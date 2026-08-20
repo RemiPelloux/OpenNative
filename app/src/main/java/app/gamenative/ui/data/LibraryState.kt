@@ -7,6 +7,7 @@ import app.gamenative.data.LibraryItem
 import app.gamenative.data.SteamCollection
 import app.gamenative.ui.enums.AppFilter
 import app.gamenative.utils.DeviceGameStatsService.DeviceGameStats
+import app.gamenative.ui.data.ProviderTabChip
 import app.gamenative.ui.enums.LibraryTab
 import app.gamenative.ui.enums.SortOption
 import java.util.EnumSet
@@ -63,6 +64,8 @@ data class LibraryState(
 
     // Current library tab for quick filter access
     val currentTab: LibraryTab = LibraryTab.ALL,
+    val selectedProviderTabId: String? = null,
+    val providerTabs: List<ProviderTabChip> = emptyList(),
 
     // Per-source game counts for tab badges
     val allCount: Int = 0,

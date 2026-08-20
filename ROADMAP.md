@@ -11,7 +11,8 @@ Dates are intentionally omitted until the preceding quality gate passes. A featu
 | Milestone | Objective | Status |
 | --- | --- | --- |
 | `1.1.x` | Maintain the current stable runtime and address critical regressions | Stable maintenance |
-| `1.5.0` | Deliver provider tabs, safe transfers/installers, settings sharing and measurable handheld improvements | Planned |
+| `1.2.0` | User-configured provider tabs, RSS/JSON feeds, AllDebrid, transfers and verified cleanup | Released |
+| `1.5.0` | Settings sharing, cockpit polish and remaining installer-session certification | Planned |
 | `2.0.0` | Introduce modular runtimes and a safe OpenNative identity/data migration | Future architecture |
 
 Detailed plans:

@@ -1,0 +1,114 @@
+package app.gamenative.provider
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class ProviderFeedParserTest {
+    @Test
+    fun `parses versioned json envelope`() {
+        val page = ProviderFeedParser.parse(
+            """
+            {
+              "version": 1,
+              "nextCursor": "abc",
+              "items": [
+                {
+                  "id": "game-1",
+                  "title": "Example",
+                  "link": "https://example.com/file.zip",
+                  "size": 1024,
+                  "architecture": "x64"
+                }
+              ]
+            }
+            """.trimIndent(),
+        )
+        assertEquals(1, page.items.size)
+        assertEquals("game-1", page.items.single().itemId)
+        assertEquals("x64", page.items.single().architecture)
+        assertEquals("abc", page.nextCursor)
+    }
+
+    @Test
+    fun `parses rss items and enclosure`() {
+        val page = ProviderFeedParser.parse(
+            """
+            <rss version="2.0">
+              <channel>
+                <title>Catalog</title>
+                <item>
+                  <title>Portable Build</title>
+                  <guid>item-1</guid>
+                  <link>https://example.com/page</link>
+                  <enclosure url="https://example.com/game.zip" length="2048" type="application/zip" />
+                </item>
+              </channel>
+            </rss>
+            """.trimIndent(),
+            contentType = "application/rss+xml",
+        )
+        assertEquals(1, page.items.size)
+        assertEquals("Portable Build", page.items.single().title)
+        assertEquals("https://example.com/page", page.items.single().link)
+        assertEquals(2048L, page.items.single().downloadSizeBytes)
+    }
+
+    @Test
+    fun `parses atom entries`() {
+        val page = ProviderFeedParser.parse(
+            """
+            <feed xmlns="http://www.w3.org/2005/Atom">
+              <title>Catalog</title>
+              <entry>
+                <id>atom-1</id>
+                <title>Atom Game</title>
+                <link href="https://example.com/atom.zip" rel="enclosure" />
+              </entry>
+            </feed>
+            """.trimIndent(),
+        )
+        assertEquals("Atom Game", page.items.single().title)
+        assertEquals("https://example.com/atom.zip", page.items.single().link)
+    }
+
+    @Test
+    fun `rejects unknown json version`() {
+        try {
+            JsonFeedParser.parse("""{"version":2,"items":[]}""")
+            throw AssertionError("expected failure")
+        } catch (error: ProviderException) {
+            assertEquals(ProviderErrorCode.MALFORMED_RESPONSE, error.code)
+        }
+    }
+
+    @Test
+    fun `parses wordpress rest arrays without reading html content`() {
+        val page = ProviderFeedParser.parse(
+            """
+            [
+              {
+                "id": 9,
+                "link": "https://example.com/hello",
+                "title": { "rendered": "Hello" },
+                "excerpt": { "rendered": "<p>Hi</p>" },
+                "content": { "rendered": "<p>magnet:not-used</p>" }
+              }
+            ]
+            """.trimIndent(),
+        )
+        assertEquals("9", page.items.single().itemId)
+        assertEquals("Hello", page.items.single().title)
+        assertEquals("https://example.com/hello", page.items.single().link)
+        assertEquals("Hi", page.items.single().description)
+        assertEquals("{}", page.items.single().extraJson)
+    }
+
+    @Test
+    fun `limits page size`() {
+        val items = (1..120).joinToString(",") { """{"id":"$it","title":"T$it","link":"https://example.com/$it"}""" }
+        val page = ProviderFeedParser.parse("""{"version":1,"items":[$items]}""")
+        assertEquals(ProviderUrlPolicy.PAGE_SIZE, page.items.size)
+        assertTrue(page.items.size <= 100)
+    }
+}

@@ -22,17 +22,16 @@ OpenNative is an independent open-source project. It does not include games, fir
 
 | Channel | Version | Status |
 | --- | --- | --- |
-| Stable | `1.1.0` | Available from GitHub Releases |
-| Next milestone | `1.5.0` | Planned and under specification |
+| Stable | `1.2.0` | Provider tabs, transfers and verified installer cleanup |
+| Next milestone | `1.5.0` | Settings sharing, cockpit polish and remaining certification |
 | Architecture milestone | `2.0.0` | Long-term roadmap |
-
-The stable application ID remains `com.remipelloux.gamenativecustom` to preserve existing app-private containers and saves during in-place upgrades. A future identity migration will ship only with an atomic, tested data-transfer path.
 
 ## Current capabilities
 
 ### Runtime and compatibility
 
 - Unified Steam, Epic, GOG, Amazon and custom-executable library flows.
+- User-created provider tabs after **Custom**, backed by a user-supplied HTTPS JSON or RSS/Atom feed. OpenNative ships no catalog.
 - Wine/Proton containers with Box64 and FEX translation options.
 - Per-title graphics, runtime, controller and display configuration.
 - Versioned portable profiles without embedded device-local paths.
@@ -54,23 +53,27 @@ The stable application ID remains `com.remipelloux.gamenativecustom` to preserve
 
 Performance varies by game, runtime, driver and thermal conditions. OpenNative does not claim universal FPS improvements. Changes are promoted only after controlled before/after measurements.
 
+## Shipped in 1.2.0
+
+- A `+` after **Custom** creates a named provider tab.
+- Feeds are user-supplied HTTPS JSON envelopes or generic RSS/Atom URLs. Daily refresh reads the latest three pages on app open; Settings also has a manual refresh.
+- Optional AllDebrid resolution with a Keystore-backed key. The first download click can show a key modal; dismiss is allowed and Download stays disabled until a key validates.
+- Resumable downloads, storage reservation (including Wine-prefix headroom), portable archive install, and installer deletion only after a verified receipt.
+
+See [provider tabs](docs/CUSTOM_PROVIDER_TABS.md) and [feed contract](docs/PROVIDER_FEEDS.md).
+
 ## Planned for 1.5.0
 
-The following work is planned and is **not part of the current stable release**:
+The following work remains after `1.2.0`:
 
 | Area | Planned capability |
 | --- | --- |
-| Provider tabs | A `+` after **Custom** creates named, reorderable library tabs backed by user-configured HTTPS feeds |
-| Link resolution | Optional AllDebrid integration with Android Keystore-backed secret storage |
-| Transfers | Resumable foreground downloads, storage reservation, verification and process-death recovery |
-| Installer Manager | Managed installation of portable archives, Windows `.exe` installers and `.msi` packages |
-| Wine setup sessions | Dedicated containers, child-process tracking, reboot/timeout states and executable discovery |
-| Cleanup | Installer deletion only after verified installation and receipt commit |
+| Wine setup sessions | Full process-tree tracking, reboot/timeout states and richer executable review |
 | Settings sharing | Redacted per-game and global presets with diff preview, merge/replace and rollback |
 | Cockpit | Refined OpenNative secondary-screen UX with robust controller, rotation and hot-plug behavior |
 | Performance | Measured frame-delivery, shader, database, Compose and transfer-path optimization |
 
-Implementation is gated by security, recovery and performance criteria. See the [1.5.0 roadmap](docs/ROADMAP_1.5.0.md) and [provider/installer specification](docs/CUSTOM_PROVIDER_TABS.md).
+Implementation is gated by security, recovery and performance criteria. See the [1.5.0 roadmap](docs/ROADMAP_1.5.0.md).
 
 ## Platform support
 
@@ -141,6 +144,7 @@ Mockito and MockK use an explicit ByteBuddy agent for JDKs that restrict dynamic
 | [Roadmap](ROADMAP.md) | Milestones, delivery phases and release gates |
 | [1.5.0 roadmap](docs/ROADMAP_1.5.0.md) | Detailed implementation and validation plan |
 | [Provider tabs](docs/CUSTOM_PROVIDER_TABS.md) | Provider, AllDebrid, transfer and Installer Manager contract |
+| [Provider feeds](docs/PROVIDER_FEEDS.md) | User-supplied JSON and RSS/Atom catalog contract |
 | [Adaptive Engine](docs/ADAPTIVE_ENGINE.md) | Decision model, safeguards and resolution policy |
 | [Performance method](docs/PERFORMANCE.md) | Benchmark protocol and current AYN Thor findings |
 | [Independence](docs/INDEPENDENCE.md) | Compatibility identifiers, attribution and infrastructure migration |

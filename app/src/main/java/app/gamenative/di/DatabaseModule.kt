@@ -12,6 +12,10 @@ import app.gamenative.db.dao.EncryptedAppTicketDao
 import app.gamenative.db.dao.LibraryPlayHistoryDao
 import app.gamenative.db.dao.ModDao
 import app.gamenative.db.dao.SteamUnlockedBranchDao
+import app.gamenative.db.dao.ProviderFeedItemDao
+import app.gamenative.db.dao.ProviderInstallReceiptDao
+import app.gamenative.db.dao.ProviderTabDao
+import app.gamenative.db.dao.ProviderTransferJobDao
 import app.gamenative.db.migration.ROOM_MIGRATION_V23_to_V24
 import app.gamenative.db.migration.ROOM_MIGRATION_V24_to_V25
 import app.gamenative.db.migration.ROOM_MIGRATION_V7_to_V8
@@ -100,4 +104,22 @@ class DatabaseModule {
     @Provides
     @Singleton
     fun provideModDao(db: PluviaDatabase): ModDao = db.modDao()
+
+    @Provides
+    @Singleton
+    fun provideProviderTabDao(db: PluviaDatabase): ProviderTabDao = db.providerTabDao()
+
+    @Provides
+    @Singleton
+    fun provideProviderFeedItemDao(db: PluviaDatabase): ProviderFeedItemDao = db.providerFeedItemDao()
+
+    @Provides
+    @Singleton
+    fun provideProviderTransferJobDao(db: PluviaDatabase): ProviderTransferJobDao =
+        db.providerTransferJobDao()
+
+    @Provides
+    @Singleton
+    fun provideProviderInstallReceiptDao(db: PluviaDatabase): ProviderInstallReceiptDao =
+        db.providerInstallReceiptDao()
 }
