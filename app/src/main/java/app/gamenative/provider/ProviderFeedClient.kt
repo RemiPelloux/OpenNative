@@ -30,6 +30,7 @@ class ProviderFeedClient(
         )
         val uri = ProviderUrlPolicy.validate(pagedUrl, allowLoopbackHttp).getOrThrow()
         val request = Request.Builder().url(uri.toString()).get().apply {
+            header("User-Agent", USER_AGENT)
             if (!etag.isNullOrBlank()) header("If-None-Match", etag)
             if (!lastModified.isNullOrBlank()) header("If-Modified-Since", lastModified)
         }.build()
@@ -38,7 +39,9 @@ class ProviderFeedClient(
 
     fun fetchText(url: String): String {
         val uri = ProviderUrlPolicy.validate(url, allowLoopbackHttp).getOrThrow()
-        val request = Request.Builder().url(uri.toString()).get().build()
+        val request = Request.Builder().url(uri.toString()).get()
+            .header("User-Agent", USER_AGENT)
+            .build()
         val response = try {
             httpClient.newCall(request).execute()
         } catch (_: IOException) {
@@ -85,6 +88,8 @@ class ProviderFeedClient(
     }
 
     companion object {
+        private const val USER_AGENT = "OpenNative/1.2.1 (Android)"
+
         fun defaultClient(): OkHttpClient = OkHttpClient.Builder()
             .followRedirects(true)
             .followSslRedirects(true)

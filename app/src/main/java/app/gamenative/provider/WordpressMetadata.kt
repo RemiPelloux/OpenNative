@@ -26,7 +26,8 @@ object WordpressMetadata {
             HREF.findAll(html).map { it.value.trimEnd('.', ',', ')', ']') }.toList(),
         )
 
-    fun rankLinks(urls: List<String>): List<String> = WordpressDownloadLinks.rank(urls)
+    fun rankLinks(urls: List<String>, allowedHosts: Set<String>? = null): List<String> =
+        WordpressDownloadLinks.rank(urls, allowedHosts)
 
     fun extraJson(links: List<String>, magnet: String = ""): String {
         if (links.isEmpty() && magnet.isBlank()) return "{}"
@@ -60,6 +61,12 @@ object WordpressMetadata {
                 if (link.isNotBlank()) add(link)
             }
         }.let { rankLinks(it) }
+    }
+
+    fun restrictForFeed(item: ProviderFeedItem, feedUrl: String): ProviderFeedItem {
+        if (HosterAllowlist.hostsFor(feedUrl) == null) return item
+        val links = HosterAllowlist.filter(linksFrom(item.extraJson), feedUrl)
+        return item.copy(extraJson = extraJson(links))
     }
 
     fun candidateLinks(item: ProviderFeedItem): List<String> {

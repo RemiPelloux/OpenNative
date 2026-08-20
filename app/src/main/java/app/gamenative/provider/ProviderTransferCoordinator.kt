@@ -228,7 +228,7 @@ class ProviderTransferCoordinator @Inject constructor(
         val apiKey = secrets.read(tab.credentialRef)
             ?: throw ProviderException(ProviderErrorCode.AUTHENTICATION, "Resolver credential is missing")
         persist(job.copy(state = TransferState.RESOLVING))
-        val links = unlockTargets(job.selectedLink, candidates, pageUrl)
+        val links = unlockTargets(job.selectedLink, candidates, pageUrl, tab.feedUrl)
         Timber.tag("ProviderTransfer").i("Unlocking ${links.size} hoster(s) for ${job.title}")
         return unlockFirst(apiKey, job, links)
     }
@@ -256,14 +256,20 @@ class ProviderTransferCoordinator @Inject constructor(
     private fun isFatalResolver(error: ProviderException): Boolean =
         error.code == ProviderErrorCode.AUTHENTICATION || error.code == ProviderErrorCode.RATE_LIMIT
 
-    private fun unlockTargets(selected: String, candidates: List<String>, pageUrl: String): List<String> {
-        val ranked = WordpressMetadata.rankLinks(
-            (candidates + selected).filter { it.isNotBlank() },
+    private fun unlockTargets(
+        selected: String,
+        candidates: List<String>,
+        pageUrl: String,
+        feedUrl: String,
+    ): List<String> {
+        val ranked = HosterAllowlist.filter(
+            WordpressMetadata.rankLinks((candidates + selected).filter { it.isNotBlank() }),
+            feedUrl,
         )
         if (ranked.isNotEmpty()) return ranked
         if (pageUrl.isBlank()) return emptyList()
         val html = runCatching { feedClient.fetchText(pageUrl) }.getOrDefault("")
-        return WordpressMetadata.httpsLinks(html)
+        return HosterAllowlist.filter(WordpressMetadata.httpsLinks(html), feedUrl)
     }
 
     private suspend fun persistResolved(

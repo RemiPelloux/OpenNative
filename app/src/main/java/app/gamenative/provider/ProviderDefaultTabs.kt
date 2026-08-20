@@ -13,15 +13,20 @@ object ProviderDefaultTabs {
     suspend fun seedIfEmpty(
         catalog: ProviderCatalogRepository,
         bundleJson: String,
+    ): List<ProviderTab> = ensure(catalog, bundleJson)
+
+    suspend fun ensure(
+        catalog: ProviderCatalogRepository,
+        bundleJson: String,
     ): List<ProviderTab> {
-        if (PrefManager.providerDefaultsSeeded) return emptyList()
-        if (catalog.getTabs().isNotEmpty()) {
-            PrefManager.providerDefaultsSeeded = true
-            return emptyList()
-        }
-        val created = ProviderTabCodec.decode(bundleJson).map { catalog.createTab(it) }
+        val existingUrls = catalog.getTabs().map { it.feedUrl }.toSet()
+        val created = ProviderTabCodec.decode(bundleJson)
+            .filter { it.feedUrl !in existingUrls }
+            .map { catalog.createTab(it) }
         PrefManager.providerDefaultsSeeded = true
-        Timber.tag("ProviderTabs").i("Seeded ${created.size} default provider tab(s)")
+        if (created.isNotEmpty()) {
+            Timber.tag("ProviderTabs").i("Seeded ${created.size} default provider tab(s)")
+        }
         return created
     }
 }

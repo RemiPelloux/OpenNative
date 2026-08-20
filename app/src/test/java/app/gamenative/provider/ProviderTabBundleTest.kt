@@ -66,12 +66,15 @@ class ProviderTabBundleTest {
     fun `shipped default asset matches the public tab bundle`() {
         val example = java.io.File("../docs/examples/opennative-provider-tabs.json").readText()
         val asset = java.io.File("src/main/assets/opennative-provider-tabs.json").readText()
-        val fromExample = ProviderTabCodec.decode(example).single()
-        val fromAsset = ProviderTabCodec.decode(asset).single()
-        assertEquals(fromExample.name, fromAsset.name)
-        assertEquals(fromExample.feedUrl, fromAsset.feedUrl)
-        assertEquals(20, fromAsset.perPage)
-        assertEquals(FeedKind.JSON, fromAsset.feedKind)
+        val fromExample = ProviderTabCodec.decode(example)
+        val fromAsset = ProviderTabCodec.decode(asset)
+        assertEquals(fromExample.map { it.name }, fromAsset.map { it.name })
+        assertEquals("FitGirl", fromAsset[0].name)
+        assertEquals(FeedKind.JSON, fromAsset[0].feedKind)
+        assertEquals("Skidrow", fromAsset[1].name)
+        assertEquals("https://feeds.feedburner.com/SkidrowReloadedGames", fromAsset[1].feedUrl)
+        assertEquals(FeedKind.RSS, fromAsset[1].feedKind)
+        assertEquals(20, fromAsset[0].perPage)
     }
 
     @Test

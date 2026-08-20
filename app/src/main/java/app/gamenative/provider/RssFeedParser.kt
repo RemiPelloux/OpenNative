@@ -33,13 +33,15 @@ object RssFeedParser {
             val id = firstText(element, "guid").ifBlank { link }
             if (title.isBlank() || link.isBlank()) return@mapNodes null
             if (CatalogFilter.isUpdateDigest(title, link, id)) return@mapNodes null
+            val html = itemHtml(element)
             ProviderFeedItem(
                 itemId = id,
                 title = title,
-                description = HtmlText.plain(firstText(element, "description")),
+                description = HtmlText.plain(firstText(element, "description").ifBlank { html }),
                 link = link,
                 downloadSizeBytes = enclosureLength(element),
-                artworkUrl = mediaUrl(element),
+                artworkUrl = mediaUrl(element) ?: firstImage(html),
+                extraJson = WordpressMetadata.extraJson(WordpressMetadata.httpsLinks(html)),
             )
         }
     }
@@ -52,11 +54,13 @@ object RssFeedParser {
             val id = firstText(element, "id").ifBlank { link }
             if (title.isBlank() || link.isBlank()) return@mapNodes null
             if (CatalogFilter.isUpdateDigest(title, link, id)) return@mapNodes null
+            val html = firstText(element, "content").ifBlank { firstText(element, "summary") }
             ProviderFeedItem(
                 itemId = id,
                 title = title,
-                description = HtmlText.plain(firstText(element, "summary").ifBlank { firstText(element, "content") }),
+                description = HtmlText.plain(html),
                 link = link,
+                extraJson = WordpressMetadata.extraJson(WordpressMetadata.httpsLinks(html)),
             )
         }
     }
@@ -71,6 +75,16 @@ object RssFeedParser {
             transform(node)?.let { items += it }
         }
         return items
+    }
+
+    private fun itemHtml(item: Element): String =
+        firstText(item, "content:encoded")
+            .ifBlank { firstText(item, "encoded") }
+            .ifBlank { firstText(item, "description") }
+
+    private fun firstImage(html: String): String? {
+        val match = Regex("""<img[^>]+src=["'](https://[^"']+)["']""", RegexOption.IGNORE_CASE).find(html)
+        return match?.groupValues?.get(1)
     }
 
     private fun firstText(parent: Element, tag: String): String {

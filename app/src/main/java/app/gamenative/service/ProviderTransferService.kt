@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import app.gamenative.PrefManager
 import app.gamenative.R
+import app.gamenative.provider.HosterAllowlist
 import app.gamenative.provider.ProviderCatalogRepository
 import app.gamenative.provider.ProviderTab
 import app.gamenative.provider.ProviderTransferCoordinator
@@ -64,8 +65,9 @@ class ProviderTransferService : Service() {
             val tab = catalog.getTab(tabId)?.withGlobal() ?: return
             val item = catalog.getItem(tabId, itemId) ?: return
             notify(item.title)
-            val magnet = WordpressMetadata.magnetOf(item)
-            val links = WordpressMetadata.candidateLinks(item)
+            val hosts = HosterAllowlist.hostsFor(tab.feedUrl)
+            val magnet = if (hosts == null) WordpressMetadata.magnetOf(item) else ""
+            val links = HosterAllowlist.filter(WordpressMetadata.candidateLinks(item), tab.feedUrl)
             val downloadItem = item.copy(link = magnet.ifBlank { links.firstOrNull() ?: item.link })
             val available = File(filesDir.absolutePath).usableSpace
             val job = transfers.enqueue(tab, downloadItem, available, includeWineHeadroom = false)

@@ -58,6 +58,33 @@ class FeedPaginatorTest {
             PaginationStyle.WORDPRESS_RSS,
             FeedPaginator.detectStyle("https://blog.example/feed/", FeedKind.RSS),
         )
+        assertEquals(
+            PaginationStyle.SINGLE_DOCUMENT,
+            FeedPaginator.detectStyle(
+                "https://feeds.feedburner.com/SkidrowReloadedGames",
+                FeedKind.RSS,
+            ),
+        )
+    }
+
+    @Test
+    fun `feedburner rss stays a single document`() {
+        val url = FeedPaginator.apply(
+            rawUrl = "https://feeds.feedburner.com/SkidrowReloadedGames",
+            request = FeedPageRequest(page = 2, search = "portal"),
+            style = PaginationStyle.SINGLE_DOCUMENT,
+        )
+        assertEquals("https://feeds.feedburner.com/SkidrowReloadedGames", url)
+        assertFalse(
+            FeedPaginator.hasMore(
+                fetchedPage = 1,
+                itemCount = 25,
+                perPage = 20,
+                totalPages = null,
+                nextCursor = null,
+                style = PaginationStyle.SINGLE_DOCUMENT,
+            ),
+        )
     }
 
     @Test

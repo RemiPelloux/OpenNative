@@ -89,16 +89,19 @@ class ProviderCatalogRepository @Inject constructor(
     ): ProviderTab {
         var cursor: String? = null
         var latest = tab
+        val style = FeedPaginator.detectStyle(latest.feedUrl, latest.feedKind)
         val collected = ArrayList<ProviderFeedItemEntity>(pageLimit * latest.perPage)
         var lastItemCount = 0
         var lastTotalPages: Int? = null
         repeat(pageLimit) { offset ->
             val pageNumber = startPage + offset
+            val conditional = style != PaginationStyle.SINGLE_DOCUMENT &&
+                offset == 0 && replace && search.isBlank()
             val page = feedClient.fetch(
                 url = latest.feedUrl,
                 cursor = cursor,
-                etag = if (offset == 0 && replace && search.isBlank()) latest.etag else null,
-                lastModified = if (offset == 0 && replace && search.isBlank()) latest.lastModified else null,
+                etag = if (conditional) latest.etag else null,
+                lastModified = if (conditional) latest.lastModified else null,
                 kindHint = latest.feedKind,
                 page = pageNumber,
                 perPage = latest.perPage,
@@ -110,6 +113,7 @@ class ProviderCatalogRepository @Inject constructor(
                 return persist(latest.copy(stale = false, lastRefreshAtEpochMs = System.currentTimeMillis()))
             }
             collected += CatalogFilter.withoutNoise(page.items)
+                .map { WordpressMetadata.restrictForFeed(it, latest.feedUrl) }
                 .map { ProviderFeedItemEntity.fromDomain(latest.id, it) }
             lastItemCount = page.items.size
             lastTotalPages = page.totalPages
@@ -129,6 +133,7 @@ class ProviderCatalogRepository @Inject constructor(
                 perPage = latest.perPage,
                 totalPages = lastTotalPages,
                 nextCursor = cursor,
+                style = style,
             )
             if (!more) return commitPages(latest, collected, replace)
         }

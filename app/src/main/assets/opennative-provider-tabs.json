@@ -12,6 +12,17 @@
       "refreshPolicy": "DAILY",
       "cleanupPolicy": "DELETE_AFTER_VERIFIED_INSTALL",
       "enabled": true
+    },
+    {
+      "name": "Skidrow",
+      "feedUrl": "https://feeds.feedburner.com/SkidrowReloadedGames",
+      "feedKind": "RSS",
+      "perPage": 20,
+      "orderBy": "date",
+      "order": "desc",
+      "refreshPolicy": "DAILY",
+      "cleanupPolicy": "DELETE_AFTER_VERIFIED_INSTALL",
+      "enabled": true
     }
   ]
 }

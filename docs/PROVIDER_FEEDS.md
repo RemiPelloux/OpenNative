@@ -1,6 +1,6 @@
 # Provider feed contract
 
-OpenNative `1.2.1` reads **user-supplied** HTTPS catalogs. First launch can seed `assets/opennative-provider-tabs.json` as a default tab; the application does not embed a game catalog.
+OpenNative `1.2.1` reads **user-supplied** HTTPS catalogs. Launch seeds `assets/opennative-provider-tabs.json` (FitGirl JSON and Skidrow RSS) when those tabs are missing. The application does not embed a game catalog.
 
 A provider tab accepts one of:
 
@@ -101,6 +101,8 @@ Mapped fields:
 - `description` / Atom `summary` with tags stripped
 
 WordPress HTML can include a magnet; Install sends it to AllDebrid and writes every file into the game folder.
+
+The shipped **Skidrow** tab uses `https://feeds.feedburner.com/SkidrowReloadedGames`. FeedBurner is fetched as a single RSS document (no WordPress paging). Download keeps only Mega links (`mega.nz`, `mega.io`, `mega.co.nz`) and scrapes the post page when the RSS snippet has none. Magnets and other hosters on that tab are ignored.
 
 ## Transport
 

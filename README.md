@@ -22,7 +22,7 @@ OpenNative is an independent open-source project. It does not include games, fir
 
 | Channel | Version | Status |
 | --- | --- | --- |
-| Stable | `1.2.1` | Default provider tab, cover-grid catalog and verified installer cleanup |
+| Stable | `1.2.1` | FitGirl and Skidrow provider tabs, cover-grid catalog and verified installer cleanup |
 | Next milestone | `1.5.0` | Settings sharing, cockpit polish and remaining certification |
 | Architecture milestone | `2.0.0` | Long-term roadmap |
 
@@ -31,7 +31,7 @@ OpenNative is an independent open-source project. It does not include games, fir
 ### Runtime and compatibility
 
 - Unified Steam, Epic, GOG, Amazon and custom-executable library flows.
-- User-created provider tabs after **Custom**, backed by a user-supplied HTTPS JSON or RSS/Atom feed. First launch seeds the bundled default tab.
+- User-created provider tabs after **Custom**, backed by a user-supplied HTTPS JSON or RSS/Atom feed. Launch seeds the bundled FitGirl and Skidrow tabs.
 - Wine/Proton containers with Box64 and FEX translation options.
 - Per-title graphics, runtime, controller and display configuration.
 - Versioned portable profiles without embedded device-local paths.
@@ -55,7 +55,7 @@ Performance varies by game, runtime, driver and thermal conditions. OpenNative d
 
 ## Shipped in 1.2.1
 
-- A `+` after **Custom** creates a named provider tab. First launch seeds `assets/opennative-provider-tabs.json`.
+- A `+` after **Custom** creates a named provider tab. Launch seeds `assets/opennative-provider-tabs.json` (FitGirl and Skidrow).
 - Provider tabs use a library-style cover grid. Tapping a title opens a detail modal with Download and Install to Custom.
 - Feeds are user-supplied HTTPS JSON envelopes or generic RSS/Atom URLs. Daily refresh reads the latest three pages on app open; Settings also has a manual refresh.
 - Optional AllDebrid resolution with a Keystore-backed key. The first download click can show a key modal; dismiss is allowed and Download stays disabled until a key validates.

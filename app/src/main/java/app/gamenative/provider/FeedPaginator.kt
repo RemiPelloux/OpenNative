@@ -14,11 +14,15 @@ enum class PaginationStyle {
     PAGE,
     WORDPRESS_REST,
     WORDPRESS_RSS,
+    SINGLE_DOCUMENT,
 }
 
 object FeedPaginator {
     fun detectStyle(url: String, kind: FeedKind): PaginationStyle {
         val lower = url.lowercase()
+        if (lower.contains("feedburner.com")) {
+            return PaginationStyle.SINGLE_DOCUMENT
+        }
         if (lower.contains("/wp-json/") || lower.contains("per_page=")) {
             return PaginationStyle.WORDPRESS_REST
         }
@@ -53,6 +57,7 @@ object FeedPaginator {
                 params["orderby"] = sanitizeOrderBy(request.orderBy)
                 params["order"] = sanitizeOrder(request.order)
             }
+            PaginationStyle.SINGLE_DOCUMENT -> Unit
         }
         applySearch(params, request.search, style)
         return appendQuery(stripped, params)
@@ -70,10 +75,19 @@ object FeedPaginator {
             PaginationStyle.WORDPRESS_REST, PaginationStyle.PAGE, PaginationStyle.CURSOR ->
                 params["search"] = encoded
             PaginationStyle.WORDPRESS_RSS -> params["s"] = encoded
+            PaginationStyle.SINGLE_DOCUMENT -> Unit
         }
     }
 
-    fun hasMore(fetchedPage: Int, itemCount: Int, perPage: Int, totalPages: Int?, nextCursor: String?): Boolean {
+    fun hasMore(
+        fetchedPage: Int,
+        itemCount: Int,
+        perPage: Int,
+        totalPages: Int?,
+        nextCursor: String?,
+        style: PaginationStyle = PaginationStyle.PAGE,
+    ): Boolean {
+        if (style == PaginationStyle.SINGLE_DOCUMENT) return false
         if (!nextCursor.isNullOrBlank()) return true
         if (totalPages != null) return fetchedPage < totalPages
         return itemCount >= perPage

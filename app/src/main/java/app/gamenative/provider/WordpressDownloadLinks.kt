@@ -19,6 +19,7 @@ object WordpressDownloadLinks {
         "pixeldrain.com",
         "mega.nz",
         "mega.io",
+        "mega.co.nz",
         "mediafire.com",
         "1fichier.com",
         "megaup.net",
@@ -36,6 +37,7 @@ object WordpressDownloadLinks {
     )
     private val NOISE_HOSTS = setOf(
         "fitgirl-repacks.site",
+        "skidrowreloaded.com",
         "1337x.to",
         "rutor.info",
         "tapochek.net",
@@ -49,11 +51,17 @@ object WordpressDownloadLinks {
         "twitter.com",
     )
 
-    fun rank(urls: List<String>): List<String> =
+    fun rank(urls: List<String>, allowedHosts: Set<String>? = null): List<String> =
         urls.filter { isDownloadLink(it) }
+            .filter { allowedHosts == null || hostAllowed(it, allowedHosts) }
             .distinct()
             .sortedByDescending { score(it) }
             .take(12)
+
+    private fun hostAllowed(url: String, allowed: Set<String>): Boolean {
+        val host = hostOf(url)
+        return allowed.any { matchesHost(host, it) }
+    }
 
     fun isDownloadLink(url: String): Boolean {
         if (!url.startsWith("https://", ignoreCase = true)) return false
