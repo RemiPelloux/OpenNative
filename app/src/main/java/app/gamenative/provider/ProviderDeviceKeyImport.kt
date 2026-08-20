@@ -18,11 +18,14 @@ object ProviderDeviceKeyImport {
         val file = File(context.filesDir, FILE_NAME)
         if (!file.exists()) return
         val raw = runCatching { file.readText() }.getOrDefault("").trim()
-        runCatching { file.delete() }
-        if (raw.isBlank()) return
+        if (raw.isBlank()) {
+            runCatching { file.delete() }
+            return
+        }
         resolver.validateCredential(raw)
         val ref = secrets.saveNamed(ProviderTabBundle.GLOBAL_CREDENTIAL_REF, raw)
         PrefManager.providerGlobalCredentialRef = ref
+        runCatching { file.delete() }
         Timber.tag("ProviderKey").i("Imported device AllDebrid key into Keystore")
     }
 }

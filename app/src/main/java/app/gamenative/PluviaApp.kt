@@ -8,6 +8,9 @@ import androidx.navigation.NavController
 import app.gamenative.db.dao.AmazonGameDao
 import app.gamenative.db.dao.GOGGameDao
 import app.gamenative.events.EventDispatcher
+import app.gamenative.provider.AllDebridResolver
+import app.gamenative.provider.ProviderDeviceKeyImport
+import app.gamenative.provider.ProviderSecretStore
 import app.gamenative.powercontrol.PowerManager
 import app.gamenative.performance.shaders.ShaderHealthMonitor
 import app.gamenative.service.ActiveGameRegistry
@@ -48,6 +51,8 @@ class PluviaApp : SplitCompatApplication() {
 
     @Inject lateinit var gogGameDao: GOGGameDao
     @Inject lateinit var amazonGameDao: AmazonGameDao
+    @Inject lateinit var providerSecrets: ProviderSecretStore
+    @Inject lateinit var allDebridResolver: AllDebridResolver
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -85,6 +90,16 @@ class PluviaApp : SplitCompatApplication() {
         DownloadService.populateDownloadService(this)
 
         migrateGogAmazonPaths()
+
+        if (BuildConfig.DEBUG) {
+            appScope.launch {
+                runCatching {
+                    ProviderDeviceKeyImport.consume(this@PluviaApp, providerSecrets, allDebridResolver)
+                }.onFailure { error ->
+                    Timber.tag("ProviderKey").e(error, "Device AllDebrid import failed")
+                }
+            }
+        }
 
         appScope.launch {
             ContainerMigrator.migrateLegacyContainersIfNeeded(
