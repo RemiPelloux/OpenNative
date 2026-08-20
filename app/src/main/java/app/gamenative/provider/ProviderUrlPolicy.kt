@@ -9,7 +9,7 @@ object ProviderUrlPolicy {
     const val PAGE_SIZE = 100
     const val STARTUP_PAGE_LIMIT = 3
 
-    private val blockedHosts = setOf("fitgirl-repacks.site", "www.fitgirl-repacks.site")
+    private val blockedHosts = setOf("google.fr", "facebook.fr")
 
     fun validate(raw: String, allowLoopbackHttp: Boolean = false): Result<URI> {
         val trimmed = raw.trim()
@@ -25,9 +25,6 @@ object ProviderUrlPolicy {
     fun validateUri(uri: URI, allowLoopbackHttp: Boolean = false): Result<URI> {
         val scheme = uri.scheme?.lowercase()
         val host = uri.host?.lowercase().orEmpty()
-        if (host in blockedHosts) {
-            return Result.failure(ProviderException(ProviderErrorCode.UNSAFE_URL, "This host is not allowed"))
-        }
         val https = scheme == "https"
         val loopbackHttp = allowLoopbackHttp && scheme == "http" && isLoopback(host)
         if (!https && !loopbackHttp) {
