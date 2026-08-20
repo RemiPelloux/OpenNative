@@ -13,6 +13,9 @@ interface ProviderFeedItemDao {
     @Query("SELECT * FROM provider_feed_items WHERE tab_id = :tabId ORDER BY published_at DESC, title ASC")
     fun observeForTab(tabId: String): Flow<List<ProviderFeedItemEntity>>
 
+    @Query("SELECT * FROM provider_feed_items WHERE tab_id = :tabId AND item_id = :itemId LIMIT 1")
+    suspend fun get(tabId: String, itemId: String): ProviderFeedItemEntity?
+
     @Query(
         "SELECT * FROM provider_feed_items WHERE tab_id = :tabId " +
             "AND (title LIKE :query OR description LIKE :query) " +

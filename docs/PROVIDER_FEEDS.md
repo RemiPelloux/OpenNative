@@ -52,7 +52,7 @@ Feeds can be paged. OpenNative detects the style from the URL and feed kind:
 
 The catalog search field filters locally. Refresh and Load more still send paging parameters.
 
-OpenNative still does not scrape HTML bodies or extract magnets.
+WordPress post HTML stores file-hoster HTTPS links and the first magnet in extra JSON. Download uploads that magnet to AllDebrid, waits until it is ready, then writes every file into CustomGames/<slugged-title>/ with slugged nested folders (filenames stay as-is, e.g. setup.exe). Install renames any leftover pack folder to a slug, registers it as a Custom game, and launches setup.exe in Wine. After Wine exits, a non-setup exe becomes the Play target.
 
 ## Tab bundle
 
@@ -82,7 +82,7 @@ A WordPress REST posts URL may include `page`, `per_page`, `orderby`, `order`, o
 
 OpenNative ships `app/src/main/assets/opennative-provider-tabs.json` as the default tab bundle and seeds it on first launch. The same file is copied at `docs/examples/opennative-provider-tabs.json` for Settings import. Use `perPage` 20 or lower when the site returns full post HTML, so a page stays under the 2 MB feed cap. OpenNative still pages with `X-WP-TotalPages`.
 
-OpenNative still does not scrape HTML bodies or extract magnets.
+WordPress post HTML stores file-hoster HTTPS links and the first magnet in extra JSON. Download uploads that magnet to AllDebrid, waits until it is ready, then writes every file into CustomGames/<slugged-title>/ with slugged nested folders (filenames stay as-is, e.g. setup.exe). Install renames any leftover pack folder to a slug, registers it as a Custom game, and launches setup.exe in Wine. After Wine exits, a non-setup exe becomes the Play target.
 
 ## RSS and Atom
 
@@ -96,7 +96,7 @@ Mapped fields:
 - `enclosure@length` as download size
 - `description` / Atom `summary` with tags stripped
 
-OpenNative does not scrape HTML bodies, extract magnets, or special-case any host.
+WordPress HTML can include a magnet; Install sends it to AllDebrid and writes every file into the game folder.
 
 ## Transport
 

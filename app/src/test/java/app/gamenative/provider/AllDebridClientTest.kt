@@ -87,4 +87,56 @@ class AllDebridClientTest {
         val request = server.takeRequest()
         assertEquals("https://example.com/file.zip", request.requestUrl?.queryParameter("link"))
     }
+
+    @Test
+    fun `polls delayed unlock until a file link is ready`() = runBlocking {
+        client = AllDebridClient(
+            httpClient = OkHttpClient(),
+            baseUrl = server.url("/").toString().trimEnd('/'),
+            allowLoopbackHttp = true,
+            delayedPollMs = 1L,
+            delayedAttempts = 4,
+        )
+        server.enqueue(
+            MockResponse().setBody(
+                """{"status":"success","data":{"filename":"game.rar","filesize":20,"delayed":99}}""",
+            ),
+        )
+        server.enqueue(MockResponse().setBody("""{"status":"success","data":{"status":1,"time_left":5}}"""))
+        server.enqueue(
+            MockResponse().setBody(
+                """{"status":"success","data":{"status":2,"time_left":0,"link":"https://cdn.example/file"}}""",
+            ),
+        )
+        val resolved = client.resolve("secret-key", "https://datanodes.to/file.rar")
+        assertEquals("game.rar", resolved.filename)
+        assertEquals("https://cdn.example/file", resolved.url)
+        assertEquals(3, server.requestCount)
+    }
+
+    @Test
+    fun `uploads a magnet and lists ready files`() = runBlocking {
+        client = AllDebridClient(
+            httpClient = OkHttpClient(),
+            baseUrl = server.url("/").toString().trimEnd('/'),
+            allowLoopbackHttp = true,
+            magnetPollMs = 1L,
+            magnetAttempts = 3,
+        )
+        server.enqueue(
+            MockResponse().setBody(
+                """{"status":"success","data":{"magnets":[{"id":77,"ready":true,"name":"Game","size":30}]}}""",
+            ),
+        )
+        server.enqueue(
+            MockResponse().setBody(
+                """{"status":"success","data":{"magnets":[{"id":77,"files":[{"n":"game.rar","s":30,"l":"https://alldebrid.com/f/a"}]}]}}""",
+            ),
+        )
+        val uploaded = client.uploadMagnet("secret-key", "magnet:?xt=urn:btih:abc")
+        assertEquals(77, uploaded.id)
+        val files = client.magnetFiles("secret-key", uploaded.id)
+        assertEquals("game.rar", files.single().relativePath)
+        assertEquals("https://alldebrid.com/f/a", files.single().link)
+    }
 }

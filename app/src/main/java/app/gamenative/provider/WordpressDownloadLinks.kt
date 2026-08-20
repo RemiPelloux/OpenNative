@@ -29,6 +29,10 @@ object WordpressDownloadLinks {
         "nitroflare.com",
         "keep2share.cc",
         "k2s.cc",
+        "multiup.io",
+        "multiup.org",
+        "pixeldrain.net",
+        "workupload.com",
     )
     private val NOISE_HOSTS = setOf(
         "fitgirl-repacks.site",

@@ -158,14 +158,6 @@ fun HomeLibraryScreen(
         onDismiss = providerViewModel::closeCreate,
         onSave = providerViewModel::createTab,
     )
-    AllDebridKeyDialog(
-        visible = providerUi.showKeyDialog,
-        busy = providerUi.keyBusy,
-        errorText = providerUi.keyError,
-        onDismiss = providerViewModel::dismissKeyDialog,
-        onSave = providerViewModel::saveKey,
-    )
-
     LibraryScreenContent(
         state = state,
         importState = importState,
@@ -217,6 +209,13 @@ fun HomeLibraryScreen(
             !providerUi.keyPromptDismissed,
         isOffline = isOffline,
         isSteamConnected = isSteamConnected,
+    )
+    AllDebridKeyDialog(
+        visible = providerUi.showKeyDialog,
+        busy = providerUi.keyBusy,
+        errorText = providerUi.keyError,
+        onDismiss = providerViewModel::dismissKeyDialog,
+        onSave = providerViewModel::saveKey,
     )
 }
 

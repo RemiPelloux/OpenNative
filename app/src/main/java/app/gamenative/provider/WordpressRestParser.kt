@@ -5,7 +5,7 @@ import org.json.JSONObject
 
 /**
  * Generic WordPress REST post list. Maps public title, link, excerpt and cover media.
- * File-hoster HTTPS links are stored in extraJson; magnets and blog pages are ignored.
+ * File-hoster HTTPS links and the first magnet are stored in extraJson.
  */
 object WordpressRestParser {
     fun looksLike(body: String): Boolean {
@@ -45,7 +45,10 @@ object WordpressRestParser {
             downloadSizeBytes = download,
             uncompressedSizeBytes = uncompressed,
             publishedAtEpochMs = 0L,
-            extraJson = WordpressMetadata.extraJson(WordpressMetadata.httpsLinks(content)),
+            extraJson = WordpressMetadata.extraJson(
+                WordpressMetadata.httpsLinks(content),
+                WordpressMagnets.first(content),
+            ),
         )
     }
 

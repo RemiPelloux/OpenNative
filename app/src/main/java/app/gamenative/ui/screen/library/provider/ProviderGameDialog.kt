@@ -50,6 +50,7 @@ import androidx.compose.ui.window.DialogProperties
 import app.gamenative.R
 import app.gamenative.provider.ProviderFeedItem
 import app.gamenative.provider.ProviderGameUi
+import app.gamenative.provider.ProviderLocalPayload
 import app.gamenative.provider.TransferJob
 import app.gamenative.provider.TransferState
 import app.gamenative.ui.theme.DarkColors
@@ -79,6 +80,7 @@ fun ProviderGameDialog(
                     .verticalScroll(rememberScrollState()),
             ) {
                 GameHero(
+                    item = item,
                     title = title,
                     sizeLine = sizeLine,
                     artworkUrl = item.artworkUrl,
@@ -88,7 +90,8 @@ fun ProviderGameDialog(
                     onDownload = onDownload,
                     onInstall = onInstall,
                 )
-                if (description.isNotBlank() || job?.errorMessage?.isNotBlank() == true) {
+                val error = ProviderGameUi.visibleError(job, ProviderLocalPayload.hasInstaller(item))
+                if (description.isNotBlank() || error.isNotBlank()) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -98,8 +101,8 @@ fun ProviderGameDialog(
                         if (description.isNotBlank()) {
                             Text(description, style = MaterialTheme.typography.bodyMedium)
                         }
-                        if (job != null && job.errorMessage.isNotBlank()) {
-                            Text(job.errorMessage, color = MaterialTheme.colorScheme.error)
+                        if (error.isNotBlank()) {
+                            Text(error, color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -110,6 +113,7 @@ fun ProviderGameDialog(
 
 @Composable
 private fun GameHero(
+    item: ProviderFeedItem,
     title: String,
     sizeLine: String,
     artworkUrl: String?,
@@ -166,19 +170,22 @@ private fun GameHero(
             if (sizeLine.isNotBlank()) {
                 Text(sizeLine, color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodyMedium)
             }
-            GameActionBar(job, downloadEnabled, onDownload, onInstall)
+            GameActionBar(item, job, downloadEnabled, onDownload, onInstall)
         }
     }
 }
 
 @Composable
 private fun GameActionBar(
+    item: ProviderFeedItem,
     job: TransferJob?,
     downloadEnabled: Boolean,
     onDownload: () -> Unit,
     onInstall: () -> Unit,
 ) {
     val downloading = job?.state == TransferState.DOWNLOADING
+    val hasLocal = ProviderLocalPayload.hasInstaller(item)
+    val canInstall = ProviderGameUi.canInstall(job, item)
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -189,13 +196,14 @@ private fun GameActionBar(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Button(
-                onClick = if (ProviderGameUi.canInstall(job)) onInstall else onDownload,
-                enabled = ProviderGameUi.canInstall(job) || (downloadEnabled && !ProviderGameUi.isBusy(job)),
-                colors = ButtonDefaults.buttonColors(containerColor = actionColor(job)),
+                onClick = if (canInstall) onInstall else onDownload,
+                enabled = canInstall ||
+                    (downloadEnabled && !ProviderGameUi.isBusy(job) && !ProviderGameUi.isInstalled(job, item)),
+                colors = ButtonDefaults.buttonColors(containerColor = actionColor(job, item, canInstall)),
             ) {
                 Icon(Icons.Filled.CloudDownload, contentDescription = null)
                 Text(
-                    text = actionLabel(job, downloadEnabled),
+                    text = actionLabel(job, item, downloadEnabled),
                     modifier = Modifier.padding(start = 8.dp),
                     fontWeight = FontWeight.Bold,
                 )
@@ -203,26 +211,32 @@ private fun GameActionBar(
             Spacer(modifier = Modifier.weight(1f))
         }
         if (job != null) {
-            Text(ProviderGameUi.statusLabel(job), color = Color.White.copy(alpha = 0.9f))
+            Text(
+                ProviderGameUi.statusLabel(job, hasLocal),
+                color = Color.White.copy(alpha = 0.9f),
+            )
         }
-        if (downloading && job.progressPercent in 1..99) {
+        if (ProviderGameUi.isBusy(job) && downloading && job.progressPercent in 1..99) {
             LinearProgressIndicator(
                 progress = { job.progressPercent / 100f },
                 modifier = Modifier.fillMaxWidth(),
             )
+        } else if (ProviderGameUi.isBusy(job)) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
     }
 }
 
 @Composable
-private fun actionLabel(job: TransferJob?, downloadEnabled: Boolean): String = when {
-    ProviderGameUi.canInstall(job) -> stringResource(R.string.provider_install)
+private fun actionLabel(job: TransferJob?, item: ProviderFeedItem, downloadEnabled: Boolean): String = when {
+    ProviderGameUi.isInstalled(job, item) -> stringResource(R.string.provider_installed)
+    ProviderGameUi.canInstall(job, item) -> stringResource(R.string.provider_install)
     !downloadEnabled -> stringResource(R.string.provider_download_blocked)
-    else -> stringResource(R.string.install_app)
+    else -> stringResource(R.string.provider_download)
 }
 
-private fun actionColor(job: TransferJob?): Color = when {
-    ProviderGameUi.canInstall(job) -> DarkColors.statusInstalled
+private fun actionColor(job: TransferJob?, item: ProviderFeedItem, canInstall: Boolean): Color = when {
+    canInstall || ProviderGameUi.isInstalled(job, item) -> DarkColors.statusInstalled
     job?.state == TransferState.DOWNLOADING -> DarkColors.statusDownloading
     else -> DarkColors.statusAvailable
 }

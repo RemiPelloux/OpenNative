@@ -38,6 +38,17 @@ class WordpressMetadataTest {
     }
 
     @Test
+    fun `stores the first magnet from post html`() {
+        val magnet = WordpressMagnets.first(
+            """<a href="magnet:?xt=urn:btih:abc123&amp;dn=Game">torrent</a>""",
+        )
+        assertEquals("magnet:?xt=urn:btih:abc123&dn=Game", magnet)
+        val extra = WordpressMetadata.extraJson(emptyList(), magnet)
+        val item = ProviderFeedItem(itemId = "1", title = "Game", link = "https://example.com/g", extraJson = extra)
+        assertEquals(magnet, WordpressMetadata.magnetOf(item))
+    }
+
+    @Test
     fun `preferred link does not fall back to a blog post url`() {
         val item = ProviderFeedItem(
             itemId = "1",
@@ -86,7 +97,7 @@ class WordpressMetadataTest {
 
     @Test
     fun `folder name stays filesystem safe`() {
-        assertEquals("Twisted Tower  v1.0.3", ProviderInstallHandler.folderName("Twisted Tower – v1.0.3"))
+        assertEquals("twisted-tower-v1-0-3", ProviderInstallHandler.folderName("Twisted Tower – v1.0.3"))
         assertTrue(ProviderInstallHandler.folderName("???").isNotBlank())
     }
 }

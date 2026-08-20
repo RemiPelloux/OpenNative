@@ -26,6 +26,9 @@ class ProviderCatalogRepository @Inject constructor(
 
     suspend fun getTab(id: String): ProviderTab? = tabDao.getById(id)?.toDomain()
 
+    suspend fun getItem(tabId: String, itemId: String): ProviderFeedItem? =
+        itemDao.get(tabId, itemId)?.toDomain()
+
     fun observeItems(tabId: String): Flow<List<ProviderFeedItem>> =
         itemDao.observeForTab(tabId).map { rows ->
             CatalogFilter.withoutNoise(rows.map { it.toDomain() })

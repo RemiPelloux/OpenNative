@@ -29,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.gamenative.R
 import app.gamenative.provider.ProviderFeedItem
+import app.gamenative.provider.ProviderJobLookup
 import app.gamenative.provider.ProviderTab
 import app.gamenative.provider.TransferJob
 
@@ -47,7 +48,7 @@ fun ProviderCatalogScreen(
     onDeleteTab: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val jobsByItem = jobs.associateBy { it.itemId }
+    val jobsByItem = remember(jobs) { ProviderJobLookup.latestByItem(jobs) }
     var selected by remember { mutableStateOf<ProviderFeedItem?>(null) }
     val colors = MaterialTheme.colorScheme
     Column(
@@ -138,7 +139,10 @@ fun ProviderCatalogScreen(
             downloadEnabled = downloadEnabled,
             onDismiss = { selected = null },
             onDownload = { onDownload(item) },
-            onInstall = { onInstall(item) },
+            onInstall = {
+                selected = null
+                onInstall(item)
+            },
         )
     }
 }

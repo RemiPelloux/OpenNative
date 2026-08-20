@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 @Singleton
 class ProviderTransferCoordinator @Inject constructor(
@@ -73,19 +74,72 @@ class ProviderTransferCoordinator @Inject constructor(
         return job
     }
 
+    suspend fun attachExisting(tab: ProviderTab, item: ProviderFeedItem, dest: File): TransferJob {
+        val now = System.currentTimeMillis()
+        return persist(
+            TransferJob(
+                jobId = UUID.randomUUID().toString(),
+                tabId = tab.id,
+                itemId = item.itemId,
+                title = item.title,
+                state = TransferState.VERIFYING,
+                selectedLink = item.link,
+                finalPath = dest.absolutePath,
+                destinationPath = dest.absolutePath,
+                createdAtEpochMs = now,
+                updatedAtEpochMs = now,
+            ),
+        )
+    }
+
     suspend fun resolveAndDownload(
         tab: ProviderTab,
         job: TransferJob,
         cancelled: () -> Boolean,
         candidates: List<String> = emptyList(),
         pageUrl: String = "",
+        magnet: String = "",
     ): TransferJob {
-        val key = job.identity
-        val running = resolveGuard.withKey(key) {
-            val resolved = resolve(tab, job, candidates, pageUrl)
-            download(resolved, cancelled)
+        return withContext(Dispatchers.IO) {
+            val key = job.identity
+            val running = resolveGuard.withKey(key) {
+                val magnetUri = magnet.ifBlank { scrapeMagnet(pageUrl) }
+                if (magnetUri.isNotBlank()) {
+                    downloadMagnet(tab, job, magnetUri, cancelled)
+                } else {
+                    val resolved = resolve(tab, job, candidates, pageUrl)
+                    download(resolved, cancelled)
+                }
+            }
+            running ?: job
         }
-        return running ?: job
+    }
+
+    private suspend fun downloadMagnet(
+        tab: ProviderTab,
+        job: TransferJob,
+        magnet: String,
+        cancelled: () -> Boolean,
+    ): TransferJob {
+        val apiKey = secrets.read(tab.credentialRef)
+            ?: throw ProviderException(ProviderErrorCode.AUTHENTICATION, "Resolver credential is missing")
+        return ProviderMagnetDownload.downloadAll(
+            apiKey = apiKey,
+            magnet = magnet,
+            job = job,
+            title = job.title,
+            resolver = resolver,
+            downloader = downloader,
+            cancelled = cancelled,
+            persist = { persist(it) },
+            onProgress = { done, total -> publishProgress(job.jobId, done, total) },
+        )
+    }
+
+    private fun scrapeMagnet(pageUrl: String): String {
+        if (pageUrl.isBlank()) return ""
+        val html = runCatching { feedClient.fetchText(pageUrl) }.getOrDefault("")
+        return WordpressMagnets.first(html)
     }
 
     suspend fun completePortableInstall(
@@ -124,7 +178,7 @@ class ProviderTransferCoordinator @Inject constructor(
             receiptCommitted = true,
             installerOwnedByJob = !installer.exists() || installer.absolutePath == job.finalPath,
         )
-        if (confirmed || decision.canDelete) {
+        if (!InstallerCleanup.shouldSkip(job, destination) && (confirmed || decision.canDelete)) {
             InstallerCleanup.remove(job, destination, stagingRoot)
         }
         return persist(
@@ -133,6 +187,8 @@ class ProviderTransferCoordinator @Inject constructor(
                 destinationPath = destination.absolutePath,
                 executablePath = selectedExe.absolutePath,
                 actualSha256 = hash,
+                errorMessage = "",
+                errorCode = null,
                 updatedAtEpochMs = System.currentTimeMillis(),
             ),
         )
@@ -172,7 +228,9 @@ class ProviderTransferCoordinator @Inject constructor(
         val apiKey = secrets.read(tab.credentialRef)
             ?: throw ProviderException(ProviderErrorCode.AUTHENTICATION, "Resolver credential is missing")
         persist(job.copy(state = TransferState.RESOLVING))
-        return unlockFirst(apiKey, job, unlockTargets(job.selectedLink, candidates, pageUrl))
+        val links = unlockTargets(job.selectedLink, candidates, pageUrl)
+        Timber.tag("ProviderTransfer").i("Unlocking ${links.size} hoster(s) for ${job.title}")
+        return unlockFirst(apiKey, job, links)
     }
 
     private suspend fun unlockFirst(

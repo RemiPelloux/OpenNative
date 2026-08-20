@@ -5,30 +5,33 @@ import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.gamenative.PluviaApp
 import app.gamenative.PrefManager
 import app.gamenative.R
+import app.gamenative.events.AndroidEvent
 import app.gamenative.provider.AllDebridResolver
 import app.gamenative.provider.CatalogFilter
-import app.gamenative.provider.PayloadClassifier
-import app.gamenative.provider.PayloadKind
 import app.gamenative.provider.ProviderCatalogRepository
 import app.gamenative.provider.ProviderDefaultTabs
 import app.gamenative.provider.ProviderDeviceKeyImport
 import app.gamenative.provider.ProviderException
 import app.gamenative.provider.ProviderFeedItem
+import app.gamenative.provider.ProviderGameUi
 import app.gamenative.provider.ProviderInstallHandler
+import app.gamenative.provider.ProviderJobLookup
+import app.gamenative.provider.ProviderLocalPayload
 import app.gamenative.provider.ProviderRefreshCoordinator
-import app.gamenative.provider.WordpressMetadata
+import app.gamenative.service.ProviderTransferService
 import app.gamenative.provider.ProviderSecretStore
 import app.gamenative.provider.ProviderTab
 import app.gamenative.provider.ProviderTabBundle
 import app.gamenative.provider.ProviderTabCodec
 import app.gamenative.provider.ProviderTransferCoordinator
 import app.gamenative.provider.ProviderUrlPolicy
+import app.gamenative.provider.ProviderWineSetup
 import app.gamenative.provider.TransferJob
 import app.gamenative.ui.screen.library.provider.ProviderTabDraft
 import app.gamenative.ui.screen.library.provider.toTab
-import app.gamenative.utils.StorageUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -188,14 +191,30 @@ class ProviderLibraryViewModel @Inject constructor(
             _ui.update { it.copy(showKeyDialog = true, pendingItem = item, keyError = null) }
             return
         }
-        startDownload(resolved, item)
+        val job = ProviderJobLookup.latestByItem(_ui.value.jobs)[item.itemId]
+        if (ProviderGameUi.isBusy(job) || ProviderGameUi.isInstalled(job, item)) return
+        if (ProviderGameUi.canInstall(job, item)) {
+            onInstallClick(resolved, item)
+            return
+        }
+        ProviderTransferService.start(context, resolved.id, item.itemId)
     }
 
     fun onInstallClick(tab: ProviderTab, item: ProviderFeedItem) {
-        val job = _ui.value.jobs.lastOrNull { it.itemId == item.itemId } ?: return
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
+            val latest = ProviderJobLookup.latestByItem(_ui.value.jobs)[item.itemId]
+            val job = latest ?: if (ProviderLocalPayload.hasInstaller(item)) {
+                transfers.attachExisting(tab, item, ProviderLocalPayload.folder(item))
+            } else {
+                return@launch
+            }
             runCatching {
-                ProviderInstallHandler.install(transfers, job, item, tab.withGlobalCredential())
+                val ready = ProviderInstallHandler.install(transfers, job, item, tab.withGlobalCredential())
+                val dest = File(ready.destinationPath.ifBlank { ProviderLocalPayload.folder(item).absolutePath })
+                val launch = ProviderWineSetup.start(context, dest)
+                if (launch != null && ProviderLocalPayload.findInstaller(launch.pack) != null) {
+                    PluviaApp.events.emit(AndroidEvent.ExternalGameLaunch(launch.appId))
+                }
             }.onFailure { error ->
                 transfers.markFailed(job, error.message ?: error.toString())
             }
@@ -247,24 +266,7 @@ class ProviderLibraryViewModel @Inject constructor(
     }
 
     private fun startDownload(tab: ProviderTab, item: ProviderFeedItem) {
-        viewModelScope.launch {
-            val available = runCatching {
-                StorageUtils.getAvailableSpace(context.filesDir.absolutePath)
-            }.getOrDefault(0L)
-            val links = WordpressMetadata.candidateLinks(item)
-            val downloadItem = item.copy(link = links.firstOrNull() ?: item.link)
-            var job: TransferJob? = null
-            runCatching {
-                job = transfers.enqueue(tab, downloadItem, available, includeWineHeadroom = true)
-                val downloaded = transfers.resolveAndDownload(tab, job!!, { false }, links, item.link)
-                val kind = PayloadClassifier.classify(File(downloaded.finalPath))
-                if (kind == PayloadKind.PORTABLE_ARCHIVE) {
-                    ProviderInstallHandler.install(transfers, downloaded, item, tab)
-                }
-            }.onFailure { error ->
-                job?.let { transfers.markFailed(it, error.message ?: error.toString()) }
-            }
-        }
+        ProviderTransferService.start(context, tab.id, item.itemId)
     }
 
     private fun persistInstallUri(uriString: String) {

@@ -3,11 +3,12 @@ package app.gamenative.provider
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
+import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
 class StreamingDownloader(
-    private val httpClient: OkHttpClient = OkHttpClient(),
+    private val httpClient: OkHttpClient = defaultClient(),
     private val bufferSize: Int = StreamingHasher.BUFFER_BYTES,
 ) {
     fun download(
@@ -59,6 +60,14 @@ class StreamingDownloader(
         if (code == 206 && length > 0L) return existing + length
         if (length > 0L) return length
         return expected
+    }
+
+    companion object {
+        fun defaultClient(): OkHttpClient = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(0, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
     }
 
     fun promote(partial: File): File {

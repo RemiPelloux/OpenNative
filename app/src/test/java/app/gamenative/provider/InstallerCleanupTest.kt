@@ -30,4 +30,24 @@ class InstallerCleanupTest {
         assertFalse(stagedExtract.exists())
         assertTrue(File(game, "Game.exe").exists())
     }
+
+    @Test
+    fun `does not delete a downloaded pack that still needs setup exe`() {
+        val root = File(createTempDir(), "pack").also { it.mkdirs() }
+        val setup = File(root, "setup.exe").also { it.writeText("exe") }
+        File(root, "fg-01.bin").writeText("bin")
+        val job = TransferJob(
+            jobId = "job-2",
+            tabId = "tab",
+            itemId = "item",
+            title = "Game",
+            selectedLink = "magnet:?xt=urn:btih:abc",
+            finalPath = root.absolutePath,
+            destinationPath = root.absolutePath,
+        )
+        assertTrue(InstallerCleanup.shouldSkip(job, root))
+        InstallerCleanup.remove(job, root, File(root, "staging"))
+        assertTrue(setup.exists())
+        assertTrue(File(root, "fg-01.bin").exists())
+    }
 }

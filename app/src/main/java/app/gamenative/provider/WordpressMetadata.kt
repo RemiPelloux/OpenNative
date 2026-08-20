@@ -28,13 +28,27 @@ object WordpressMetadata {
 
     fun rankLinks(urls: List<String>): List<String> = WordpressDownloadLinks.rank(urls)
 
-    fun extraJson(links: List<String>): String {
-        if (links.isEmpty()) return "{}"
+    fun extraJson(links: List<String>, magnet: String = ""): String {
+        if (links.isEmpty() && magnet.isBlank()) return "{}"
         val root = JSONObject()
-        val array = JSONArray()
-        links.forEach { array.put(it) }
-        root.put("downloadLinks", array)
+        if (links.isNotEmpty()) {
+            val array = JSONArray()
+            links.forEach { array.put(it) }
+            root.put("downloadLinks", array)
+        }
+        if (magnet.isNotBlank()) root.put("magnet", magnet)
         return root.toString()
+    }
+
+    fun magnetOf(item: ProviderFeedItem): String {
+        val stored = magnetFrom(item.extraJson)
+        if (stored.isNotBlank()) return stored
+        return WordpressMagnets.first(item.description)
+    }
+
+    fun magnetFrom(extraJson: String): String {
+        val root = runCatching { JSONObject(extraJson) }.getOrNull() ?: return ""
+        return root.optString("magnet")
     }
 
     fun linksFrom(extraJson: String): List<String> {

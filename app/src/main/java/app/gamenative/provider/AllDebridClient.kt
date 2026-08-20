@@ -1,23 +1,27 @@
 package app.gamenative.provider
 
-import java.io.IOException
 import java.util.concurrent.TimeUnit
-import okhttp3.HttpUrl.Companion.toHttpUrl
+import kotlinx.coroutines.delay
 import okhttp3.OkHttpClient
-import okhttp3.Request
 import org.json.JSONObject
 
 class AllDebridClient(
     private val httpClient: OkHttpClient = defaultClient(),
     private val baseUrl: String = "https://api.alldebrid.com",
     private val allowLoopbackHttp: Boolean = false,
+    private val delayedPollMs: Long = 5_000L,
+    private val delayedAttempts: Int = 18,
+    private val magnetPollMs: Long = 3_000L,
+    private val magnetAttempts: Int = 200,
 ) : AllDebridResolver {
+    private val http = AllDebridHttp(httpClient, baseUrl)
+    private val magnets = AllDebridMagnetApi(http, magnetPollMs, magnetAttempts)
+
     override suspend fun validateCredential(apiKey: String): AllDebridAccountState {
-        requireKey(apiKey)
-        val json = get("/v4/user", apiKey)
-        val status = json.optString("status")
-        if (status != "success") {
-            throw mapError(json, ProviderErrorCode.AUTHENTICATION)
+        http.requireKey(apiKey)
+        val json = http.get("/v4/user", apiKey)
+        if (json.optString("status") != "success") {
+            throw http.mapError(json, ProviderErrorCode.AUTHENTICATION)
         }
         val data = json.optJSONObject("data")?.optJSONObject("user")
         return AllDebridAccountState(
@@ -26,86 +30,95 @@ class AllDebridClient(
         )
     }
 
-    override suspend fun resolve(apiKey: String, userSelectedLink: String): ResolvedDownload {
-        requireKey(apiKey)
+    override suspend fun resolve(apiKey: String, userSelectedLink: String): ResolvedDownload =
+        resolve(apiKey, userSelectedLink, allowRedirector = true)
+
+    override suspend fun uploadMagnet(apiKey: String, magnet: String): MagnetUpload =
+        magnets.upload(apiKey, magnet)
+
+    override suspend fun waitMagnetReady(apiKey: String, magnetId: Int) =
+        magnets.waitReady(apiKey, magnetId)
+
+    override suspend fun magnetFiles(apiKey: String, magnetId: Int): List<MagnetRemoteFile> =
+        magnets.files(apiKey, magnetId)
+
+    private suspend fun resolve(
+        apiKey: String,
+        userSelectedLink: String,
+        allowRedirector: Boolean,
+    ): ResolvedDownload {
+        http.requireKey(apiKey)
         ProviderUrlPolicy.validate(userSelectedLink, allowLoopbackHttp).getOrThrow()
-        val json = get("/v4/link/unlock", apiKey, mapOf("link" to userSelectedLink))
-        if (json.optString("status") != "success") {
-            throw mapError(json, ProviderErrorCode.UNAVAILABLE_LINK)
+        val json = http.get("/v4/link/unlock", apiKey, mapOf("link" to userSelectedLink))
+        if (json.optString("status") == "success") return fromUnlock(apiKey, json)
+        val error = http.mapError(json, ProviderErrorCode.UNAVAILABLE_LINK)
+        if (allowRedirector && error.code == ProviderErrorCode.UNSUPPORTED_HOST) {
+            val nested = redirectorLinks(apiKey, userSelectedLink)
+            if (nested.isNotEmpty()) return resolve(apiKey, nested.first(), allowRedirector = false)
         }
+        throw error
+    }
+
+    private suspend fun fromUnlock(apiKey: String, json: JSONObject): ResolvedDownload {
         val data = json.optJSONObject("data")
             ?: throw ProviderException(ProviderErrorCode.MALFORMED_RESPONSE, "Unlock payload is malformed")
         val filename = data.optString("filename").ifBlank { "download.bin" }
         val url = data.optString("link")
+        val delayedId = data.optInt("delayed", 0)
+        if (url.isBlank() && delayedId > 0) {
+            return pollDelayed(apiKey, delayedId, filename, data.optLong("filesize"))
+        }
         if (url.isBlank()) {
             throw ProviderException(ProviderErrorCode.UNAVAILABLE_LINK, "Unlock did not return a file")
         }
-        return ResolvedDownload(
-            filename = filename,
-            url = url,
-            sizeBytes = data.optLong("filesize"),
-        )
+        return ResolvedDownload(filename = filename, url = url, sizeBytes = data.optLong("filesize"))
     }
 
-    private fun get(path: String, apiKey: String, query: Map<String, String> = emptyMap()): JSONObject {
-        val builder = baseUrl.toHttpUrl().newBuilder()
-            .addPathSegments(path.trimStart('/'))
-            .addQueryParameter("agent", "OpenNative")
-        query.forEach { (key, value) -> builder.addQueryParameter(key, value) }
-        val request = Request.Builder()
-            .url(builder.build())
-            .header("Authorization", "Bearer $apiKey")
-            .get()
-            .build()
-        val response = try {
-            httpClient.newCall(request).execute()
-        } catch (_: IOException) {
-            throw ProviderException(ProviderErrorCode.NETWORK, "Link resolver request failed")
-        }
-        response.use { resp ->
-            if (resp.code == 429) throw ProviderException(ProviderErrorCode.RATE_LIMIT, "Resolver rate limited")
-            if (resp.code == 401 || resp.code == 403) {
-                throw ProviderException(ProviderErrorCode.AUTHENTICATION, "Resolver authentication failed")
+    private suspend fun pollDelayed(
+        apiKey: String,
+        delayedId: Int,
+        filename: String,
+        sizeBytes: Long,
+    ): ResolvedDownload {
+        repeat(delayedAttempts) {
+            delay(delayedPollMs)
+            val json = http.get("/v4/link/delayed", apiKey, mapOf("id" to delayedId.toString()))
+            if (json.optString("status") != "success") {
+                throw http.mapError(json, ProviderErrorCode.UNAVAILABLE_LINK)
             }
-            val body = resp.body?.string().orEmpty()
-            return runCatching { JSONObject(body) }.getOrElse {
-                throw ProviderException(ProviderErrorCode.MALFORMED_RESPONSE, "Resolver response is malformed")
+            val data = json.optJSONObject("data") ?: return@repeat
+            when (data.optInt("status")) {
+                2 -> {
+                    val url = data.optString("link")
+                    if (url.isBlank()) {
+                        throw ProviderException(ProviderErrorCode.UNAVAILABLE_LINK, "Delayed unlock returned no file")
+                    }
+                    return ResolvedDownload(filename = filename, url = url, sizeBytes = sizeBytes)
+                }
+                3 -> throw ProviderException(ProviderErrorCode.UNAVAILABLE_LINK, "Delayed unlock failed")
             }
         }
+        throw ProviderException(ProviderErrorCode.TIMEOUT, "Delayed unlock timed out")
     }
 
-    private fun requireKey(apiKey: String) {
-        if (apiKey.isBlank()) {
-            throw ProviderException(ProviderErrorCode.AUTHENTICATION, "Resolver credential is missing")
-        }
-    }
-
-    private fun mapError(json: JSONObject, fallback: ProviderErrorCode): ProviderException {
-        val error = json.optJSONObject("error")
-        val code = error?.optString("code").orEmpty()
-        val mapped = when (code) {
-            "AUTH_BAD_APIKEY", "AUTH_MISSING_APIKEY" -> ProviderErrorCode.AUTHENTICATION
-            "LINK_HOST_NOT_SUPPORTED" -> ProviderErrorCode.UNSUPPORTED_HOST
-            "LINK_DOWN", "LINK_ERROR" -> ProviderErrorCode.UNAVAILABLE_LINK
-            else -> fallback
-        }
-        return ProviderException(mapped, resolverMessage(mapped, error?.optString("message").orEmpty()))
-    }
-
-    private fun resolverMessage(code: ProviderErrorCode, detail: String): String {
-        val safe = ProviderUrlPolicy.redact(detail).trim()
-        return when {
-            code == ProviderErrorCode.AUTHENTICATION -> "Resolver authentication failed"
-            code == ProviderErrorCode.UNSUPPORTED_HOST -> "This file host is not supported"
-            safe.isNotBlank() -> safe
-            else -> "Resolver request failed"
-        }
+    private fun redirectorLinks(apiKey: String, userSelectedLink: String): List<String> {
+        val json = runCatching {
+            http.get("/v4/link/redirector", apiKey, mapOf("link" to userSelectedLink))
+        }.getOrNull() ?: return emptyList()
+        if (json.optString("status") != "success") return emptyList()
+        val array = json.optJSONObject("data")?.optJSONArray("links") ?: return emptyList()
+        return buildList {
+            for (index in 0 until array.length()) {
+                val link = array.optString(index)
+                if (link.startsWith("https://")) add(link)
+            }
+        }.take(8)
     }
 
     companion object {
         fun defaultClient(): OkHttpClient = OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(20, TimeUnit.SECONDS)
+            .connectTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(45, TimeUnit.SECONDS)
             .build()
     }
 }
