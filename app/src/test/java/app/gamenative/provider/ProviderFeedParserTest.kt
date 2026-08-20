@@ -107,6 +107,46 @@ class ProviderFeedParserTest {
     }
 
     @Test
+    fun `decodes wordpress title entities for cuphead`() {
+        val page = ProviderFeedParser.parse(
+            """
+            [
+              {
+                "id": 5361,
+                "link": "https://fitgirl-repacks.site/cuphead/",
+                "title": { "rendered": "Cuphead: Game &#038; Soundtrack Bundle &#8211; v1.3.9 + DLC + Bonus OSTs" },
+                "excerpt": { "rendered": "<p>Arcade &amp; run and gun</p>" }
+              }
+            ]
+            """.trimIndent(),
+        )
+        val item = page.items.single()
+        assertEquals("Cuphead: Game & Soundtrack Bundle – v1.3.9 + DLC + Bonus OSTs", item.title)
+        assertEquals("Arcade & run and gun", item.description)
+    }
+
+    @Test
+    fun `skips wordpress updates digest posts`() {
+        val page = ProviderFeedParser.parse(
+            """
+            [
+              {
+                "id": 1,
+                "link": "https://fitgirl-repacks.site/updates-digest-for-july-19-2026/",
+                "title": { "rendered": "Updates Digest for July 19, 2026" }
+              },
+              {
+                "id": 5361,
+                "link": "https://fitgirl-repacks.site/cuphead/",
+                "title": { "rendered": "Cuphead" }
+              }
+            ]
+            """.trimIndent(),
+        )
+        assertEquals(listOf("5361"), page.items.map { it.itemId })
+    }
+
+    @Test
     fun `limits page size`() {
         val items = (1..120).joinToString(",") { """{"id":"$it","title":"T$it","link":"https://example.com/$it"}""" }
         val page = ProviderFeedParser.parse("""{"version":1,"items":[$items]}""")

@@ -2244,6 +2244,7 @@
     <string name="provider_next">Next</string>
     <string name="provider_back">Back</string>
     <string name="provider_cancel">Cancel</string>
+    <string name="provider_close">Close</string>
     <string name="provider_empty">No items in this feed yet. Refresh or check the URL.</string>
     <string name="provider_stale">Showing last good snapshot</string>
     <string name="provider_refresh">Refresh feed</string>

@@ -24,4 +24,19 @@ class CatalogFilterTest {
     fun `blank query returns every item`() {
         assertEquals(3, CatalogFilter.filter(items, "  ").size)
     }
+
+    @Test
+    fun `drops fitgirl updates digest posts`() {
+        val digest = ProviderFeedItem(
+            itemId = "99",
+            title = "Updates Digest for July 19, 2026",
+            link = "https://fitgirl-repacks.site/updates-digest-for-july-19-2026/",
+        )
+        val game = ProviderFeedItem(
+            itemId = "5361",
+            title = "Cuphead: Game & Soundtrack Bundle",
+            link = "https://fitgirl-repacks.site/cuphead/",
+        )
+        assertEquals(listOf("5361"), CatalogFilter.filter(listOf(digest, game), "").map { it.itemId })
+    }
 }

@@ -3,6 +3,7 @@ package app.gamenative.db.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
+import app.gamenative.provider.HtmlText
 import app.gamenative.provider.ProviderFeedItem
 
 @Entity(
@@ -42,14 +43,14 @@ data class ProviderFeedItemEntity(
 ) {
     fun toDomain(): ProviderFeedItem = ProviderFeedItem(
         itemId = itemId,
-        title = title,
+        title = HtmlText.decode(title),
         version = version,
         architecture = architecture,
         downloadSizeBytes = downloadSize,
         uncompressedSizeBytes = uncompressedSize,
         sha256 = sha256,
         artworkUrl = artworkUrl,
-        description = description,
+        description = HtmlText.plain(description),
         link = link,
         profileRef = profileRef,
         publishedAtEpochMs = publishedAt,

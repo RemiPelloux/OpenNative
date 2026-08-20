@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -103,10 +104,10 @@ fun ProviderCatalogScreen(
             )
         } else {
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(148.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                columns = GridCells.Adaptive(340.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 128.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(items, key = { it.itemId }) { item ->
                     ProviderCatalogRow(
@@ -117,8 +118,13 @@ fun ProviderCatalogScreen(
                 }
                 if (canLoadMore(tab)) {
                     item(key = "load-more", span = { GridItemSpan(maxLineSpan) }) {
-                        TextButton(onClick = onLoadMore, modifier = Modifier.padding(16.dp)) {
-                            Text(stringResource(R.string.provider_load_more), color = colors.primary)
+                        Button(
+                            onClick = onLoadMore,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                        ) {
+                            Text(stringResource(R.string.provider_load_more))
                         }
                     }
                 }

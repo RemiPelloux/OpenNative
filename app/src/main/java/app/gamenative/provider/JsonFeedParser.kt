@@ -34,9 +34,10 @@ object JsonFeedParser {
 
     private fun parseItem(obj: JSONObject): ProviderFeedItem? {
         val id = obj.optString("id").ifBlank { obj.optString("itemId") }
-        val title = obj.optString("title")
+        val title = HtmlText.decode(obj.optString("title"))
         val link = obj.optString("link")
         if (id.isBlank() || title.isBlank() || link.isBlank()) return null
+        if (CatalogFilter.isUpdateDigest(title, link, id)) return null
         return ProviderFeedItem(
             itemId = id,
             title = title,
@@ -46,7 +47,7 @@ object JsonFeedParser {
             uncompressedSizeBytes = obj.optLong("uncompressedSizeBytes"),
             sha256 = obj.optString("sha256").ifBlank { null },
             artworkUrl = obj.optString("artworkUrl").ifBlank { null },
-            description = obj.optString("description"),
+            description = HtmlText.plain(obj.optString("description")),
             link = link,
             profileRef = obj.optString("profileRef").ifBlank { null },
             publishedAtEpochMs = obj.optLong("publishedAt"),

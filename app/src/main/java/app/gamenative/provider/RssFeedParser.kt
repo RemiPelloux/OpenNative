@@ -29,13 +29,14 @@ object RssFeedParser {
         val nodes = root.getElementsByTagName("item")
         return mapNodes(nodes) { element ->
             val link = firstText(element, "link").ifBlank { enclosureUrl(element) }
-            val title = firstText(element, "title")
+            val title = HtmlText.decode(firstText(element, "title"))
             val id = firstText(element, "guid").ifBlank { link }
             if (title.isBlank() || link.isBlank()) return@mapNodes null
+            if (CatalogFilter.isUpdateDigest(title, link, id)) return@mapNodes null
             ProviderFeedItem(
                 itemId = id,
                 title = title,
-                description = stripTags(firstText(element, "description")),
+                description = HtmlText.plain(firstText(element, "description")),
                 link = link,
                 downloadSizeBytes = enclosureLength(element),
                 artworkUrl = mediaUrl(element),
@@ -47,13 +48,14 @@ object RssFeedParser {
         val nodes = root.getElementsByTagName("entry")
         return mapNodes(nodes) { element ->
             val link = atomLink(element)
-            val title = firstText(element, "title")
+            val title = HtmlText.decode(firstText(element, "title"))
             val id = firstText(element, "id").ifBlank { link }
             if (title.isBlank() || link.isBlank()) return@mapNodes null
+            if (CatalogFilter.isUpdateDigest(title, link, id)) return@mapNodes null
             ProviderFeedItem(
                 itemId = id,
                 title = title,
-                description = stripTags(firstText(element, "summary").ifBlank { firstText(element, "content") }),
+                description = HtmlText.plain(firstText(element, "summary").ifBlank { firstText(element, "content") }),
                 link = link,
             )
         }
@@ -110,8 +112,6 @@ object RssFeedParser {
         }
         return firstText(entry, "link")
     }
-
-    private fun stripTags(html: String): String = html.replace(Regex("<[^>]+>"), " ").replace(Regex("\\s+"), " ").trim()
 
     private fun secureFactory(): DocumentBuilderFactory {
         val factory = DocumentBuilderFactory.newInstance()

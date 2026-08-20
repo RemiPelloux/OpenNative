@@ -27,7 +27,9 @@ class ProviderCatalogRepository @Inject constructor(
     suspend fun getTab(id: String): ProviderTab? = tabDao.getById(id)?.toDomain()
 
     fun observeItems(tabId: String): Flow<List<ProviderFeedItem>> =
-        itemDao.observeForTab(tabId).map { rows -> rows.map { it.toDomain() } }
+        itemDao.observeForTab(tabId).map { rows ->
+            CatalogFilter.withoutNoise(rows.map { it.toDomain() })
+        }
 
     suspend fun createTab(draft: ProviderTab): ProviderTab {
         ProviderUrlPolicy.validate(draft.feedUrl).getOrThrow()
@@ -104,7 +106,8 @@ class ProviderCatalogRepository @Inject constructor(
             if (page.notModified) {
                 return persist(latest.copy(stale = false, lastRefreshAtEpochMs = System.currentTimeMillis()))
             }
-            collected += page.items.map { ProviderFeedItemEntity.fromDomain(latest.id, it) }
+            collected += CatalogFilter.withoutNoise(page.items)
+                .map { ProviderFeedItemEntity.fromDomain(latest.id, it) }
             lastItemCount = page.items.size
             lastTotalPages = page.totalPages
             latest = latest.copy(

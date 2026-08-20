@@ -28,17 +28,18 @@ object WordpressRestParser {
     }
 
     private fun parseItem(obj: JSONObject): ProviderFeedItem? {
-        val title = rendered(obj, "title").ifBlank { obj.optString("slug") }
+        val title = HtmlText.decode(rendered(obj, "title").ifBlank { obj.optString("slug") })
         val link = obj.optString("link")
         val id = obj.opt("id")?.toString().orEmpty().ifBlank { link }
         if (title.isBlank() || link.isBlank()) return null
+        if (CatalogFilter.isUpdateDigest(title, link, id)) return null
         val excerpt = rendered(obj, "excerpt")
         val content = rendered(obj, "content")
         val (download, uncompressed) = WordpressMetadata.sizes("$excerpt $content")
         return ProviderFeedItem(
             itemId = id,
             title = title,
-            description = strip(excerpt),
+            description = HtmlText.plain(excerpt),
             link = link,
             artworkUrl = WordpressArtwork.from(obj),
             downloadSizeBytes = download,
@@ -53,7 +54,4 @@ object WordpressRestParser {
         if (value is JSONObject) return value.optString("rendered")
         return obj.optString(key)
     }
-
-    private fun strip(html: String): String =
-        html.replace(Regex("<[^>]+>"), " ").replace(Regex("\\s+"), " ").trim()
 }

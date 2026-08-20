@@ -24,6 +24,11 @@
 
 ## Unreleased
 
+- Decode WordPress HTML entities such as `&#038;` in provider titles and game detail text.
+- Widen provider catalog cards and the game detail sheet for handheld reading and actions.
+- Hide FitGirl Updates Digest posts from provider tabs.
+- Lift the Load next page action above the bottom gamepad menu so it stays tappable.
+
 - Integrate GameNative upstream through `78bc4bbe`, retaining download I/O, service locale and LSFG 1.3.3 fixes while preserving OpenNative's independent product policy.
 - Debounce download-resume metadata writes, use thread-safe progress listeners and use bounded FileChannel writes for Epic and GOG assembly on external storage.
 - Load the LSFG native layer from Android's native library directory and discover `Lossless.dll` without creating a utility container or deleting any existing user container.
