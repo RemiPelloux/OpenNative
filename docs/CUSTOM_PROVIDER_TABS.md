@@ -19,6 +19,8 @@ The `+` is a square icon button with the tooltip **Add provider tab**. The creat
 2. **Provider**: feed URL, refresh behavior and optional AllDebrid account.
 3. **Install**: destination selected with Android's folder picker and cleanup policy.
 
+Settings can export and import tab names and feed URLs as `opennative.provider.tabs/v1` JSON. AllDebrid keys stay in the device Keystore; a Settings key applies to every tab.
+
 The final screen tests the feed, credential and persisted folder permission before saving. A provider tab has an overflow menu for refresh, edit, reorder, disable and delete. Deleting a tab never deletes installed games; pending partial transfers require separate confirmation.
 
 ## Data model

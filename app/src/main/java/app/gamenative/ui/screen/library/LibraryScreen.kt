@@ -208,7 +208,9 @@ fun HomeLibraryScreen(
         providerSearchQuery = providerUi.searchQuery,
         providerJobs = providerUi.jobs,
         providerDownloadEnabled = providerTabs.find { it.id == state.selectedProviderTabId }
-            ?.hasCredential() == true || !providerUi.keyPromptDismissed,
+            ?.hasCredential() == true ||
+            providerUi.hasGlobalCredential ||
+            !providerUi.keyPromptDismissed,
         isOffline = isOffline,
         isSteamConnected = isSteamConnected,
     )

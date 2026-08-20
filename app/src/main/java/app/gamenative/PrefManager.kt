@@ -1451,6 +1451,11 @@ object PrefManager {
         get() = getPref(USAGE_ANALYTICS_ENABLED, true)
         set(value) { setPref(USAGE_ANALYTICS_ENABLED, value) }
 
+    private val PROVIDER_GLOBAL_CREDENTIAL_REF = stringPreferencesKey("provider_global_credential_ref")
+    var providerGlobalCredentialRef: String
+        get() = getPref(PROVIDER_GLOBAL_CREDENTIAL_REF, "")
+        set(value) { setPref(PROVIDER_GLOBAL_CREDENTIAL_REF, value) }
+
     private val NEXUS_LAST_PLACEMENT_JSON = stringPreferencesKey("nexus_last_placement_json")
     var nexusLastPlacementJson: String
         get() = getPref(NEXUS_LAST_PLACEMENT_JSON, "{}")

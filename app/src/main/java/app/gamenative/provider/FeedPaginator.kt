@@ -110,8 +110,11 @@ object FeedPaginator {
     private fun encode(value: String): String =
         java.net.URLEncoder.encode(value, "UTF-8").replace("+", "%20")
 
+    fun canonicalFeedUrl(rawUrl: String): String = stripPaging(rawUrl.trim())
+
     private val PAGING_KEYS = setOf(
-        "page", "per_page", "paged", "orderby", "order", "cursor", "search", "s", "_fields",
+        "page", "per_page", "paged", "orderby", "order", "cursor", "search", "s",
+        "_fields", "_embed", "embed",
     )
     private const val WP_REST_FIELDS = "id,slug,link,title,excerpt,jetpack_featured_media_url"
     private val ORDER_BY = setOf("date", "modified", "title", "id", "relevance")

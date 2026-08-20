@@ -5,17 +5,21 @@ import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.gamenative.PrefManager
 import app.gamenative.R
-import app.gamenative.provider.CatalogFilter
 import app.gamenative.provider.AllDebridResolver
+import app.gamenative.provider.CatalogFilter
 import app.gamenative.provider.PayloadClassifier
 import app.gamenative.provider.PayloadKind
 import app.gamenative.provider.ProviderCatalogRepository
+import app.gamenative.provider.ProviderDeviceKeyImport
 import app.gamenative.provider.ProviderException
 import app.gamenative.provider.ProviderFeedItem
 import app.gamenative.provider.ProviderRefreshCoordinator
 import app.gamenative.provider.ProviderSecretStore
 import app.gamenative.provider.ProviderTab
+import app.gamenative.provider.ProviderTabBundle
+import app.gamenative.provider.ProviderTabCodec
 import app.gamenative.provider.ProviderTransferCoordinator
 import app.gamenative.provider.ProviderUrlPolicy
 import app.gamenative.provider.TransferJob
@@ -26,6 +30,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,9 +38,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class ProviderLibraryUi(
     val showCreate: Boolean = false,
@@ -49,6 +54,9 @@ data class ProviderLibraryUi(
     val visibleItems: List<ProviderFeedItem> = emptyList(),
     val jobs: List<TransferJob> = emptyList(),
     val searchQuery: String = "",
+    val hasGlobalCredential: Boolean = false,
+    val bundleStatus: String? = null,
+    val showGlobalKeyDialog: Boolean = false,
 )
 
 @HiltViewModel
@@ -66,19 +74,33 @@ class ProviderLibraryViewModel @Inject constructor(
     private val _ui = MutableStateFlow(ProviderLibraryUi())
     val ui: StateFlow<ProviderLibraryUi> = _ui.asStateFlow()
 
+    init {
+        syncGlobalFlag()
+    }
+
     private var activeTabId: String? = null
-    private var searchJob: Job? = null
     private var catalogJob: Job? = null
 
     fun onAppOpen() {
-        viewModelScope.launch { refreshCoordinator.refreshOnOpen() }
+        viewModelScope.launch {
+            runCatching { ProviderDeviceKeyImport.consume(context, secrets, resolver) }
+            syncGlobalFlag()
+            refreshCoordinator.refreshOnOpen()
+        }
     }
 
     fun openCreate() = _ui.update { it.copy(showCreate = true, createError = null) }
     fun closeCreate() = _ui.update { it.copy(showCreate = false) }
     fun dismissKeyDialog() = _ui.update {
-        it.copy(showKeyDialog = false, pendingItem = null, keyPromptDismissed = true)
+        it.copy(
+            showKeyDialog = false,
+            showGlobalKeyDialog = false,
+            pendingItem = null,
+            keyPromptDismissed = true,
+        )
     }
+
+    fun openGlobalKey() = _ui.update { it.copy(showGlobalKeyDialog = true, keyError = null) }
 
     fun selectTab(tabId: String?) {
         if (tabId == activeTabId && catalogJob?.isActive == true) return
@@ -129,12 +151,6 @@ class ProviderLibraryViewModel @Inject constructor(
 
     fun onSearchQuery(value: String) {
         _ui.update { it.copy(searchQuery = value, visibleItems = CatalogFilter.filter(it.items, value)) }
-        searchJob?.cancel()
-        searchJob = viewModelScope.launch {
-            delay(400)
-            val id = activeTabId ?: return@launch
-            catalog.getTab(id)?.let { catalog.refreshTab(it, search = value.trim()) }
-        }
     }
 
     fun refreshActive() {
@@ -161,29 +177,48 @@ class ProviderLibraryViewModel @Inject constructor(
     }
 
     fun onDownloadClick(tab: ProviderTab, item: ProviderFeedItem) {
-        if (!tab.hasCredential()) {
+        val resolved = tab.withGlobalCredential()
+        if (!resolved.hasCredential()) {
             _ui.update { it.copy(showKeyDialog = true, pendingItem = item, keyError = null) }
             return
         }
-        startDownload(tab, item)
+        startDownload(resolved, item)
     }
 
-    fun saveKey(rawKey: String) {
-        val tabId = activeTabId ?: return
+    fun saveKey(rawKey: String) = persistGlobalKey(rawKey, fromDownloadPrompt = true)
+
+    fun saveGlobalKey(rawKey: String) = persistGlobalKey(rawKey, fromDownloadPrompt = false)
+
+    fun exportTabs(uri: Uri) {
         viewModelScope.launch {
-            _ui.update { it.copy(keyBusy = true, keyError = null) }
             runCatching {
-                resolver.validateCredential(rawKey)
-                val tab = catalog.getTab(tabId) ?: return@runCatching
-                val ref = secrets.save(rawKey)
-                val updated = tab.copy(credentialRef = ref)
-                catalog.updateTab(updated)
-                val pending = _ui.value.pendingItem
-                _ui.update { it.copy(showKeyDialog = false, keyBusy = false, pendingItem = null) }
-                if (pending != null) startDownload(updated, pending)
+                val body = ProviderTabCodec.encode(catalog.getTabs())
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { it.write(body.toByteArray()) }
+                        ?: error("Could not write tab bundle")
+                }
+                _ui.update { it.copy(bundleStatus = context.getString(R.string.provider_bundle_exported)) }
             }.onFailure { error ->
-                val message = if (error is ProviderException) error.message else error.message
-                _ui.update { it.copy(keyBusy = false, keyError = message) }
+                _ui.update { it.copy(bundleStatus = error.message ?: error.toString()) }
+            }
+        }
+    }
+
+    fun importTabs(uri: Uri) {
+        viewModelScope.launch {
+            runCatching {
+                val raw = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)?.use { String(it.readBytes()) }
+                        ?: error("Could not read tab bundle")
+                }
+                val incoming = ProviderTabCodec.decode(raw)
+                val existing = catalog.getTabs().map { it.feedUrl }.toSet()
+                incoming.filter { it.feedUrl !in existing }.forEach { catalog.createTab(it) }
+                _ui.update {
+                    it.copy(bundleStatus = context.getString(R.string.provider_bundle_imported, incoming.size))
+                }
+            }.onFailure { error ->
+                _ui.update { it.copy(bundleStatus = error.message ?: error.toString()) }
             }
         }
     }
@@ -220,11 +255,48 @@ class ProviderLibraryViewModel @Inject constructor(
     }
 
     private suspend fun saveOptionalKey(tab: ProviderTab, rawKey: String): ProviderTab {
-        if (rawKey.isBlank()) return tab
+        if (rawKey.isBlank()) return tab.withGlobalCredential()
+        persistGlobalKeyValue(rawKey)
+        return tab.withGlobalCredential()
+    }
+
+    private fun persistGlobalKey(rawKey: String, fromDownloadPrompt: Boolean) {
+        viewModelScope.launch {
+            _ui.update { it.copy(keyBusy = true, keyError = null) }
+            runCatching {
+                persistGlobalKeyValue(rawKey)
+                val pending = _ui.value.pendingItem
+                val tab = activeTabId?.let { catalog.getTab(it) }?.withGlobalCredential()
+                _ui.update {
+                    it.copy(
+                        showKeyDialog = false,
+                        showGlobalKeyDialog = false,
+                        keyBusy = false,
+                        pendingItem = null,
+                        hasGlobalCredential = true,
+                    )
+                }
+                if (fromDownloadPrompt && pending != null && tab != null) startDownload(tab, pending)
+            }.onFailure { error ->
+                val message = if (error is ProviderException) error.message else error.message
+                _ui.update { it.copy(keyBusy = false, keyError = message) }
+            }
+        }
+    }
+
+    private suspend fun persistGlobalKeyValue(rawKey: String) {
         resolver.validateCredential(rawKey)
-        val ref = secrets.save(rawKey)
-        val updated = tab.copy(credentialRef = ref)
-        catalog.updateTab(updated)
-        return updated
+        val ref = secrets.saveNamed(ProviderTabBundle.GLOBAL_CREDENTIAL_REF, rawKey)
+        PrefManager.providerGlobalCredentialRef = ref
+    }
+
+    private fun syncGlobalFlag() {
+        _ui.update { it.copy(hasGlobalCredential = PrefManager.providerGlobalCredentialRef.isNotBlank()) }
+    }
+
+    private fun ProviderTab.withGlobalCredential(): ProviderTab {
+        if (hasCredential()) return this
+        val global = PrefManager.providerGlobalCredentialRef
+        return if (global.isBlank()) this else copy(credentialRef = global)
     }
 }

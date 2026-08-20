@@ -10,6 +10,8 @@
 - Store optional AllDebrid keys in a dedicated Keystore alias. The first download click can prompt for a key; dismiss is allowed and Download stays disabled until validation succeeds.
 - Download selected links with Range resume, size/space reservation, SHA-256 verification, portable archive extraction, and installer deletion only after a committed install receipt.
 - Bound feed refresh and AllDebrid resolve to one in-flight request each, keep job progress on keyed rows, and pause catalog work during an active game session.
+- Export and import provider tabs as a versioned JSON bundle. AllDebrid keys stay in the device Keystore and a Settings key applies to every tab.
+- Strip WordPress `_embed` and unused fields from user feed URLs so catalog fetches stay on public title, link, excerpt and media metadata.
 
 ## Unreleased
 

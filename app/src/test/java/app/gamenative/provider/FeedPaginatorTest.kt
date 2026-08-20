@@ -84,6 +84,20 @@ class FeedPaginatorTest {
     }
 
     @Test
+    fun `strips wordpress embed so responses stay public fields only`() {
+        val url = FeedPaginator.apply(
+            rawUrl = "https://blog.example/wp-json/wp/v2/posts?per_page=100&page=1&_embed=1",
+            request = FeedPageRequest(page = 2, perPage = 100),
+            style = PaginationStyle.WORDPRESS_REST,
+        )
+        assertFalse(url.contains("_embed"))
+        assertEquals("https://blog.example/wp-json/wp/v2/posts", FeedPaginator.canonicalFeedUrl(
+            "https://blog.example/wp-json/wp/v2/posts?per_page=100&page=1&orderby=date&order=desc&_embed=1",
+        ))
+        assertTrue(url.contains("_fields="))
+    }
+
+    @Test
     fun `rejects unknown orderby values`() {
         val url = FeedPaginator.apply(
             rawUrl = "https://example.com/wp-json/wp/v2/posts",

@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import app.gamenative.R
 import app.gamenative.provider.CleanupPolicy
 import app.gamenative.provider.FeedKind
+import app.gamenative.provider.FeedPaginator
 import app.gamenative.provider.ProviderTab
 import app.gamenative.provider.RefreshPolicy
 
@@ -199,7 +200,7 @@ fun ProviderTabDraft.toTab(): ProviderTab {
         id = "",
         name = name.trim(),
         position = 0,
-        feedUrl = if (useRss) rss else json,
+        feedUrl = FeedPaginator.canonicalFeedUrl(if (useRss) rss else json),
         feedKind = if (useRss) FeedKind.RSS else FeedKind.JSON,
         installTreeUri = installTreeUri,
         cleanupPolicy = cleanupPolicy,

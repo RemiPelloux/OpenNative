@@ -2263,6 +2263,15 @@
     <string name="settings_providers_title">Provider tabs</string>
     <string name="provider_settings_refresh_all">Refresh all feeds</string>
     <string name="provider_settings_refresh_subtitle">Fetches the latest pages from each enabled tab</string>
+    <string name="provider_settings_alldebrid">AllDebrid key</string>
+    <string name="provider_settings_alldebrid_subtitle">Saved on this device and used by every provider tab</string>
+    <string name="provider_settings_alldebrid_set">Configured on this device</string>
+    <string name="provider_settings_export">Export provider tabs</string>
+    <string name="provider_settings_export_subtitle">Writes a JSON bundle of names and feed URLs. Keys stay on this device.</string>
+    <string name="provider_settings_import">Import provider tabs</string>
+    <string name="provider_settings_import_subtitle">Adds tabs from an OpenNative JSON bundle</string>
+    <string name="provider_bundle_exported">Provider tabs exported</string>
+    <string name="provider_bundle_imported">Imported %1$d provider tab(s)</string>
     <string name="provider_need_url">Enter a JSON feed URL or an RSS URL</string>
     <string name="provider_need_name">Enter a tab name</string>
     <string name="provider_edit">Edit tab</string>

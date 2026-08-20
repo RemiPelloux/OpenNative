@@ -50,7 +50,35 @@ Feeds can be paged. OpenNative detects the style from the URL and feed kind:
 
 `orderby` is limited to `date`, `modified`, `title`, `id`, and `relevance`. `order` is `desc` or `asc`. WordPress `X-WP-TotalPages` is honored when present. The catalog can load the next page after the first three.
 
-The catalog search field filters locally immediately. After a short debounce it also sends WordPress REST `search=` or RSS `s=`.
+The catalog search field filters locally. Refresh and Load more still send paging parameters.
+
+OpenNative still does not scrape HTML bodies or extract magnets.
+
+## Tab bundle
+
+Settings can export and import provider tabs. The file is public metadata only:
+
+```json
+{
+  "schema": "opennative.provider.tabs/v1",
+  "exportedAtEpochMs": 1755705600000,
+  "tabs": [
+    {
+      "name": "Example WordPress",
+      "feedUrl": "https://blog.example/wp-json/wp/v2/posts",
+      "feedKind": "JSON",
+      "perPage": 100,
+      "orderBy": "date",
+      "order": "desc",
+      "refreshPolicy": "DAILY",
+      "cleanupPolicy": "DELETE_AFTER_VERIFIED_INSTALL",
+      "enabled": true
+    }
+  ]
+}
+```
+
+A WordPress REST posts URL may include `page`, `per_page`, `orderby`, `order`, or `_embed`. OpenNative stores the canonical path and then requests `page` / `per_page` / `orderby` / `order` / `_fields` only. Credentials and install folders are never written to the bundle.
 
 OpenNative still does not scrape HTML bodies or extract magnets.
 

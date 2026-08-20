@@ -13,7 +13,12 @@ class ProviderSecretStore(
 ) {
     fun save(secret: String): String {
         require(secret.isNotBlank()) { "Credential cannot be blank" }
-        val ref = idFactory()
+        return saveNamed(idFactory(), secret)
+    }
+
+    fun saveNamed(ref: String, secret: String): String {
+        require(secret.isNotBlank()) { "Credential cannot be blank" }
+        require(ref.isNotBlank()) { "Credential ref cannot be blank" }
         val encrypted = cipher.encrypt(secret.toByteArray(Charsets.UTF_8))
         persistence.put(ref, Base64.getEncoder().encodeToString(encrypted))
         return ref
