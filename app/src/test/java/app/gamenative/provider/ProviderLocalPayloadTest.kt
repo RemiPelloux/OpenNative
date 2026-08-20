@@ -59,4 +59,16 @@ class ProviderLocalPayloadTest {
         assertTrue(File(moved, "setup.exe").exists())
         root.deleteRecursively()
     }
+
+    @Test
+    fun `moves Android data packs onto the public CustomGames root`() {
+        val tmp = kotlin.io.path.createTempDirectory("provider-fuse").toFile()
+        val hidden = File(tmp, "Android/data/pkg/CustomGames/darkest-dungeon-fitgirl-repack").also { it.mkdirs() }
+        File(hidden, "setup.exe").writeBytes(ByteArray(8))
+        val publicRoot = File(tmp, "GameNative/CustomGames").also { it.mkdirs() }
+        val moved = ProviderLocalPayload.migrateOffFuse(hidden, publicRoot)
+        assertEquals(File(publicRoot, "darkest-dungeon-fitgirl-repack").absolutePath, moved.absolutePath)
+        assertTrue(File(moved, "setup.exe").exists())
+        tmp.deleteRecursively()
+    }
 }

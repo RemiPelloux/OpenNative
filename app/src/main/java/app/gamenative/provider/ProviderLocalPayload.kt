@@ -6,10 +6,22 @@ import java.io.File
 object ProviderLocalPayload {
     private val INSTALLER_EXT = setOf("exe", "msi", "rar", "zip", "7z", "bin")
 
-    fun folder(item: ProviderFeedItem, root: File = File(CustomGameScanner.defaultRootPath)): File =
-        ProviderPathSlug.resolveFolder(item.title, root)
+    fun writeRoot(): File = File(CustomGameScanner.importRootPath)
 
-    fun payloadFiles(item: ProviderFeedItem, root: File = File(CustomGameScanner.defaultRootPath)): List<File> {
+    fun folder(item: ProviderFeedItem, root: File? = null): File {
+        if (root != null) return ProviderPathSlug.resolveFolder(item.title, root)
+        val candidates = runCatching {
+            listOf(writeRoot(), File(CustomGameScanner.defaultRootPath)).distinctBy { it.absolutePath }
+        }.getOrDefault(emptyList())
+        for (candidate in candidates) {
+            val found = ProviderPathSlug.resolveFolder(item.title, candidate)
+            if (found.isDirectory) return found
+        }
+        val fallback = candidates.firstOrNull() ?: File(".")
+        return ProviderPathSlug.resolveFolder(item.title, fallback)
+    }
+
+    fun payloadFiles(item: ProviderFeedItem, root: File? = null): List<File> {
         val dir = folder(item, root)
         if (!dir.isDirectory) return emptyList()
         return dir.walkTopDown()
@@ -17,7 +29,7 @@ object ProviderLocalPayload {
             .toList()
     }
 
-    fun hasInstaller(item: ProviderFeedItem, root: File = File(CustomGameScanner.defaultRootPath)): Boolean =
+    fun hasInstaller(item: ProviderFeedItem, root: File? = null): Boolean =
         payloadFiles(item, root).any { it.extension.lowercase() in INSTALLER_EXT }
 
     fun findInstaller(folder: File): File? {
@@ -31,10 +43,10 @@ object ProviderLocalPayload {
         } ?: exes.firstOrNull()
     }
 
-    fun hasGameExe(item: ProviderFeedItem, root: File = File(CustomGameScanner.defaultRootPath)): Boolean =
+    fun hasGameExe(item: ProviderFeedItem, root: File? = null): Boolean =
         ExecutableDiscovery.discover(folder(item, root)).isNotEmpty()
 
-    fun roots(job: TransferJob?, item: ProviderFeedItem?, root: File = File(CustomGameScanner.defaultRootPath)): List<File> {
+    fun roots(job: TransferJob?, item: ProviderFeedItem?, root: File? = null): List<File> {
         val dirs = LinkedHashSet<File>()
         if (item != null) dirs.add(folder(item, root))
         job?.destinationPath?.takeIf { it.isNotBlank() }?.let { dirs.add(File(it)) }
@@ -42,7 +54,7 @@ object ProviderLocalPayload {
         return dirs.toList()
     }
 
-    fun resolve(job: TransferJob, item: ProviderFeedItem, root: File = File(CustomGameScanner.defaultRootPath)): File? {
+    fun resolve(job: TransferJob, item: ProviderFeedItem, root: File? = null): File? {
         val dest = folder(item, root)
         return listOf(File(job.finalPath), dest)
             .filter { it.path.isNotBlank() }
@@ -56,6 +68,14 @@ object ProviderLocalPayload {
         val target = File(pack.parentFile, safe)
         if (target.exists()) return target
         return if (pack.renameTo(target)) target else pack
+    }
+
+    fun migrateOffFuse(folder: File, publicRoot: File = writeRoot()): File {
+        if (!folder.exists() || !folder.absolutePath.contains("/Android/data/")) return folder
+        if (!publicRoot.isDirectory && !publicRoot.mkdirs()) return folder
+        val target = File(publicRoot, folder.name)
+        if (target.exists()) return target
+        return if (folder.renameTo(target)) target else folder
     }
 
     fun hasPayload(file: File): Boolean {

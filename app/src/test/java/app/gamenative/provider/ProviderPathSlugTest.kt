@@ -16,6 +16,7 @@ class ProviderPathSlugTest {
             ProviderPathSlug.slugDirectories("Darkest Dungeon [FitGirl Repack]/setup.exe"),
         )
         assertEquals("setup.exe", ProviderPathSlug.slugDirectories("setup.exe"))
+        assertEquals("MD5/QuickSFV.EXE", ProviderPathSlug.slugDirectories("MD5/QuickSFV.EXE"))
     }
 
     @Test

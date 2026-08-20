@@ -18,8 +18,14 @@ object ProviderPathSlug {
         val parts = relativePath.replace('\\', '/').trim('/').split('/').filter { it.isNotBlank() }
         if (parts.isEmpty()) return ""
         if (parts.size == 1) return parts[0]
-        val dirs = parts.dropLast(1).joinToString("/") { slug(it) }
+        val dirs = parts.dropLast(1).joinToString("/") { slugDir(it) }
         return "$dirs/${parts.last()}"
+    }
+
+    private fun slugDir(name: String): String {
+        val key = name.lowercase()
+        if (key == "md5" || key == "_commonredist") return name
+        return slug(name)
     }
 
     fun resolveFolder(title: String, root: File): File {

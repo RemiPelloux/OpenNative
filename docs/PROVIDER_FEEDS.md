@@ -52,7 +52,9 @@ Feeds can be paged. OpenNative detects the style from the URL and feed kind:
 
 The catalog search field filters locally. Refresh and Load more still send paging parameters.
 
-WordPress post HTML stores file-hoster HTTPS links and the first magnet in extra JSON. Download uploads that magnet to AllDebrid, waits until it is ready, then writes every file into CustomGames/<slugged-title>/ with slugged nested folders (filenames stay as-is, e.g. setup.exe). Install renames any leftover pack folder to a slug, registers it as a Custom game, and launches setup.exe in Wine. After Wine exits, a non-setup exe becomes the Play target.
+WordPress post HTML stores file-hoster HTTPS links and the first magnet in extra JSON. Download uploads that magnet to AllDebrid, waits until it is ready, then writes every file into the public GameNative/CustomGames/<slugged-title>/ tree (not Android/data, which Wine cannot see through FUSE). Nested pack folders are slugged; filenames and MD5/_CommonRedist stay as-is.
+
+FitGirl packs are Inno Setup 5.5 plus FreeArc `fg-*.bin` files (`ArC` magic). setup.exe unpacks those bins with ISDone/unarc into a temp dir, then copies the game. Install maps A: to the pack, launches `setup.exe /DIR="A:\game"`, and sets `WINEDLLOVERRIDES=isdone,unarc=n,b` plus TEMP on `C:/windows/temp`. In the wizard, leave the destination on A:\game, skip DirectX/VC redist, and enable the RAM limit. After Wine exits, a non-setup exe under `game/` becomes the Play target.
 
 ## Tab bundle
 
@@ -82,7 +84,9 @@ A WordPress REST posts URL may include `page`, `per_page`, `orderby`, `order`, o
 
 OpenNative ships `app/src/main/assets/opennative-provider-tabs.json` as the default tab bundle and seeds it on first launch. The same file is copied at `docs/examples/opennative-provider-tabs.json` for Settings import. Use `perPage` 20 or lower when the site returns full post HTML, so a page stays under the 2 MB feed cap. OpenNative still pages with `X-WP-TotalPages`.
 
-WordPress post HTML stores file-hoster HTTPS links and the first magnet in extra JSON. Download uploads that magnet to AllDebrid, waits until it is ready, then writes every file into CustomGames/<slugged-title>/ with slugged nested folders (filenames stay as-is, e.g. setup.exe). Install renames any leftover pack folder to a slug, registers it as a Custom game, and launches setup.exe in Wine. After Wine exits, a non-setup exe becomes the Play target.
+WordPress post HTML stores file-hoster HTTPS links and the first magnet in extra JSON. Download uploads that magnet to AllDebrid, waits until it is ready, then writes every file into the public GameNative/CustomGames/<slugged-title>/ tree (not Android/data, which Wine cannot see through FUSE). Nested pack folders are slugged; filenames and MD5/_CommonRedist stay as-is.
+
+FitGirl packs are Inno Setup 5.5 plus FreeArc `fg-*.bin` files (`ArC` magic). setup.exe unpacks those bins with ISDone/unarc into a temp dir, then copies the game. Install maps A: to the pack, launches `setup.exe /DIR="A:\game"`, and sets `WINEDLLOVERRIDES=isdone,unarc=n,b` plus TEMP on `C:/windows/temp`. In the wizard, leave the destination on A:\game, skip DirectX/VC redist, and enable the RAM limit. After Wine exits, a non-setup exe under `game/` becomes the Play target.
 
 ## RSS and Atom
 

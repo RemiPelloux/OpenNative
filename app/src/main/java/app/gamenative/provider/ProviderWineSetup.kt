@@ -17,7 +17,7 @@ object ProviderWineSetup {
 
     fun start(context: Context, dest: File): Launch? {
         hook(context.applicationContext)
-        val titleFolder = ProviderLocalPayload.relocatePack(dest)
+        val titleFolder = ProviderLocalPayload.migrateOffFuse(ProviderLocalPayload.relocatePack(dest))
         val installer = ProviderLocalPayload.findInstaller(titleFolder)
         val pack = ProviderLocalPayload.relocatePack(installer?.parentFile ?: titleFolder)
         val launchExe = ProviderLocalPayload.findInstaller(pack)
@@ -29,6 +29,10 @@ object ProviderWineSetup {
         if (launchExe != null) {
             val container = ContainerUtils.getOrCreateContainer(context, item.appId)
             container.executablePath = launchExe.name
+            if (FitGirlPack.isPack(pack)) {
+                container.execArgs = FitGirlPack.EXEC_ARGS
+                container.envVars = FitGirlPack.mergeEnv(container.envVars)
+            }
             container.saveData()
         }
         pendingAppId = item.appId

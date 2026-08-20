@@ -1,6 +1,5 @@
 package app.gamenative.provider
 
-import app.gamenative.utils.CustomGameScanner
 import java.io.File
 import timber.log.Timber
 
@@ -24,7 +23,7 @@ object ProviderMagnetDownload {
         if (files.isEmpty()) {
             throw ProviderException(ProviderErrorCode.UNAVAILABLE_LINK, "Magnet has no downloadable files")
         }
-        val dest = ProviderPathSlug.ensureFolder(title, File(CustomGameScanner.defaultRootPath))
+        val dest = ProviderPathSlug.ensureFolder(title, ProviderLocalPayload.writeRoot())
         var downloaded = persist(
             job.copy(
                 state = TransferState.DOWNLOADING,
