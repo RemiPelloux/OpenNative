@@ -10,12 +10,17 @@ import java.io.File
 
 object ProviderWineSetup {
     @Volatile private var pendingAppId: String? = null
-    @Volatile private var pendingDest: String? = null
+    @Volatile private var pendingPack: String? = null
+    @Volatile private var pendingPolicy: CleanupPolicy = CleanupPolicy.DELETE_AFTER_VERIFIED_INSTALL
     @Volatile private var hooked = false
 
     data class Launch(val appId: String, val pack: File)
 
-    fun start(context: Context, dest: File): Launch? {
+    fun start(
+        context: Context,
+        dest: File,
+        policy: CleanupPolicy = CleanupPolicy.DELETE_AFTER_VERIFIED_INSTALL,
+    ): Launch? {
         hook(context.applicationContext)
         val titleFolder = ProviderLocalPayload.flattenInstaller(
             ProviderLocalPayload.migrateOffFuse(ProviderLocalPayload.relocatePack(dest)),
@@ -34,7 +39,8 @@ object ProviderWineSetup {
             container.saveData()
         }
         pendingAppId = item.appId
-        pendingDest = titleFolder.absolutePath
+        pendingPack = titleFolder.absolutePath
+        pendingPolicy = policy
         return Launch(item.appId, titleFolder)
     }
 
@@ -48,14 +54,32 @@ object ProviderWineSetup {
 
     private fun promote(context: Context) {
         val appId = pendingAppId ?: return
-        val dest = pendingDest?.let(::File) ?: return
+        val pack = pendingPack?.let(::File) ?: return
+        val policy = pendingPolicy
         pendingAppId = null
-        pendingDest = null
-        val game = ExecutableDiscovery.discover(dest).firstOrNull() ?: return
+        pendingPack = null
+        val gameDir = InstallerGameDir.hostFolder(pack.name)
+        val game = ExecutableDiscovery.discover(gameDir).firstOrNull()
+            ?: ExecutableDiscovery.discover(pack).firstOrNull()
+            ?: return
+        val root = if (game.absolutePath.startsWith(gameDir.absolutePath)) gameDir else pack
         runCatching {
             val container = ContainerUtils.getContainer(context, appId)
-            container.executablePath = game.relativeTo(dest).invariantSeparatorsPath
+            InstallerGameDir.remapDriveA(container, root.absolutePath)
+            container.executablePath = game.relativeTo(root).invariantSeparatorsPath
             container.saveData()
+        }
+        if (root == gameDir) {
+            val marker = File(pack, ".gamenative")
+            if (marker.exists()) marker.copyTo(File(gameDir, ".gamenative"), overwrite = false)
+            val folders = PrefManager.customGameManualFolders.toMutableSet()
+            folders.remove(pack.absolutePath)
+            folders.add(gameDir.absolutePath)
+            PrefManager.customGameManualFolders = folders
+            CustomGameScanner.invalidateCache()
+            if (policy != CleanupPolicy.KEEP) {
+                InstallerCleanup.removePack(pack, gameDir)
+            }
         }
     }
 }

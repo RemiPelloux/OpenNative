@@ -10,6 +10,7 @@ import android.provider.Settings
 import androidx.core.content.ContextCompat
 import app.gamenative.PluviaApp
 import app.gamenative.PrefManager
+import app.gamenative.provider.InstallerGameDir
 import app.gamenative.data.AppInfo
 import app.gamenative.data.GameSource
 import app.gamenative.data.LibraryItem
@@ -122,6 +123,7 @@ object CustomGameScanner {
                 .filterNot { it.contains("/Android/data/") }
                 .forEach { roots.add(File(it, "CustomGames").absolutePath) }
             roots.add(File(DownloadService.baseDataDirPath, "CustomGames").absolutePath)
+            runCatching { roots.add(InstallerGameDir.hostRoot().absolutePath) }
             return roots.toList()
         }
 

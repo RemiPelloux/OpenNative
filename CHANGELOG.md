@@ -4,6 +4,8 @@
 
 - Run Windows installers with Box64 and write every magnet file next to `setup.exe` in the title folder.
 - Force Box64 on every Custom installer (`setup`/`install`/`.msi`) at container create and launch.
+- Install every Windows pack into `D:\games\<slug>` (`Download/games`) and delete the FitGirl pack after a verified game exe exists.
+- Document the no-PC FitGirl flow in `docs/INSTALLING_GAMES.md`.
 - Seed `assets/opennative-provider-tabs.json` as the default provider tab on first launch.
 - Show WordPress covers from public media, Jetpack/Yoast metadata, or the first HTTPS image in post content.
 - Give provider tabs a library-style cover grid and a detail modal with Download and Install to Custom.

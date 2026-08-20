@@ -2261,6 +2261,14 @@ fun XServerScreen(
                                         retryDelayMs = 5000
                                     )
                                     Timber.tag("XServerScreen").i("Initiated CPU pinning for: $baseName.exe")
+                                    val pack = InstallerWineEnv.packFolder(container)
+                                    if (pack != null && InstallerWineEnv.isInstaller(name, pack)) {
+                                        PowerManager.pinGameWithRetry(
+                                            processName = "setup.tmp",
+                                            maxRetries = 10,
+                                            retryDelayMs = 5000
+                                        )
+                                    }
                                 }
 
                             // Pin Background processes for better performance

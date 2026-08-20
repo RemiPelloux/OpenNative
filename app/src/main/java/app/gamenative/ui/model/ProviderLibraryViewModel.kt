@@ -211,7 +211,7 @@ class ProviderLibraryViewModel @Inject constructor(
             runCatching {
                 val ready = ProviderInstallHandler.install(transfers, job, item, tab.withGlobalCredential())
                 val dest = File(ready.destinationPath.ifBlank { ProviderLocalPayload.folder(item).absolutePath })
-                val launch = ProviderWineSetup.start(context, dest)
+                val launch = ProviderWineSetup.start(context, dest, tab.cleanupPolicy)
                 if (launch != null && ProviderLocalPayload.findInstaller(launch.pack) != null) {
                     PluviaApp.events.emit(AndroidEvent.ExternalGameLaunch(launch.appId))
                 }

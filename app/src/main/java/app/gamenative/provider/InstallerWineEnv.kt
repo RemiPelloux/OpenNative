@@ -36,11 +36,17 @@ object InstallerWineEnv {
             container.isWoW64Mode = true
             changed = true
         }
+        if (container.suspendPolicy != Container.SUSPEND_POLICY_NEVER) {
+            container.suspendPolicy = Container.SUSPEND_POLICY_NEVER
+            changed = true
+        }
+        val args = InstallerGameDir.execArgs(pack.name)
+        if (container.execArgs != args) {
+            container.execArgs = args
+            changed = true
+        }
+        InstallerGameDir.ensureHost(pack.name)
         if (FitGirlPack.isPack(pack)) {
-            if (container.execArgs != FitGirlPack.EXEC_ARGS) {
-                container.execArgs = FitGirlPack.EXEC_ARGS
-                changed = true
-            }
             val merged = FitGirlPack.mergeEnv(container.envVars)
             if (merged != container.envVars) {
                 container.envVars = merged

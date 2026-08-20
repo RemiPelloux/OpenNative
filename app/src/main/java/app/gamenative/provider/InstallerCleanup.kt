@@ -32,6 +32,15 @@ object InstallerCleanup {
         return staging.canonicalFile.path.startsWith(stagingRoot.canonicalFile.path + File.separator)
     }
 
+    fun removePack(pack: File, gameRoot: File) {
+        if (!pack.isDirectory || !gameRoot.isDirectory) return
+        val packPath = runCatching { pack.canonicalFile }.getOrElse { return }
+        val gamePath = runCatching { gameRoot.canonicalFile }.getOrElse { return }
+        if (packPath == gamePath) return
+        if (gamePath.path.startsWith(packPath.path + File.separator)) return
+        pack.deleteRecursively()
+    }
+
     private fun deleteQuietly(file: File) {
         if (file.isFile) file.delete()
     }

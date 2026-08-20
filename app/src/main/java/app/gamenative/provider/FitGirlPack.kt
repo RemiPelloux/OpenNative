@@ -4,8 +4,8 @@ import java.io.File
 
 object FitGirlPack {
     private val ARC = byteArrayOf(0x41, 0x72, 0x43, 0x01)
-    const val INSTALL_DIR = "A:\\game"
-    const val EXEC_ARGS = "/DIR=\"A:\\game\" /NORESTART"
+    const val INSTALL_DIR = InstallerGameDir.WINE_ROOT
+    const val EXEC_ARGS = "/DIR=\"D:\\games\" /NORESTART"
     const val ENV =
         "WINEDLLOVERRIDES=isdone,unarc=n,b WINE_LARGE_ADDRESS_AWARE=0 TEMP=C:/windows/temp TMP=C:/windows/temp"
 
