@@ -21,6 +21,8 @@ class HosterAllowlistTest {
         )
         assertEquals(listOf("https://mega.co.nz/#!abc!key"), kept)
         assertNull(HosterAllowlist.hostsFor("https://fitgirl-repacks.site/wp-json/wp/v2/posts"))
+        assertTrue(ProviderTabPolicy.extractOnly(feed))
+        assertTrue(!ProviderTabPolicy.extractOnly("https://fitgirl-repacks.site/wp-json/wp/v2/posts"))
         assertEquals(
             listOf("https://mega.co.nz/#!abc!key"),
             WordpressDownloadLinks.rank(

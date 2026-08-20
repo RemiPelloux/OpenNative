@@ -1006,7 +1006,7 @@ private fun LibraryScreenContent(
                             id = selectedProvider.id,
                             name = selectedProvider.name,
                             position = 0,
-                            feedUrl = "",
+                            feedUrl = selectedProvider.feedUrl,
                             stale = selectedProvider.stale,
                             lastFetchedPage = selectedProvider.lastFetchedPage,
                             totalPages = selectedProvider.totalPages,

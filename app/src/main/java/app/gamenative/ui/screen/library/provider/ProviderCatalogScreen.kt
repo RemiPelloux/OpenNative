@@ -31,6 +31,7 @@ import app.gamenative.R
 import app.gamenative.provider.ProviderFeedItem
 import app.gamenative.provider.ProviderJobLookup
 import app.gamenative.provider.ProviderTab
+import app.gamenative.provider.ProviderTabPolicy
 import app.gamenative.provider.TransferJob
 
 @Composable
@@ -137,6 +138,7 @@ fun ProviderCatalogScreen(
             item = item,
             job = jobsByItem[item.itemId],
             downloadEnabled = downloadEnabled,
+            extractOnly = ProviderTabPolicy.extractOnly(tab.feedUrl),
             onDismiss = { selected = null },
             onDownload = { onDownload(item) },
             onInstall = {

@@ -7,7 +7,6 @@ import app.gamenative.db.entity.ProviderInstallReceiptEntity
 import app.gamenative.db.entity.ProviderTransferJobEntity
 import java.io.File
 import java.util.UUID
-import java.util.zip.ZipFile
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -194,23 +193,19 @@ class ProviderTransferCoordinator @Inject constructor(
         )
     }
 
-    suspend fun extractPortable(job: TransferJob): TransferJob = withContext(Dispatchers.IO) {
+    suspend fun extractPortable(job: TransferJob): TransferJob = extractArchive(job)
+
+    suspend fun extractArchive(job: TransferJob): TransferJob = withContext(Dispatchers.IO) {
         val archive = File(job.finalPath)
-        ArchiveInspector.inspectZip(archive)
-        val dest = File(stagingRoot, job.jobId)
-        dest.mkdirs()
-        ZipFile(archive).use { zip ->
-            val entries = zip.entries()
-            while (entries.hasMoreElements()) {
-                val entry = entries.nextElement()
-                val target = ArchiveInspector.confinedPath(dest, entry.name)
-                if (entry.isDirectory) {
-                    target.mkdirs()
-                } else {
-                    target.parentFile?.mkdirs()
-                    zip.getInputStream(entry).use { input -> target.outputStream().use { input.copyTo(it) } }
-                }
-            }
+        val dest = File(stagingRoot, "${job.jobId}-extract")
+        runCatching {
+            app.gamenative.mods.ModArchiveExtractor.extract(archive, dest)
+        }.getOrElse { error ->
+            dest.deleteRecursively()
+            throw ProviderException(
+                ProviderErrorCode.MALFORMED_RESPONSE,
+                error.message ?: "Could not extract archive",
+            )
         }
         persist(job.copy(state = TransferState.INSTALLING, destinationPath = dest.absolutePath))
     }

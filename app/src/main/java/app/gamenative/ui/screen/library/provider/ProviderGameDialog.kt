@@ -62,6 +62,7 @@ fun ProviderGameDialog(
     item: ProviderFeedItem,
     job: TransferJob?,
     downloadEnabled: Boolean,
+    extractOnly: Boolean = false,
     onDismiss: () -> Unit,
     onDownload: () -> Unit,
     onInstall: () -> Unit,
@@ -86,6 +87,7 @@ fun ProviderGameDialog(
                     artworkUrl = item.artworkUrl,
                     job = job,
                     downloadEnabled = downloadEnabled,
+                    extractOnly = extractOnly,
                     onDismiss = onDismiss,
                     onDownload = onDownload,
                     onInstall = onInstall,
@@ -119,6 +121,7 @@ private fun GameHero(
     artworkUrl: String?,
     job: TransferJob?,
     downloadEnabled: Boolean,
+    extractOnly: Boolean,
     onDismiss: () -> Unit,
     onDownload: () -> Unit,
     onInstall: () -> Unit,
@@ -170,7 +173,7 @@ private fun GameHero(
             if (sizeLine.isNotBlank()) {
                 Text(sizeLine, color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodyMedium)
             }
-            GameActionBar(item, job, downloadEnabled, onDownload, onInstall)
+            GameActionBar(item, job, downloadEnabled, extractOnly, onDownload, onInstall)
         }
     }
 }
@@ -180,6 +183,7 @@ private fun GameActionBar(
     item: ProviderFeedItem,
     job: TransferJob?,
     downloadEnabled: Boolean,
+    extractOnly: Boolean,
     onDownload: () -> Unit,
     onInstall: () -> Unit,
 ) {
@@ -203,7 +207,7 @@ private fun GameActionBar(
             ) {
                 Icon(Icons.Filled.CloudDownload, contentDescription = null)
                 Text(
-                    text = actionLabel(job, item, downloadEnabled),
+                    text = actionLabel(job, item, downloadEnabled, extractOnly),
                     modifier = Modifier.padding(start = 8.dp),
                     fontWeight = FontWeight.Bold,
                 )
@@ -228,8 +232,14 @@ private fun GameActionBar(
 }
 
 @Composable
-private fun actionLabel(job: TransferJob?, item: ProviderFeedItem, downloadEnabled: Boolean): String = when {
+private fun actionLabel(
+    job: TransferJob?,
+    item: ProviderFeedItem,
+    downloadEnabled: Boolean,
+    extractOnly: Boolean,
+): String = when {
     ProviderGameUi.isInstalled(job, item) -> stringResource(R.string.provider_installed)
+    ProviderGameUi.canInstall(job, item) && extractOnly -> stringResource(R.string.provider_extract)
     ProviderGameUi.canInstall(job, item) -> stringResource(R.string.provider_install)
     !downloadEnabled -> stringResource(R.string.provider_download_blocked)
     else -> stringResource(R.string.provider_download)

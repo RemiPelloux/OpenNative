@@ -2,7 +2,7 @@
 
 ## 1.2.1 - 2026-08-20
 
-- Seed a Skidrow provider tab from the FeedBurner RSS and resolve only Mega links (`mega.nz` / `mega.co.nz`).
+- Seed a Skidrow provider tab from the FeedBurner RSS, resolve only Mega links, and extract the archive into Custom without Wine.
 - Run Windows installers with Box64 and write every magnet file next to `setup.exe` in the title folder.
 - Force Box64 on every Custom installer (`setup`/`install`/`.msi`) at container create and launch.
 - Install every Windows pack into `D:\games\<slug>` (`Download/games`) and delete the FitGirl pack after a verified game exe exists.

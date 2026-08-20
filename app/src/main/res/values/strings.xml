@@ -2250,6 +2250,7 @@
     <string name="provider_refresh">Refresh feed</string>
     <string name="provider_download">Download</string>
     <string name="provider_install">Install to Custom</string>
+    <string name="provider_extract">Extract to Custom</string>
     <string name="provider_installed">Installed</string>
     <string name="provider_download_blocked">Add an AllDebrid key to download</string>
     <string name="provider_key_title">AllDebrid required</string>

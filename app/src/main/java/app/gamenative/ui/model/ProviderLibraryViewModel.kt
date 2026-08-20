@@ -26,6 +26,7 @@ import app.gamenative.provider.ProviderSecretStore
 import app.gamenative.provider.ProviderTab
 import app.gamenative.provider.ProviderTabBundle
 import app.gamenative.provider.ProviderTabCodec
+import app.gamenative.provider.ProviderTabPolicy
 import app.gamenative.provider.ProviderTransferCoordinator
 import app.gamenative.provider.ProviderUrlPolicy
 import app.gamenative.provider.ProviderWineSetup
@@ -47,6 +48,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 data class ProviderLibraryUi(
     val showCreate: Boolean = false,
@@ -92,6 +94,8 @@ class ProviderLibraryViewModel @Inject constructor(
             runCatching { ProviderDeviceKeyImport.consume(context, secrets, resolver) }
             runCatching {
                 ProviderDefaultTabs.seedIfEmpty(catalog, ProviderDefaultTabs.readAsset(context))
+            }.onFailure { error ->
+                Timber.tag("ProviderTabs").e(error, "Default provider tab seed failed")
             }
             syncGlobalFlag()
             refreshCoordinator.refreshOnOpen()
@@ -210,6 +214,7 @@ class ProviderLibraryViewModel @Inject constructor(
             }
             runCatching {
                 val ready = ProviderInstallHandler.install(transfers, job, item, tab.withGlobalCredential())
+                if (ProviderTabPolicy.extractOnly(tab.feedUrl)) return@launch
                 val dest = File(ready.destinationPath.ifBlank { ProviderLocalPayload.folder(item).absolutePath })
                 val launch = ProviderWineSetup.start(context, dest, tab.cleanupPolicy)
                 if (launch != null && ProviderLocalPayload.findInstaller(launch.pack) != null) {

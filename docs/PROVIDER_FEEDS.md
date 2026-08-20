@@ -102,7 +102,7 @@ Mapped fields:
 
 WordPress HTML can include a magnet; Install sends it to AllDebrid and writes every file into the game folder.
 
-The shipped **Skidrow** tab uses `https://feeds.feedburner.com/SkidrowReloadedGames`. FeedBurner is fetched as a single RSS document (no WordPress paging). Download keeps only Mega links (`mega.nz`, `mega.io`, `mega.co.nz`) and scrapes the post page when the RSS snippet has none. Magnets and other hosters on that tab are ignored.
+The shipped **Skidrow** tab uses `https://feeds.feedburner.com/SkidrowReloadedGames`. FeedBurner is fetched as a single RSS document (no WordPress paging). Download keeps only Mega links (`mega.nz`, `mega.io`, `mega.co.nz`) and scrapes the post page when the RSS snippet has none. Magnets and other hosters on that tab are ignored. Install extracts the zip/rar/7z into Custom and does not run Wine `setup.exe`.
 
 ## Transport
 

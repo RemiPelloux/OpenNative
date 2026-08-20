@@ -2,7 +2,6 @@ package app.gamenative.provider
 
 import app.gamenative.PluviaApp
 import app.gamenative.events.AndroidEvent
-import app.gamenative.utils.CustomGameScanner
 import java.io.File
 
 object ProviderInstallHandler {
@@ -23,19 +22,33 @@ object ProviderInstallHandler {
             errorMessage = "",
             errorCode = null,
         )
+        if (payload.isDirectory && ExecutableDiscovery.discover(payload).isNotEmpty()) {
+            return finish(transfers, aligned, tab, payload)
+        }
+        val archive = findArchive(payload)
+        dest.mkdirs()
+        if (archive != null) {
+            val extracted = transfers.extractArchive(aligned.copy(finalPath = archive.absolutePath))
+            copyExtracted(extracted.destinationPath, dest)
+            File(extracted.destinationPath).deleteRecursively()
+            if (tab.cleanupPolicy != CleanupPolicy.KEEP) archive.delete()
+            return finish(transfers, aligned, tab, dest)
+        }
+        if (ProviderTabPolicy.extractOnly(tab.feedUrl)) {
+            return transfers.markFailed(aligned, "Skidrow downloads must be a zip, rar, or 7z archive")
+        }
         if (payload.isDirectory && ProviderLocalPayload.hasPayload(payload)) {
             return finish(transfers, aligned, tab, payload)
         }
-        val kind = runCatching { PayloadClassifier.classify(payload) }.getOrDefault(PayloadKind.UNKNOWN)
-        dest.mkdirs()
-        if (kind == PayloadKind.PORTABLE_ARCHIVE && isZip(payload)) {
-            val extracted = transfers.extractPortable(aligned)
-            copyExtracted(extracted.destinationPath, dest)
-            File(extracted.destinationPath).deleteRecursively()
-        } else {
-            payload.copyTo(File(dest, payload.name), overwrite = true)
-        }
+        payload.copyTo(File(dest, payload.name), overwrite = true)
         return finish(transfers, aligned, tab, dest)
+    }
+
+    internal fun findArchive(payload: File): File? {
+        val files = if (payload.isFile) listOf(payload) else payload.walkTopDown().filter { it.isFile }.toList()
+        return files.firstOrNull { file ->
+            runCatching { PayloadClassifier.classify(file) }.getOrNull() == PayloadKind.PORTABLE_ARCHIVE
+        }
     }
 
     private suspend fun finish(
@@ -56,12 +69,6 @@ object ProviderInstallHandler {
     }
 
     fun folderName(title: String): String = ProviderPathSlug.slug(title)
-
-    private fun isZip(file: File): Boolean = file.inputStream().use { stream ->
-        val header = ByteArray(2)
-        stream.read(header)
-        header[0] == 0x50.toByte() && header[1] == 0x4B.toByte()
-    }
 
     private fun copyExtracted(sourcePath: String, dest: File) {
         val source = File(sourcePath)

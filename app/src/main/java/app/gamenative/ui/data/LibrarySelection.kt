@@ -11,6 +11,7 @@ sealed class LibrarySelection {
 data class ProviderTabChip(
     val id: String,
     val name: String,
+    val feedUrl: String = "",
     val stale: Boolean = false,
     val hasCredential: Boolean = false,
     val lastFetchedPage: Int = 0,
@@ -20,6 +21,7 @@ data class ProviderTabChip(
 fun ProviderTab.toChip(): ProviderTabChip = ProviderTabChip(
     id = id,
     name = name,
+    feedUrl = feedUrl,
     stale = stale,
     hasCredential = hasCredential(),
     lastFetchedPage = lastFetchedPage,
