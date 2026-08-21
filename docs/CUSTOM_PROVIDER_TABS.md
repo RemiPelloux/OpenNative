@@ -2,7 +2,7 @@
 
 ## Product contract
 
-OpenNative `1.2.1` places a compact `+` action immediately after the built-in **Custom** tab. Selecting it creates a user-owned library tab backed by a configurable metadata provider (HTTPS JSON envelope or optional RSS/Atom URL). Launch seeds any missing bundled defaults from `assets/opennative-provider-tabs.json` (FitGirl and Skidrow). The feature does not add values to `GameSource`, impersonate a store, or change existing Steam, Epic, GOG, Amazon and Custom launch behavior.
+OpenNative `1.3.0` places a compact `+` action immediately after the built-in **Custom** tab. Selecting it creates a user-owned library tab backed by a configurable metadata provider (HTTPS JSON envelope or optional RSS/Atom URL). Launch seeds any missing bundled defaults from `assets/opennative-provider-tabs.json` (FitGirl and Skidrow). The feature does not add values to `GameSource`, impersonate a store, or change existing Steam, Epic, GOG, Amazon and Custom launch behavior.
 
 Each provider tab can discover entries from a user-configured HTTPS feed, resolve a selected link through an optional AllDebrid account, download into staging, install into a user-granted directory and clean the installer after verified success.
 

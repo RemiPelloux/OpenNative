@@ -457,34 +457,8 @@ object CustomGameScanner {
     }
 
     fun findUniqueExeRelativeToFolder(folder: File): String? {
-        if (!folder.exists() || !folder.isDirectory) return null
-
-        fun File.isValidExe(): Boolean = this.isFile && this.name.endsWith(".exe", ignoreCase = true) &&
-            !this.name.startsWith("unins", ignoreCase = true)
-
-        val candidates = mutableListOf<String>()
-
-        folder.listFiles { f ->
-            f.isFile && f.name.endsWith(".exe", ignoreCase = true) &&
-                !f.name.startsWith("unins", ignoreCase = true)
-        }?.forEach { f ->
-            candidates.add(f.name)
-        }
-
-        val subDirs = folder.listFiles { f -> f.isDirectory } ?: emptyArray()
-        for (sd in subDirs) {
-            sd.listFiles { f ->
-                f.isFile && f.name.endsWith(".exe", ignoreCase = true) &&
-                    !f.name.startsWith("unins", ignoreCase = true)
-            }?.forEach { f ->
-                val rel = sd.name + "/" + f.name
-                candidates.add(rel)
-            }
-        }
-
-        // Keep only unique items
-        val unique = candidates.distinct()
-        return if (unique.size == 1) unique.first() else null
+        val exe = app.gamenative.provider.ExecutableDiscovery.pickLaunchExe(folder, folder.name) ?: return null
+        return app.gamenative.provider.ExecutableDiscovery.relativePath(folder, exe)
     }
 
     /**

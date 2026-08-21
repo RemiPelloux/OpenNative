@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0 - 2026-08-21
+
+- Browse Skidrow from the live site archive instead of a thin RSS search, and keep paging as you scroll.
+- Skip magnets on Skidrow, unlock 1fichier through AllDebrid, extract the archive into Custom, and delete the rar.
+- Compact the Skidrow header: smaller title, icon refresh/delete, and a search field that hides while scrolling.
+- Mark Skidrow covers with an Installed label when that title already exists in Custom.
+- Launch the real game exe from Play even when a crash handler sits next to it.
+- Copy the catalog cover into Custom as `cover.jpg` / `cover.png` when a provider game is installed.
+- Keep FitGirl and Skidrow search on the whole catalog, not only the first page.
+
 ## 1.2.1 - 2026-08-20
 
 - Seed a Skidrow provider tab from the FeedBurner RSS, unlock 1fichier through AllDebrid, extract the rar into Custom, and delete the archive.

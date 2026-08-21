@@ -1,6 +1,6 @@
 # Provider feed contract
 
-OpenNative `1.2.1` reads **user-supplied** HTTPS catalogs. Launch seeds `assets/opennative-provider-tabs.json` (FitGirl JSON and Skidrow RSS) when those tabs are missing. The application does not embed a game catalog.
+OpenNative `1.3.0` reads **user-supplied** HTTPS catalogs. Launch seeds `assets/opennative-provider-tabs.json` (FitGirl JSON and Skidrow RSS) when those tabs are missing. The application does not embed a game catalog.
 
 A provider tab accepts one of:
 

@@ -23,6 +23,7 @@ object ProviderInstallHandler {
             errorCode = null,
         )
         if (payload.isDirectory && ExecutableDiscovery.discover(payload).isNotEmpty()) {
+            saveCover(item, payload)
             return finish(transfers, aligned, tab, payload)
         }
         val archive = findArchive(payload)
@@ -32,15 +33,18 @@ object ProviderInstallHandler {
             copyExtracted(extracted.destinationPath, dest)
             File(extracted.destinationPath).deleteRecursively()
             if (shouldDeleteArchive(tab)) archive.delete()
+            saveCover(item, dest)
             return finish(transfers, aligned, tab, dest)
         }
         if (ProviderTabPolicy.extractOnly(tab.feedUrl)) {
             return transfers.markFailed(aligned, "Skidrow downloads must be a zip, rar, or 7z archive")
         }
         if (payload.isDirectory && ProviderLocalPayload.hasPayload(payload)) {
+            saveCover(item, payload)
             return finish(transfers, aligned, tab, payload)
         }
         payload.copyTo(File(dest, payload.name), overwrite = true)
+        saveCover(item, dest)
         return finish(transfers, aligned, tab, dest)
     }
 
@@ -60,7 +64,7 @@ object ProviderInstallHandler {
         tab: ProviderTab,
         dest: File,
     ): TransferJob {
-        val exe = ExecutableDiscovery.discover(dest).firstOrNull() ?: dest
+        val exe = ExecutableDiscovery.pickLaunchExe(dest, job.title) ?: dest
         val ready = transfers.completePortableInstall(
             job.copy(destinationPath = dest.absolutePath),
             exe,
@@ -72,6 +76,10 @@ object ProviderInstallHandler {
     }
 
     fun folderName(title: String): String = ProviderPathSlug.slug(title)
+
+    private fun saveCover(item: ProviderFeedItem, dest: File) {
+        runCatching { ProviderCoverStore.save(item.artworkUrl, dest) }
+    }
 
     private fun copyExtracted(sourcePath: String, dest: File) {
         val source = File(sourcePath)

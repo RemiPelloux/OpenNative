@@ -1,6 +1,7 @@
 package app.gamenative.provider
 
 import app.gamenative.utils.StorageUtils
+import java.io.File
 
 object ProviderGameUi {
     fun title(item: ProviderFeedItem): String = HtmlText.decode(item.title)
@@ -25,8 +26,8 @@ object ProviderGameUi {
         }
     }
 
-    fun isInstalled(job: TransferJob?, item: ProviderFeedItem? = null): Boolean =
-        ProviderLocalPayload.roots(job, item).any { ExecutableDiscovery.discover(it).isNotEmpty() }
+    fun isInstalled(job: TransferJob?, item: ProviderFeedItem? = null, root: File? = null): Boolean =
+        ProviderLocalPayload.roots(job, item, root).any { ExecutableDiscovery.discover(it).isNotEmpty() }
 
     fun canInstall(job: TransferJob?, item: ProviderFeedItem? = null): Boolean {
         if (isBusy(job) || isInstalled(job, item)) return false

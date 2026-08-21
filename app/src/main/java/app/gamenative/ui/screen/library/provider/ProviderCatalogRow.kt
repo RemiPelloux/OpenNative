@@ -14,12 +14,14 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -39,6 +41,9 @@ fun ProviderCatalogRow(
     modifier: Modifier = Modifier,
 ) {
     val title = ProviderGameUi.title(item)
+    val installed = remember(item.itemId, item.title, job?.state, job?.destinationPath) {
+        ProviderGameUi.isInstalled(job, item)
+    }
     val shape = RoundedCornerShape(12.dp)
     Card(
         modifier = modifier
@@ -77,6 +82,19 @@ fun ProviderCatalogRow(
                     .align(Alignment.BottomStart)
                     .padding(10.dp),
             )
+            if (installed) {
+                Text(
+                    text = stringResource(R.string.provider_installed),
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp)
+                        .background(Color(0xCC1B5E20), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 7.dp, vertical = 3.dp),
+                )
+            }
             if (job != null && job.state != TransferState.IDLE && job.progressPercent in 1..99) {
                 LinearProgressIndicator(
                     progress = { job.progressPercent / 100f },

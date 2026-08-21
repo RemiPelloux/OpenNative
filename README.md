@@ -22,7 +22,7 @@ OpenNative is an independent open-source project. It does not include games, fir
 
 | Channel | Version | Status |
 | --- | --- | --- |
-| Stable | `1.2.1` | FitGirl and Skidrow provider tabs, cover-grid catalog and verified installer cleanup |
+| Stable | `1.3.0` | Skidrow archive browse, 1fichier extract-to-Custom, compact catalog chrome |
 | Next milestone | `1.5.0` | Settings sharing, cockpit polish and remaining certification |
 | Architecture milestone | `2.0.0` | Long-term roadmap |
 
@@ -53,19 +53,19 @@ OpenNative is an independent open-source project. It does not include games, fir
 
 Performance varies by game, runtime, driver and thermal conditions. OpenNative does not claim universal FPS improvements. Changes are promoted only after controlled before/after measurements.
 
-## Shipped in 1.2.1
+## Shipped in 1.3.0
 
-- A `+` after **Custom** creates a named provider tab. Launch seeds `assets/opennative-provider-tabs.json` (FitGirl and Skidrow).
-- Provider tabs use a library-style cover grid. Tapping a title opens a detail modal with Download and Install to Custom.
-- Feeds are user-supplied HTTPS JSON envelopes or generic RSS/Atom URLs. Daily refresh reads the latest three pages on app open; Settings also has a manual refresh.
-- Optional AllDebrid resolution with a Keystore-backed key. The first download click can show a key modal; dismiss is allowed and Download stays disabled until a key validates.
-- Resumable downloads, storage reservation (including Wine-prefix headroom), portable archive install, and installer deletion only after a verified receipt.
+- Skidrow browses the live site archive, pages on scroll, and searches the whole catalog.
+- Skidrow downloads unlock 1fichier through AllDebrid, extract into Custom, and delete the archive.
+- The catalog header is compact, search hides on scroll, and covers show **Installed** when the title is already in Custom.
+- Play launches the game exe (not the file manager), and Custom uses the catalog cover image.
+- FitGirl keeps its WordPress catalog, AllDebrid unlock, and on-device pack install into Custom.
 
 See [provider tabs](docs/CUSTOM_PROVIDER_TABS.md) and [feed contract](docs/PROVIDER_FEEDS.md).
 
 ## Planned for 1.5.0
 
-The following work remains after `1.2.1`:
+The following work remains after `1.3.0`:
 
 | Area | Planned capability |
 | --- | --- |

@@ -20,4 +20,19 @@ class ExecutableDiscoveryTest {
         assertEquals("DarkestDungeon.exe", found.single().name)
         root.deleteRecursively()
     }
+
+    @Test
+    fun `picks the game exe over a unity crash handler in a nested folder`() {
+        val root = kotlin.io.path.createTempDirectory("echoes-discovery").toFile()
+        val pack = File(root, "Echoes.of.Mystralia.v20260815.Early.Access").also { it.mkdirs() }
+        File(pack, "UnityCrashHandler64.exe").writeBytes(ByteArray(8))
+        File(pack, "Echoes.exe").writeBytes(ByteArray(8))
+        val picked = ExecutableDiscovery.pickLaunchExe(root, "echoes-of-mystralia-v20260815-early-access")
+        assertEquals("Echoes.exe", picked?.name)
+        assertEquals(
+            "Echoes.of.Mystralia.v20260815.Early.Access/Echoes.exe",
+            ExecutableDiscovery.relativePath(root, picked!!),
+        )
+        root.deleteRecursively()
+    }
 }
