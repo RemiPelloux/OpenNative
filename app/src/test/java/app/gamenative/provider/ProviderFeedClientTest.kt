@@ -70,6 +70,14 @@ class ProviderFeedClientTest {
     }
 
     @Test
+    fun `treats later page 404 as the end of the catalog`() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(404))
+        val page = client.fetch(server.url("/page/9/").toString(), page = 9)
+        assertTrue(page.items.isEmpty())
+        assertEquals(9, page.page)
+    }
+
+    @Test
     fun `maps 429 to rate limit`() = runBlocking {
         server.enqueue(MockResponse().setResponseCode(429))
         try {

@@ -64,6 +64,9 @@ class ProviderFeedClient(
             if (resp.code == 304) {
                 return ProviderFeedPage(items = emptyList(), notModified = true)
             }
+            if (resp.code == 404 && page > 1) {
+                return ProviderFeedPage(items = emptyList(), page = page)
+            }
             if (!resp.isSuccessful) {
                 throw mapHttp(resp.code)
             }
@@ -94,7 +97,7 @@ class ProviderFeedClient(
             .followRedirects(true)
             .followSslRedirects(true)
             .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(45, TimeUnit.SECONDS)
             .build()
     }
 }

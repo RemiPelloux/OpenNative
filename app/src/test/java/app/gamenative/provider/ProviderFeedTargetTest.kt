@@ -47,5 +47,7 @@ class ProviderFeedTargetTest {
                 ),
             ),
         )
+        assertTrue(ProviderCatalogPaging.needsCatalogRepair(tab.copy(totalPages = 1)))
+        assertFalse(ProviderCatalogPaging.needsCatalogRepair(tab))
     }
 }

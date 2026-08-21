@@ -8,6 +8,7 @@ object ProviderUrlPolicy {
     const val MAX_REDIRECTS = 3
     const val PAGE_SIZE = 100
     const val STARTUP_PAGE_LIMIT = 3
+    const val SKIDROW_STARTUP_PAGES = 8
 
     private val blockedHosts = setOf("google.fr", "facebook.fr")
 

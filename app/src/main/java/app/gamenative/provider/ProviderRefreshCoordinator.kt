@@ -39,6 +39,7 @@ class ProviderRefreshCoordinator @Inject constructor(
 
     private fun shouldRefresh(tab: ProviderTab, nowMs: Long): Boolean {
         if (tab.refreshPolicy == RefreshPolicy.MANUAL) return false
+        if (ProviderCatalogPaging.needsCatalogRepair(tab)) return true
         if (tab.lastRefreshAtEpochMs <= 0L) return true
         return nowMs - tab.lastRefreshAtEpochMs >= dayMs
     }

@@ -147,6 +147,35 @@ class ProviderFeedParserTest {
     }
 
     @Test
+    fun `parses skidrow html listing posts`() {
+        val page = ProviderFeedParser.parse(
+            """
+            <!doctype html>
+            <html><body>
+            <div class="post type-post">
+              <h2><a href="https://www.skidrowreloaded.com/grim-trials-tenoke/">Grim Trials-TENOKE</a></h2>
+              <div class="meta">Posted August 21, 2026 in PC GAMES</div>
+              <div class="post-excerpt">
+                <p><a href="https://www.skidrowreloaded.com/grim-trials-tenoke/">
+                  <img src="https://cdn.example.com/grim.jpg" />
+                </a></p>
+              </div>
+            </div>
+            <div class="post type-post">
+              <h2><a href="https://www.skidrowreloaded.com/slayblade-tenoke/">Slayblade-TENOKE</a></h2>
+              <div class="meta">Posted August 20, 2026 in PC GAMES</div>
+            </div>
+            </body></html>
+            """.trimIndent(),
+            contentType = "text/html; charset=UTF-8",
+        )
+        assertEquals(listOf("grim-trials-tenoke", "slayblade-tenoke"), page.items.map { it.itemId })
+        assertEquals("Grim Trials-TENOKE", page.items.first().title)
+        assertEquals("https://cdn.example.com/grim.jpg", page.items.first().artworkUrl)
+        assertTrue(page.items.first().publishedAtEpochMs > 0L)
+    }
+
+    @Test
     fun `limits page size`() {
         val items = (1..120).joinToString(",") { """{"id":"$it","title":"T$it","link":"https://example.com/$it"}""" }
         val page = ProviderFeedParser.parse("""{"version":1,"items":[$items]}""")

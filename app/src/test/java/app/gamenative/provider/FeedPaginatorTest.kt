@@ -95,24 +95,30 @@ class FeedPaginatorTest {
     }
 
     @Test
-    fun `skidrow uses a paged site rss instead of wordpress rest`() {
+    fun `skidrow browse uses html archive pages and search uses rss`() {
         val first = FeedPaginator.apply(
             rawUrl = "https://feeds.feedburner.com/SkidrowReloadedGames",
             request = FeedPageRequest(page = 1),
             style = PaginationStyle.SKIDROW_RSS,
         )
-        assertEquals("https://www.skidrowreloaded.com/?s=.&feed=rss2", first)
+        assertEquals("https://www.skidrowreloaded.com/", first)
         val next = FeedPaginator.apply(
+            rawUrl = "https://feeds.feedburner.com/SkidrowReloadedGames",
+            request = FeedPageRequest(page = 2),
+            style = PaginationStyle.SKIDROW_RSS,
+        )
+        assertEquals("https://www.skidrowreloaded.com/page/2/", next)
+        val search = FeedPaginator.apply(
             rawUrl = "https://feeds.feedburner.com/SkidrowReloadedGames",
             request = FeedPageRequest(page = 2, search = "portal"),
             style = PaginationStyle.SKIDROW_RSS,
         )
-        assertEquals("https://www.skidrowreloaded.com/?s=portal&feed=rss2&paged=2", next)
-        assertFalse(next.contains("wp-json"))
+        assertEquals("https://www.skidrowreloaded.com/?s=portal&feed=rss2&paged=2", search)
+        assertFalse(search.contains("wp-json"))
         assertTrue(
             FeedPaginator.hasMore(
                 fetchedPage = 1,
-                itemCount = 10,
+                itemCount = 9,
                 perPage = 20,
                 totalPages = null,
                 nextCursor = null,

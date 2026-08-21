@@ -93,10 +93,10 @@ object FeedPaginator {
         if (style == PaginationStyle.SINGLE_DOCUMENT) return false
         if (!nextCursor.isNullOrBlank()) return true
         if (totalPages != null) return fetchedPage < totalPages
-        val fullPage = if (style == PaginationStyle.WORDPRESS_RSS || style == PaginationStyle.SKIDROW_RSS) {
-            RSS_PAGE_SIZE
-        } else {
-            perPage
+        val fullPage = when (style) {
+            PaginationStyle.SKIDROW_RSS -> SKIDROW_PAGE_SIZE
+            PaginationStyle.WORDPRESS_RSS -> RSS_PAGE_SIZE
+            else -> perPage
         }
         return itemCount >= fullPage
     }
@@ -113,13 +113,17 @@ object FeedPaginator {
     }
 
     private fun skidrowUrl(request: FeedPageRequest): String {
-        val query = request.search.trim().ifBlank { "." }
-        val params = linkedMapOf(
-            "s" to encode(query),
-            "feed" to "rss2",
-        )
-        if (request.page > 1) params["paged"] = request.page.toString()
-        return appendQuery(SKIDROW_SITE, params)
+        val query = request.search.trim()
+        if (query.isNotEmpty()) {
+            val params = linkedMapOf(
+                "s" to encode(query),
+                "feed" to "rss2",
+            )
+            if (request.page > 1) params["paged"] = request.page.toString()
+            return appendQuery(SKIDROW_SITE, params)
+        }
+        if (request.page <= 1) return SKIDROW_SITE
+        return "${SKIDROW_SITE}page/${request.page}/"
     }
 
     private fun appendQuery(url: String, params: Map<String, String>): String {
@@ -152,5 +156,6 @@ object FeedPaginator {
         "id,slug,link,title,excerpt,content,jetpack_featured_media_url,featured_media"
     private val ORDER_BY = setOf("date", "modified", "title", "id", "relevance")
     private const val RSS_PAGE_SIZE = 10
+    private const val SKIDROW_PAGE_SIZE = 8
     private const val SKIDROW_SITE = "https://www.skidrowreloaded.com/"
 }

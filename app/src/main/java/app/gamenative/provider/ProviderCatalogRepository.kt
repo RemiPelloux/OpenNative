@@ -64,8 +64,15 @@ class ProviderCatalogRepository @Inject constructor(
         search: String = "",
     ): ProviderTab {
         if (!ProviderSessionGate.allowCatalogWork()) return tab
+        val fetchUrl = ProviderFeedTarget.resolve(tab.feedUrl)
+        val style = FeedPaginator.detectStyle(fetchUrl, tab.feedKind)
+        val limit = if (style == PaginationStyle.SKIDROW_RSS) {
+            maxOf(pageLimit, ProviderUrlPolicy.SKIDROW_STARTUP_PAGES)
+        } else {
+            pageLimit
+        }
         val result = refreshGuard.withKey(tab.id) {
-            fetchPages(tab, pageLimit, search = search)
+            fetchPages(tab.copy(totalPages = 0), limit, search = search)
         }
         return result ?: tab
     }
@@ -79,7 +86,7 @@ class ProviderCatalogRepository @Inject constructor(
         if (!ProviderSessionGate.allowCatalogWork()) return tab
         if (!ProviderCatalogPaging.canLoadMore(tab)) return tab
         val nextPage = tab.lastFetchedPage + 1
-        return refreshGuard.withKey("${tab.id}:more") {
+        return refreshGuard.withKey(tab.id) {
             runCatching {
                 fetchPages(tab, pageLimit = 1, startPage = nextPage, replace = false, search = search)
             }.getOrElse { error ->
@@ -125,10 +132,9 @@ class ProviderCatalogRepository @Inject constructor(
         search: String = "",
     ): ProviderTab = withContext(Dispatchers.IO) {
         var cursor: String? = null
-        var latest = tab
+        var latest = if (replace) tab.copy(totalPages = 0) else tab
         val fetchUrl = ProviderFeedTarget.resolve(latest.feedUrl)
         val style = FeedPaginator.detectStyle(fetchUrl, latest.feedKind)
-        val collected = ArrayList<ProviderFeedItemEntity>(pageLimit * latest.perPage)
         var lastItemCount = 0
         var lastTotalPages: Int? = null
         repeat(pageLimit) { offset ->
@@ -151,7 +157,7 @@ class ProviderCatalogRepository @Inject constructor(
             if (page.notModified) {
                 return@withContext persist(latest.copy(stale = false, lastRefreshAtEpochMs = System.currentTimeMillis()))
             }
-            collected += CatalogFilter.withoutNoise(page.items)
+            val pageItems = CatalogFilter.withoutNoise(page.items)
                 .map { WordpressMetadata.restrictForFeed(it, latest.feedUrl) }
                 .map { ProviderFeedItemEntity.fromDomain(latest.id, it) }
             lastItemCount = page.items.size
@@ -172,11 +178,12 @@ class ProviderCatalogRepository @Inject constructor(
                 lastGoodAtEpochMs = System.currentTimeMillis(),
                 stale = false,
                 lastFetchedPage = pageNumber,
-                totalPages = lastTotalPages ?: if (!more) pageNumber else latest.totalPages,
+                totalPages = lastTotalPages ?: if (!more) pageNumber else 0,
             )
-            if (!more) return@withContext commitPages(latest, collected, replace)
+            commitPages(latest, pageItems, replace && offset == 0)
+            if (!more) return@withContext latest
         }
-        commitPages(latest, collected, replace)
+        latest
     }
 
     private suspend fun commitPages(

@@ -156,6 +156,15 @@ class ProviderLibraryViewModel @Inject constructor(
                     }
                 }
         }
+        viewModelScope.launch { repairStuckCatalog(tabId) }
+    }
+
+    private suspend fun repairStuckCatalog(tabId: String) {
+        val tab = catalog.getTab(tabId) ?: return
+        if (!ProviderCatalogPaging.needsCatalogRepair(tab)) return
+        runCatching { catalog.refreshTab(tab) }.onFailure { error ->
+            Timber.tag("ProviderTabs").e(error, "Provider catalog repair failed")
+        }
     }
 
     fun createTab(draft: ProviderTabDraft) {
