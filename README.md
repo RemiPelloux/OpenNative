@@ -22,7 +22,7 @@ OpenNative is an independent open-source project. It does not include games, fir
 
 | Channel | Version | Status |
 | --- | --- | --- |
-| Stable | `1.3.0` | Skidrow archive browse, 1fichier extract-to-Custom, compact catalog chrome |
+| Stable | `1.3.0` | Skidrow extract-to-Custom, Play launches the game exe, catalog covers in Custom |
 | Next milestone | `1.5.0` | Settings sharing, cockpit polish and remaining certification |
 | Architecture milestone | `2.0.0` | Long-term roadmap |
 
@@ -97,13 +97,13 @@ OpenNative has no third-party in-app updater. Before redistributing an APK, revi
 
 ## Adding a custom game
 
-1. Extract the game into a folder Android can access.
-2. Open **Library > Custom** and grant access through Android's folder picker.
-3. Select the actual game executable in the container settings.
+1. Extract the game into a folder Android can access, or use a provider tab (FitGirl / Skidrow) to download and install into Custom.
+2. Open **Library > Custom**. Provider installs register the folder automatically.
+3. Tap **Play**. OpenNative picks the game `.exe` and ignores crash handlers, redistributables and setup tools. You can still open the container and choose another executable.
 4. Begin with a conservative resolution, frame cap and compatibility-oriented translation profile.
 5. Change one setting at a time and validate a repeatable scene.
 
-The tested AYN Thor starting point for Gamma Emerald is documented in [Gamma Emerald](docs/GAMMA_EMERALD.md).
+Provider installs also copy the catalog/RSS artwork into the Custom folder as `cover.jpg` or `cover.png`. See [Installing games](docs/INSTALLING_GAMES.md) and [Gamma Emerald](docs/GAMMA_EMERALD.md).
 
 ## Build from source
 
@@ -146,6 +146,7 @@ Mockito and MockK use an explicit ByteBuddy agent for JDKs that restrict dynamic
 | [1.5.0 roadmap](docs/ROADMAP_1.5.0.md) | Detailed implementation and validation plan |
 | [Provider tabs](docs/CUSTOM_PROVIDER_TABS.md) | Provider, AllDebrid, transfer and Installer Manager contract |
 | [Provider feeds](docs/PROVIDER_FEEDS.md) | User-supplied JSON and RSS/Atom catalog contract |
+| [Installing games](docs/INSTALLING_GAMES.md) | FitGirl and Skidrow on-device install, Play exe and catalog covers |
 | [Adaptive Engine](docs/ADAPTIVE_ENGINE.md) | Decision model, safeguards and resolution policy |
 | [Performance method](docs/PERFORMANCE.md) | Benchmark protocol and current AYN Thor findings |
 | [Independence](docs/INDEPENDENCE.md) | Compatibility identifiers, attribution and infrastructure migration |

@@ -1,6 +1,17 @@
 # Installing games on the Thor (no PC)
 
-OpenNative can take a FitGirl (or other Windows) pack from a provider tab all the way to Play, on the AYN Thor. You do not need a PC. The unpack is slow. That is the tradeoff.
+OpenNative can take a FitGirl pack or a Skidrow archive from a provider tab all the way to Play, on the AYN Thor. You do not need a PC. FitGirl unpack is slow. That is the tradeoff.
+
+## Skidrow (extract, then Play)
+
+Skidrow is extract-only. There is no Wine `setup.exe` step.
+
+1. Open the Skidrow tab. Browse is the live site archive; search is RSS.
+2. Open a game. Tap **Extract to Custom**. Stay on the device until the bar finishes.
+3. OpenNative unlocks the 1fichier link through AllDebrid, downloads the rar, extracts it into `GameNative/CustomGames/<slug>/`, copies the catalog cover as `cover.jpg` or `cover.png`, and deletes the archive.
+4. Open **Custom** and tap **Play**. OpenNative launches the game exe. Crash handlers (`UnityCrashHandler64.exe`), redistributables and setup tools are ignored.
+
+If Play ever opened the Wine file manager instead of the game, that was the old unique-exe check. `1.3.0` picks the real game exe automatically. You can still open the container and tap a specific `.exe` if you want another one.
 
 ## What you do
 
@@ -75,4 +86,4 @@ There is no faster on-device unpacker for these bins. A second â€œinstaller APKâ
 
 ## After it works
 
-Custom shows the folder under `Download/games`. Play that exe. You can delete leftover `CustomGames/<title>` yourself if cleanup did not run (failed session or Keep policy).
+Custom shows the installed folder. Play launches the discovered game exe. Provider installs also show the catalog cover in Custom. You can delete leftover `CustomGames/<title>` yourself if FitGirl cleanup did not run (failed session or Keep policy).
