@@ -37,11 +37,13 @@ object ProviderGameUi {
 
     fun isBusy(job: TransferJob?): Boolean = job?.state in setOf(
         TransferState.QUEUED,
-        TransferState.RESOLVING,
         TransferState.DOWNLOADING,
         TransferState.INSTALLING,
         TransferState.VERIFYING_INSTALL,
     )
+
+    fun canRestart(job: TransferJob?): Boolean =
+        job == null || job.state == TransferState.FAILED || job.state == TransferState.RESOLVING
 
     fun statusLabel(job: TransferJob, hasLocalInstaller: Boolean = false): String = when {
         job.state == TransferState.READY -> "Ready in Custom"

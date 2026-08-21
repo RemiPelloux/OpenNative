@@ -34,6 +34,17 @@ class HosterAllowlistTest {
                 setOf("1fichier.com"),
             ),
         )
+        assertEquals(
+            "",
+            ProviderDownloadRoute.magnetFor(feed, "magnet:?xt=urn:btih:abc") { "magnet:?xt=urn:btih:scraped" },
+        )
+        assertEquals(
+            "magnet:?xt=urn:btih:abc",
+            ProviderDownloadRoute.magnetFor(
+                "https://fitgirl-repacks.site/wp-json/wp/v2/posts",
+                "magnet:?xt=urn:btih:abc",
+            ) { "magnet:?xt=urn:btih:scraped" },
+        )
     }
 
     @Test

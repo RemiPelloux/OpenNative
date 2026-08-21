@@ -102,7 +102,9 @@ class ProviderTransferCoordinator @Inject constructor(
         return withContext(Dispatchers.IO) {
             val key = job.identity
             val running = resolveGuard.withKey(key) {
-                val magnetUri = magnet.ifBlank { scrapeMagnet(pageUrl) }
+                val magnetUri = ProviderDownloadRoute.magnetFor(tab.feedUrl, magnet) {
+                    scrapeMagnet(pageUrl)
+                }
                 if (magnetUri.isNotBlank()) {
                     downloadMagnet(tab, job, magnetUri, cancelled)
                 } else {

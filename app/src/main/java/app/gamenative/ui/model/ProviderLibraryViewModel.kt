@@ -259,7 +259,8 @@ class ProviderLibraryViewModel @Inject constructor(
             return
         }
         val job = ProviderJobLookup.latestByItem(_ui.value.jobs)[item.itemId]
-        if (ProviderGameUi.isBusy(job) || ProviderGameUi.isInstalled(job, item)) return
+        if (ProviderGameUi.isInstalled(job, item)) return
+        if (ProviderGameUi.isBusy(job) && !ProviderGameUi.canRestart(job)) return
         if (ProviderGameUi.canInstall(job, item)) {
             onInstallClick(resolved, item)
             return
