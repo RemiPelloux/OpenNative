@@ -30,6 +30,7 @@ class AllDebridHttp(
             "AUTH_BAD_APIKEY", "AUTH_MISSING_APIKEY", "MAGNET_MUST_BE_PREMIUM" ->
                 ProviderErrorCode.AUTHENTICATION
             "LINK_HOST_NOT_SUPPORTED" -> ProviderErrorCode.UNSUPPORTED_HOST
+            "LINK_PASS_PROTECTED" -> ProviderErrorCode.PASSWORD_PROTECTED
             "LINK_DOWN", "LINK_ERROR", "MAGNET_INVALID_URI", "MAGNET_NO_URI" ->
                 ProviderErrorCode.UNAVAILABLE_LINK
             "MAGNET_TOO_MANY_ACTIVE" -> ProviderErrorCode.RATE_LIMIT
@@ -84,6 +85,7 @@ class AllDebridHttp(
         return when {
             code == ProviderErrorCode.AUTHENTICATION -> "Resolver authentication failed"
             code == ProviderErrorCode.UNSUPPORTED_HOST -> "This file host is not supported"
+            code == ProviderErrorCode.PASSWORD_PROTECTED -> "This file needs a password"
             safe.isNotBlank() -> safe
             else -> "Resolver request failed"
         }

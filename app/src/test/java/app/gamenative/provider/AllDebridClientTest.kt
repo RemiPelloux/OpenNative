@@ -66,7 +66,7 @@ class AllDebridClientTest {
             ),
         )
         try {
-            client.resolve("secret-key", "https://example.com/post")
+            client.resolve("secret-key", "https://example.com/post", "")
             throw AssertionError("expected failure")
         } catch (error: ProviderException) {
             assertEquals(ProviderErrorCode.UNSUPPORTED_HOST, error.code)
@@ -82,10 +82,27 @@ class AllDebridClientTest {
                 """{"status":"success","data":{"filename":"game.zip","link":"https://cdn.example/file","filesize":10}}""",
             ),
         )
-        val resolved = client.resolve("secret-key", "https://example.com/file.zip")
+        val resolved = client.resolve("secret-key", "https://1fichier.com/?abcd1234", "hunter2")
         assertEquals("game.zip", resolved.filename)
         val request = server.takeRequest()
-        assertEquals("https://example.com/file.zip", request.requestUrl?.queryParameter("link"))
+        assertEquals("https://1fichier.com/?abcd1234", request.requestUrl?.queryParameter("link"))
+        assertEquals("hunter2", request.requestUrl?.queryParameter("password"))
+    }
+
+    @Test
+    fun `maps a password protected unlock`() = runBlocking {
+        server.enqueue(
+            MockResponse().setBody(
+                """{"status":"error","error":{"code":"LINK_PASS_PROTECTED","message":"Link is password protected"}}""",
+            ),
+        )
+        try {
+            client.resolve("secret-key", "https://1fichier.com/?abcd1234", "")
+            throw AssertionError("expected failure")
+        } catch (error: ProviderException) {
+            assertEquals(ProviderErrorCode.PASSWORD_PROTECTED, error.code)
+            assertTrue(error.message.orEmpty().contains("password"))
+        }
     }
 
     @Test
@@ -108,7 +125,7 @@ class AllDebridClientTest {
                 """{"status":"success","data":{"status":2,"time_left":0,"link":"https://cdn.example/file"}}""",
             ),
         )
-        val resolved = client.resolve("secret-key", "https://datanodes.to/file.rar")
+        val resolved = client.resolve("secret-key", "https://datanodes.to/file.rar", "")
         assertEquals("game.rar", resolved.filename)
         assertEquals("https://cdn.example/file", resolved.url)
         assertEquals(3, server.requestCount)

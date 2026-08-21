@@ -59,9 +59,16 @@ class FeedPaginatorTest {
             FeedPaginator.detectStyle("https://blog.example/feed/", FeedKind.RSS),
         )
         assertEquals(
-            PaginationStyle.SINGLE_DOCUMENT,
+            PaginationStyle.SKIDROW_RSS,
             FeedPaginator.detectStyle(
                 "https://feeds.feedburner.com/SkidrowReloadedGames",
+                FeedKind.RSS,
+            ),
+        )
+        assertEquals(
+            PaginationStyle.SINGLE_DOCUMENT,
+            FeedPaginator.detectStyle(
+                "https://feeds.feedburner.com/OtherGames",
                 FeedKind.RSS,
             ),
         )
@@ -70,11 +77,11 @@ class FeedPaginatorTest {
     @Test
     fun `feedburner rss stays a single document`() {
         val url = FeedPaginator.apply(
-            rawUrl = "https://feeds.feedburner.com/SkidrowReloadedGames",
+            rawUrl = "https://feeds.feedburner.com/OtherGames",
             request = FeedPageRequest(page = 2, search = "portal"),
             style = PaginationStyle.SINGLE_DOCUMENT,
         )
-        assertEquals("https://feeds.feedburner.com/SkidrowReloadedGames", url)
+        assertEquals("https://feeds.feedburner.com/OtherGames", url)
         assertFalse(
             FeedPaginator.hasMore(
                 fetchedPage = 1,
@@ -83,6 +90,43 @@ class FeedPaginatorTest {
                 totalPages = null,
                 nextCursor = null,
                 style = PaginationStyle.SINGLE_DOCUMENT,
+            ),
+        )
+    }
+
+    @Test
+    fun `skidrow uses a paged site rss instead of wordpress rest`() {
+        val first = FeedPaginator.apply(
+            rawUrl = "https://feeds.feedburner.com/SkidrowReloadedGames",
+            request = FeedPageRequest(page = 1),
+            style = PaginationStyle.SKIDROW_RSS,
+        )
+        assertEquals("https://www.skidrowreloaded.com/?s=.&feed=rss2", first)
+        val next = FeedPaginator.apply(
+            rawUrl = "https://feeds.feedburner.com/SkidrowReloadedGames",
+            request = FeedPageRequest(page = 2, search = "portal"),
+            style = PaginationStyle.SKIDROW_RSS,
+        )
+        assertEquals("https://www.skidrowreloaded.com/?s=portal&feed=rss2&paged=2", next)
+        assertFalse(next.contains("wp-json"))
+        assertTrue(
+            FeedPaginator.hasMore(
+                fetchedPage = 1,
+                itemCount = 10,
+                perPage = 20,
+                totalPages = null,
+                nextCursor = null,
+                style = PaginationStyle.SKIDROW_RSS,
+            ),
+        )
+        assertFalse(
+            FeedPaginator.hasMore(
+                fetchedPage = 2,
+                itemCount = 3,
+                perPage = 20,
+                totalPages = null,
+                nextCursor = null,
+                style = PaginationStyle.SKIDROW_RSS,
             ),
         )
     }

@@ -225,18 +225,22 @@ class ProviderTransferCoordinator @Inject constructor(
         persist(job.copy(state = TransferState.RESOLVING))
         val links = unlockTargets(job.selectedLink, candidates, pageUrl, tab.feedUrl)
         Timber.tag("ProviderTransfer").i("Unlocking ${links.size} hoster(s) for ${job.title}")
-        return unlockFirst(apiKey, job, links)
+        return unlockFirst(apiKey, job, links, pageUrl)
     }
 
     private suspend fun unlockFirst(
         apiKey: String,
         job: TransferJob,
         links: List<String>,
+        pageUrl: String,
     ): TransferJob {
         var lastError: ProviderException? = null
+        var password: String? = null
         for (link in links) {
             try {
-                return persistResolved(job, link, resolver.resolve(apiKey, link))
+                return persistResolved(job, link, unlockLink(apiKey, link) {
+                    password ?: pagePassword(pageUrl).also { password = it }
+                })
             } catch (error: ProviderException) {
                 if (isFatalResolver(error)) throw error
                 lastError = error
@@ -246,6 +250,27 @@ class ProviderTransferCoordinator @Inject constructor(
             ProviderErrorCode.UNAVAILABLE_LINK,
             "No file hoster link in this post",
         )
+    }
+
+    private suspend fun unlockLink(
+        apiKey: String,
+        link: String,
+        password: () -> String,
+    ): ResolvedDownload {
+        return try {
+            resolver.resolve(apiKey, link)
+        } catch (error: ProviderException) {
+            if (error.code != ProviderErrorCode.PASSWORD_PROTECTED) throw error
+            val pass = password()
+            if (pass.isBlank()) throw error
+            resolver.resolve(apiKey, link, pass)
+        }
+    }
+
+    private fun pagePassword(pageUrl: String): String {
+        if (pageUrl.isBlank()) return ""
+        val html = runCatching { feedClient.fetchText(pageUrl) }.getOrDefault("")
+        return HosterPassword.fromHtml(html)
     }
 
     private fun isFatalResolver(error: ProviderException): Boolean =

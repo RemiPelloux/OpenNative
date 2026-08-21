@@ -202,6 +202,8 @@ fun HomeLibraryScreen(
         },
         providerItems = providerUi.visibleItems,
         providerSearchQuery = providerUi.searchQuery,
+        providerCanLoadMore = providerUi.canLoadMore,
+        providerLoadingMore = providerUi.loadingMore,
         providerJobs = providerUi.jobs,
         providerDownloadEnabled = providerTabs.find { it.id == state.selectedProviderTabId }
             ?.hasCredential() == true ||
@@ -267,6 +269,8 @@ private fun LibraryScreenContent(
     onProviderInstall: (app.gamenative.provider.ProviderFeedItem) -> Unit = {},
     providerItems: List<app.gamenative.provider.ProviderFeedItem> = emptyList(),
     providerSearchQuery: String = "",
+    providerCanLoadMore: Boolean = false,
+    providerLoadingMore: Boolean = false,
     providerJobs: List<app.gamenative.provider.TransferJob> = emptyList(),
     providerDownloadEnabled: Boolean = false,
     isOffline: Boolean = false,
@@ -1015,6 +1019,8 @@ private fun LibraryScreenContent(
                         jobs = providerJobs,
                         downloadEnabled = providerDownloadEnabled,
                         searchQuery = providerSearchQuery,
+                        canLoadMore = providerCanLoadMore,
+                        loadingMore = providerLoadingMore,
                         onSearchQuery = onProviderSearch,
                         onRefresh = onProviderRefresh,
                         onLoadMore = onProviderLoadMore,

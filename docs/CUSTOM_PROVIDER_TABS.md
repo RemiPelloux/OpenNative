@@ -54,7 +54,7 @@ The provider boundary exposes typed operations rather than AllDebrid response ob
 
 ```text
 validateCredential() -> AccountState
-resolve(userSelectedLink) -> ResolvedDownload
+resolve(userSelectedLink, optionalPassword) -> ResolvedDownload
 ```
 
 Errors normalize to authentication, rate limit, unavailable link, unsupported host, network, timeout and malformed response. Retries use bounded exponential backoff only for safe idempotent reads. Authentication and rate-limit failures are never retried blindly.

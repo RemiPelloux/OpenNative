@@ -2,7 +2,9 @@
 
 ## 1.2.1 - 2026-08-20
 
-- Seed a Skidrow provider tab from the FeedBurner RSS, resolve only Mega links, and extract the archive into Custom without Wine.
+- Seed a Skidrow provider tab from the FeedBurner RSS, unlock 1fichier through AllDebrid, extract the rar into Custom, and delete the archive.
+- Lazy-load FitGirl and Skidrow catalog pages on scroll, and search the whole WordPress catalog instead of the first page.
+- Fetch Skidrow through the site RSS (`s` + `feed=rss2`) so refresh no longer hits a 403 REST endpoint.
 - Run Windows installers with Box64 and write every magnet file next to `setup.exe` in the title folder.
 - Force Box64 on every Custom installer (`setup`/`install`/`.msi`) at container create and launch.
 - Install every Windows pack into `D:\games\<slug>` (`Download/games`) and delete the FitGirl pack after a verified game exe exists.
@@ -34,7 +36,7 @@
 - Open provider games with the same full-screen hero and install action as other library tabs.
 - Parse FitGirl `3.6/4 GB` size lines and hide a size label when no size is known.
 - Hide FitGirl Updates Digest posts from provider tabs.
-- Lift the Load next page action above the bottom gamepad menu so it stays tappable.
+- Load later provider catalog pages by scrolling instead of a Load next page button.
 
 - Integrate GameNative upstream through `78bc4bbe`, retaining download I/O, service locale and LSFG 1.3.3 fixes while preserving OpenNative's independent product policy.
 - Debounce download-resume metadata writes, use thread-safe progress listeners and use bounded FileChannel writes for Epic and GOG assembly on external storage.

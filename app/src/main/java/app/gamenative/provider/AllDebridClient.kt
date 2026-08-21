@@ -30,8 +30,11 @@ class AllDebridClient(
         )
     }
 
-    override suspend fun resolve(apiKey: String, userSelectedLink: String): ResolvedDownload =
-        resolve(apiKey, userSelectedLink, allowRedirector = true)
+    override suspend fun resolve(
+        apiKey: String,
+        userSelectedLink: String,
+        password: String,
+    ): ResolvedDownload = resolve(apiKey, userSelectedLink, password, allowRedirector = true)
 
     override suspend fun uploadMagnet(apiKey: String, magnet: String): MagnetUpload =
         magnets.upload(apiKey, magnet)
@@ -45,16 +48,23 @@ class AllDebridClient(
     private suspend fun resolve(
         apiKey: String,
         userSelectedLink: String,
+        password: String,
         allowRedirector: Boolean,
     ): ResolvedDownload {
         http.requireKey(apiKey)
         ProviderUrlPolicy.validate(userSelectedLink, allowLoopbackHttp).getOrThrow()
-        val json = http.get("/v4/link/unlock", apiKey, mapOf("link" to userSelectedLink))
+        val query = buildMap {
+            put("link", userSelectedLink)
+            if (password.isNotBlank()) put("password", password)
+        }
+        val json = http.get("/v4/link/unlock", apiKey, query)
         if (json.optString("status") == "success") return fromUnlock(apiKey, json)
         val error = http.mapError(json, ProviderErrorCode.UNAVAILABLE_LINK)
         if (allowRedirector && error.code == ProviderErrorCode.UNSUPPORTED_HOST) {
             val nested = redirectorLinks(apiKey, userSelectedLink)
-            if (nested.isNotEmpty()) return resolve(apiKey, nested.first(), allowRedirector = false)
+            if (nested.isNotEmpty()) {
+                return resolve(apiKey, nested.first(), password, allowRedirector = false)
+            }
         }
         throw error
     }

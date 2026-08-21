@@ -6,6 +6,32 @@ import org.junit.Test
 
 class ProviderInstallHandlerTest {
     @Test
+    fun `skidrow extracts always delete the archive`() {
+        val skidrow = ProviderTab(
+            id = "skidrow",
+            name = "Skidrow",
+            position = 1,
+            feedUrl = "https://feeds.feedburner.com/SkidrowReloadedGames",
+            cleanupPolicy = CleanupPolicy.KEEP,
+        )
+        val fitgirl = ProviderTab(
+            id = "fitgirl",
+            name = "FitGirl",
+            position = 0,
+            feedUrl = "https://fitgirl-repacks.site/wp-json/wp/v2/posts",
+            cleanupPolicy = CleanupPolicy.KEEP,
+        )
+        assertEquals(true, ProviderInstallHandler.shouldDeleteArchive(skidrow))
+        assertEquals(false, ProviderInstallHandler.shouldDeleteArchive(fitgirl))
+        assertEquals(
+            true,
+            ProviderInstallHandler.shouldDeleteArchive(
+                fitgirl.copy(cleanupPolicy = CleanupPolicy.DELETE_AFTER_VERIFIED_INSTALL),
+            ),
+        )
+    }
+
+    @Test
     fun `finds zip rar or 7z in a downloaded folder`() {
         val root = kotlin.io.path.createTempDirectory("skidrow-pack").toFile()
         java.io.File(root, "readme.txt").writeText("x")

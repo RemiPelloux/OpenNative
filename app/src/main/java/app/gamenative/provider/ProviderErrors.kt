@@ -4,6 +4,7 @@ enum class ProviderErrorCode {
     AUTHENTICATION,
     RATE_LIMIT,
     UNAVAILABLE_LINK,
+    PASSWORD_PROTECTED,
     UNSUPPORTED_HOST,
     NETWORK,
     TIMEOUT,

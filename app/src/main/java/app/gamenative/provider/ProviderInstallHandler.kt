@@ -31,7 +31,7 @@ object ProviderInstallHandler {
             val extracted = transfers.extractArchive(aligned.copy(finalPath = archive.absolutePath))
             copyExtracted(extracted.destinationPath, dest)
             File(extracted.destinationPath).deleteRecursively()
-            if (tab.cleanupPolicy != CleanupPolicy.KEEP) archive.delete()
+            if (shouldDeleteArchive(tab)) archive.delete()
             return finish(transfers, aligned, tab, dest)
         }
         if (ProviderTabPolicy.extractOnly(tab.feedUrl)) {
@@ -43,6 +43,9 @@ object ProviderInstallHandler {
         payload.copyTo(File(dest, payload.name), overwrite = true)
         return finish(transfers, aligned, tab, dest)
     }
+
+    internal fun shouldDeleteArchive(tab: ProviderTab): Boolean =
+        ProviderTabPolicy.extractOnly(tab.feedUrl) || tab.cleanupPolicy != CleanupPolicy.KEEP
 
     internal fun findArchive(payload: File): File? {
         val files = if (payload.isFile) listOf(payload) else payload.walkTopDown().filter { it.isFile }.toList()

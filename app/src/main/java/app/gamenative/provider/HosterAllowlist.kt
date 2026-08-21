@@ -3,11 +3,10 @@ package app.gamenative.provider
 import java.net.URI
 
 object HosterAllowlist {
-    private val MEGA = setOf("mega.nz", "mega.io", "mega.co.nz")
+    private val FICHIER = setOf("1fichier.com")
 
     fun hostsFor(feedUrl: String): Set<String>? {
-        val lower = feedUrl.lowercase()
-        if (lower.contains("skidrow")) return MEGA
+        if (ProviderTabPolicy.extractOnly(feedUrl)) return FICHIER
         return null
     }
 

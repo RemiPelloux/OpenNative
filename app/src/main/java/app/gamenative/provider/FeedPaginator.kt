@@ -14,12 +14,14 @@ enum class PaginationStyle {
     PAGE,
     WORDPRESS_REST,
     WORDPRESS_RSS,
+    SKIDROW_RSS,
     SINGLE_DOCUMENT,
 }
 
 object FeedPaginator {
     fun detectStyle(url: String, kind: FeedKind): PaginationStyle {
         val lower = url.lowercase()
+        if (lower.contains("skidrow")) return PaginationStyle.SKIDROW_RSS
         if (lower.contains("feedburner.com")) {
             return PaginationStyle.SINGLE_DOCUMENT
         }
@@ -57,6 +59,7 @@ object FeedPaginator {
                 params["orderby"] = sanitizeOrderBy(request.orderBy)
                 params["order"] = sanitizeOrder(request.order)
             }
+            PaginationStyle.SKIDROW_RSS -> return skidrowUrl(request)
             PaginationStyle.SINGLE_DOCUMENT -> Unit
         }
         applySearch(params, request.search, style)
@@ -74,7 +77,7 @@ object FeedPaginator {
         when (style) {
             PaginationStyle.WORDPRESS_REST, PaginationStyle.PAGE, PaginationStyle.CURSOR ->
                 params["search"] = encoded
-            PaginationStyle.WORDPRESS_RSS -> params["s"] = encoded
+            PaginationStyle.WORDPRESS_RSS, PaginationStyle.SKIDROW_RSS -> params["s"] = encoded
             PaginationStyle.SINGLE_DOCUMENT -> Unit
         }
     }
@@ -90,7 +93,12 @@ object FeedPaginator {
         if (style == PaginationStyle.SINGLE_DOCUMENT) return false
         if (!nextCursor.isNullOrBlank()) return true
         if (totalPages != null) return fetchedPage < totalPages
-        return itemCount >= perPage
+        val fullPage = if (style == PaginationStyle.WORDPRESS_RSS || style == PaginationStyle.SKIDROW_RSS) {
+            RSS_PAGE_SIZE
+        } else {
+            perPage
+        }
+        return itemCount >= fullPage
     }
 
     internal fun stripPaging(rawUrl: String): String {
@@ -102,6 +110,16 @@ object FeedPaginator {
             key !in PAGING_KEYS
         }
         return if (kept.isEmpty()) base else "$base?${kept.joinToString("&")}"
+    }
+
+    private fun skidrowUrl(request: FeedPageRequest): String {
+        val query = request.search.trim().ifBlank { "." }
+        val params = linkedMapOf(
+            "s" to encode(query),
+            "feed" to "rss2",
+        )
+        if (request.page > 1) params["paged"] = request.page.toString()
+        return appendQuery(SKIDROW_SITE, params)
     }
 
     private fun appendQuery(url: String, params: Map<String, String>): String {
@@ -133,4 +151,6 @@ object FeedPaginator {
     private const val WP_REST_FIELDS =
         "id,slug,link,title,excerpt,content,jetpack_featured_media_url,featured_media"
     private val ORDER_BY = setOf("date", "modified", "title", "id", "relevance")
+    private const val RSS_PAGE_SIZE = 10
+    private const val SKIDROW_SITE = "https://www.skidrowreloaded.com/"
 }

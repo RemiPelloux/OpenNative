@@ -7,27 +7,31 @@ import org.junit.Test
 
 class HosterAllowlistTest {
     @Test
-    fun `skidrow tabs keep only mega links`() {
+    fun `skidrow tabs keep only 1fichier links`() {
         val feed = "https://feeds.feedburner.com/SkidrowReloadedGames"
-        assertEquals(setOf("mega.nz", "mega.io", "mega.co.nz"), HosterAllowlist.hostsFor(feed))
+        assertEquals(setOf("1fichier.com"), HosterAllowlist.hostsFor(feed))
         val kept = HosterAllowlist.filter(
             listOf(
                 "https://mega.co.nz/#!abc!key",
                 "https://megaup.net/abc",
-                "https://1fichier.com/foo",
+                "https://1fichier.com/?abcd1234",
+                "https://www.1fichier.com/?efgh5678",
                 "https://www.skidrowreloaded.com/game/",
             ),
             feed,
         )
-        assertEquals(listOf("https://mega.co.nz/#!abc!key"), kept)
+        assertEquals(
+            listOf("https://1fichier.com/?abcd1234", "https://www.1fichier.com/?efgh5678"),
+            kept,
+        )
         assertNull(HosterAllowlist.hostsFor("https://fitgirl-repacks.site/wp-json/wp/v2/posts"))
         assertTrue(ProviderTabPolicy.extractOnly(feed))
         assertTrue(!ProviderTabPolicy.extractOnly("https://fitgirl-repacks.site/wp-json/wp/v2/posts"))
         assertEquals(
-            listOf("https://mega.co.nz/#!abc!key"),
+            listOf("https://1fichier.com/?abcd1234"),
             WordpressDownloadLinks.rank(
-                listOf("https://mega.co.nz/#!abc!key", "https://megaup.net/x.zip"),
-                setOf("mega.nz", "mega.io", "mega.co.nz"),
+                listOf("https://mega.co.nz/#!abc!key", "https://1fichier.com/?abcd1234"),
+                setOf("1fichier.com"),
             ),
         )
     }
@@ -44,19 +48,19 @@ class HosterAllowlistTest {
                 <content:encoded><![CDATA[
                   <img src="https://www.skidrowreloaded.com/cover.jpg" />
                   <a href="https://mega.nz/file/abc#key">MEGA</a>
-                  <a href="https://1fichier.com/x">other</a>
+                  <a href="https://1fichier.com/?abcd1234">1fichier</a>
                 ]]></content:encoded>
               </item>
             </channel></rss>
         """.trimIndent()
         val item = RssFeedParser.parse(xml).items.single()
         assertEquals("Example Game", item.title)
-        assertTrue(WordpressMetadata.linksFrom(item.extraJson).any { it.contains("mega.nz") })
+        assertTrue(WordpressMetadata.linksFrom(item.extraJson).any { it.contains("1fichier.com") })
         val restricted = WordpressMetadata.restrictForFeed(
             item,
             "https://feeds.feedburner.com/SkidrowReloadedGames",
         )
-        assertEquals(listOf("https://mega.nz/file/abc#key"), WordpressMetadata.linksFrom(restricted.extraJson))
+        assertEquals(listOf("https://1fichier.com/?abcd1234"), WordpressMetadata.linksFrom(restricted.extraJson))
         assertEquals("https://www.skidrowreloaded.com/cover.jpg", item.artworkUrl)
     }
 }

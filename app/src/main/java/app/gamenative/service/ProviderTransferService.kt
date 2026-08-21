@@ -13,7 +13,9 @@ import app.gamenative.PrefManager
 import app.gamenative.R
 import app.gamenative.provider.HosterAllowlist
 import app.gamenative.provider.ProviderCatalogRepository
+import app.gamenative.provider.ProviderInstallHandler
 import app.gamenative.provider.ProviderTab
+import app.gamenative.provider.ProviderTabPolicy
 import app.gamenative.provider.ProviderTransferCoordinator
 import app.gamenative.provider.WordpressMetadata
 import dagger.hilt.android.AndroidEntryPoint
@@ -70,11 +72,21 @@ class ProviderTransferService : Service() {
             val links = HosterAllowlist.filter(WordpressMetadata.candidateLinks(item), tab.feedUrl)
             val downloadItem = item.copy(link = magnet.ifBlank { links.firstOrNull() ?: item.link })
             val available = File(filesDir.absolutePath).usableSpace
-            val job = transfers.enqueue(tab, downloadItem, available, includeWineHeadroom = false)
+            var latest = transfers.enqueue(tab, downloadItem, available, includeWineHeadroom = false)
             try {
-                transfers.resolveAndDownload(tab, job, { false }, links, item.link, magnet)
+                latest = transfers.resolveAndDownload(
+                    tab,
+                    latest,
+                    { false },
+                    links,
+                    item.link,
+                    magnet,
+                )
+                if (ProviderTabPolicy.extractOnly(tab.feedUrl)) {
+                    latest = ProviderInstallHandler.install(transfers, latest, item, tab)
+                }
             } catch (error: Throwable) {
-                transfers.markFailed(job, error.message ?: error.toString())
+                transfers.markFailed(latest, error.message ?: error.toString())
                 throw error
             }
         } catch (error: Throwable) {

@@ -48,9 +48,9 @@ Feeds can be paged. OpenNative detects the style from the URL and feed kind:
 | WordPress RSS / generic RSS | `paged`, `page`, `orderby`, `order` |
 | JSON envelope | `cursor` when the feed returns `nextCursor`, otherwise `page` + `per_page` |
 
-`orderby` is limited to `date`, `modified`, `title`, `id`, and `relevance`. `order` is `desc` or `asc`. WordPress `X-WP-TotalPages` is honored when present. The catalog can load the next page after the first three.
+`orderby` is limited to `date`, `modified`, `title`, `id`, and `relevance`. `order` is `desc` or `asc`. WordPress `X-WP-TotalPages` is honored when present. After the first three pages, later pages load as the grid scrolls.
 
-The catalog search field filters locally. Refresh and Load more still send paging parameters.
+The catalog search field queries the whole WordPress catalog (`search=`). Results are not limited to the pages already cached. Further matches load as the grid scrolls.
 
 WordPress post HTML stores file-hoster HTTPS links and the first magnet in extra JSON. Download uploads that magnet to AllDebrid, waits until it is ready, then writes every file as siblings in public GameNative/CustomGames/<slugged-title>/ (not Android/data, which Wine cannot see through FUSE). `setup.exe` and `fg-*.bin` must share that folder.
 
@@ -102,7 +102,7 @@ Mapped fields:
 
 WordPress HTML can include a magnet; Install sends it to AllDebrid and writes every file into the game folder.
 
-The shipped **Skidrow** tab uses `https://feeds.feedburner.com/SkidrowReloadedGames`. FeedBurner is fetched as a single RSS document (no WordPress paging). Download keeps only Mega links (`mega.nz`, `mega.io`, `mega.co.nz`) and scrapes the post page when the RSS snippet has none. Magnets and other hosters on that tab are ignored. Install extracts the zip/rar/7z into Custom and does not run Wine `setup.exe`.
+The shipped **Skidrow** tab is stored as `https://feeds.feedburner.com/SkidrowReloadedGames`. Browse and search use `https://www.skidrowreloaded.com/?s=<query>&feed=rss2` (`s=.` when browsing, plus `paged=` after page 1). The site WordPress REST API and `/feed/` permalink are blocked (403). Later RSS pages load as the grid scrolls. Download keeps only 1fichier links and scrapes the post page when the RSS snippet has none. Those links are unlocked through AllDebrid (`/v4/link/unlock`), including a labeled post password when AllDebrid reports `LINK_PASS_PROTECTED`. Magnets, Mega, and other hosters on that tab are ignored. The returned file is a rar: OpenNative extracts it into Custom, deletes the archive, and does not run Wine `setup.exe`.
 
 ## Transport
 

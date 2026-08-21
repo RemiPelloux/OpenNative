@@ -11,6 +11,7 @@ import app.gamenative.R
 import app.gamenative.events.AndroidEvent
 import app.gamenative.provider.AllDebridResolver
 import app.gamenative.provider.CatalogFilter
+import app.gamenative.provider.ProviderCatalogPaging
 import app.gamenative.provider.ProviderCatalogRepository
 import app.gamenative.provider.ProviderDefaultTabs
 import app.gamenative.provider.ProviderDeviceKeyImport
@@ -45,6 +46,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -62,6 +64,9 @@ data class ProviderLibraryUi(
     val visibleItems: List<ProviderFeedItem> = emptyList(),
     val jobs: List<TransferJob> = emptyList(),
     val searchQuery: String = "",
+    val canLoadMore: Boolean = false,
+    val loadingMore: Boolean = false,
+    val remoteSearchActive: Boolean = false,
     val hasGlobalCredential: Boolean = false,
     val bundleStatus: String? = null,
     val showGlobalKeyDialog: Boolean = false,
@@ -88,6 +93,10 @@ class ProviderLibraryViewModel @Inject constructor(
 
     private var activeTabId: String? = null
     private var catalogJob: Job? = null
+    private var searchJob: Job? = null
+    private var searchPage = 0
+    private var searchHasMore = false
+    private val searchResults = ArrayList<ProviderFeedItem>()
 
     fun onAppOpen() {
         viewModelScope.launch {
@@ -120,20 +129,32 @@ class ProviderLibraryViewModel @Inject constructor(
         activeTabId = tabId
         catalogJob?.cancel()
         if (tabId == null) return
-        _ui.update { it.copy(searchQuery = "") }
+        resetSearch(clearQuery = true)
         catalogJob = viewModelScope.launch {
             combine(
                 catalog.observeItems(tabId),
                 transfers.observeJobs(tabId),
-            ) { items, jobs -> items to jobs }.collect { (items, jobs) ->
-                _ui.update { state ->
-                    state.copy(
-                        items = items,
-                        visibleItems = CatalogFilter.filter(items, state.searchQuery),
-                        jobs = jobs,
-                    )
+                catalog.observeTabs(),
+            ) { items, jobs, tabs -> Triple(items, jobs, tabs.find { it.id == tabId }) }
+                .collect { (items, jobs, tab) ->
+                    _ui.update { state ->
+                        val searching = state.remoteSearchActive
+                        state.copy(
+                            items = items,
+                            visibleItems = if (searching) {
+                                state.visibleItems
+                            } else {
+                                CatalogFilter.filter(items, state.searchQuery)
+                            },
+                            jobs = jobs,
+                            canLoadMore = if (searching) {
+                                searchHasMore
+                            } else {
+                                tab != null && ProviderCatalogPaging.canLoadMore(tab)
+                            },
+                        )
+                    }
                 }
-            }
         }
     }
 
@@ -163,20 +184,53 @@ class ProviderLibraryViewModel @Inject constructor(
     }
 
     fun onSearchQuery(value: String) {
-        _ui.update { it.copy(searchQuery = value, visibleItems = CatalogFilter.filter(it.items, value)) }
+        _ui.update { it.copy(searchQuery = value) }
+        searchJob?.cancel()
+        val needle = value.trim()
+        if (needle.isEmpty()) {
+            resetSearch()
+            _ui.update { state ->
+                state.copy(visibleItems = CatalogFilter.filter(state.items, ""))
+            }
+            return
+        }
+        _ui.update { state ->
+            state.copy(visibleItems = CatalogFilter.filter(state.items, needle))
+        }
+        searchJob = viewModelScope.launch {
+            delay(450)
+            runRemoteSearch(needle)
+        }
     }
 
     fun refreshActive() {
         val id = activeTabId ?: return
         viewModelScope.launch {
-            catalog.getTab(id)?.let { catalog.refreshTab(it, search = _ui.value.searchQuery.trim()) }
+            runCatching {
+                catalog.getTab(id)?.let { catalog.refreshTab(it) }
+            }.onFailure { error ->
+                Timber.tag("ProviderTabs").e(error, "Provider refresh failed")
+            }
         }
     }
 
     fun loadMore() {
         val id = activeTabId ?: return
+        if (_ui.value.loadingMore || !_ui.value.canLoadMore) return
         viewModelScope.launch {
-            catalog.getTab(id)?.let { catalog.loadMore(it, search = _ui.value.searchQuery.trim()) }
+            val tab = catalog.getTab(id) ?: return@launch
+            _ui.update { it.copy(loadingMore = true) }
+            runCatching {
+                val needle = _ui.value.searchQuery.trim()
+                if (needle.isNotEmpty() && _ui.value.remoteSearchActive) {
+                    appendSearchPage(tab, needle)
+                } else {
+                    catalog.loadMore(tab)
+                }
+            }.onFailure { error ->
+                Timber.tag("ProviderTabs").w(error, "Load more failed")
+            }
+            _ui.update { it.copy(loadingMore = false) }
         }
     }
 
@@ -327,5 +381,52 @@ class ProviderLibraryViewModel @Inject constructor(
         if (hasCredential()) return this
         val global = PrefManager.providerGlobalCredentialRef
         return if (global.isBlank()) this else copy(credentialRef = global)
+    }
+
+    private fun resetSearch(clearQuery: Boolean = false) {
+        searchJob?.cancel()
+        searchPage = 0
+        searchHasMore = false
+        searchResults.clear()
+        _ui.update {
+            it.copy(
+                searchQuery = if (clearQuery) "" else it.searchQuery,
+                remoteSearchActive = false,
+            )
+        }
+    }
+
+    private suspend fun runRemoteSearch(needle: String) {
+        val tab = activeTabId?.let { catalog.getTab(it) } ?: return
+        runCatching {
+            val page = catalog.searchPage(tab, needle, page = 1)
+            searchResults.clear()
+            searchResults += page.items
+            searchPage = 1
+            searchHasMore = page.hasMore
+            _ui.update {
+                it.copy(
+                    visibleItems = page.items,
+                    remoteSearchActive = true,
+                    canLoadMore = page.hasMore,
+                )
+            }
+        }.onFailure { error ->
+            Timber.tag("ProviderTabs").w(error, "Remote catalog search failed")
+        }
+    }
+
+    private suspend fun appendSearchPage(tab: ProviderTab, needle: String) {
+        if (!searchHasMore) return
+        val page = catalog.searchPage(tab, needle, page = searchPage + 1)
+        searchResults += page.items
+        searchPage += 1
+        searchHasMore = page.hasMore
+        _ui.update {
+            it.copy(
+                visibleItems = searchResults.toList(),
+                canLoadMore = page.hasMore,
+            )
+        }
     }
 }
