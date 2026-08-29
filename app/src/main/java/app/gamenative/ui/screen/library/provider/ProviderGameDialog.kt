@@ -239,7 +239,8 @@ private fun actionLabel(
     extractOnly: Boolean,
 ): String = when {
     ProviderGameUi.isInstalled(job, item) -> stringResource(R.string.provider_installed)
-    ProviderGameUi.canInstall(job, item) && extractOnly -> stringResource(R.string.provider_extract)
+    ProviderGameUi.canInstall(job, item) && extractOnly && !ProviderLocalPayload.hasInstaller(item) ->
+        stringResource(R.string.provider_extract)
     ProviderGameUi.canInstall(job, item) -> stringResource(R.string.provider_install)
     !downloadEnabled -> stringResource(R.string.provider_download_blocked)
     else -> stringResource(R.string.provider_download)

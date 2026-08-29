@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.1 - 2026-08-29
+
+- Recognize verified ISO9660 Skidrow downloads and extract them natively with the same path, entry-count and expanded-size safeguards as RAR and 7z archives.
+- Delete a Skidrow source archive only after extraction and install registration succeed, while retaining setup files until they produce a usable game installation.
+- Update the upstream runtime catalog with current Turnip, FEX, Box64 and WOWBox64 releases.
+- Fix Wine container file-copy crashes, Bionic verification recovery and GOG v1 installer registry/CD-drive setup.
+- Add portrait top-aligned game display placement and exempt pipelined clients from shared-memory frame pacing.
+
 ## 1.3.0 - 2026-08-21
 
 - Browse Skidrow from the live site archive instead of a thin RSS search, and keep paging as you scroll.

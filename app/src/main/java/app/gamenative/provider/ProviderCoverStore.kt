@@ -18,7 +18,7 @@ object ProviderCoverStore {
         dest.mkdirs()
         val out = File(dest, "cover.${extension(url)}")
         val request = Request.Builder().url(url).get()
-            .header("User-Agent", "OpenNative/1.3.0 (Android)")
+            .header("User-Agent", "OpenNative/1.3.1 (Android)")
             .build()
         val response = try {
             httpClient.newCall(request).execute()

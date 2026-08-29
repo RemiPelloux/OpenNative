@@ -1,6 +1,6 @@
 # Provider feed contract
 
-OpenNative `1.3.0` reads **user-supplied** HTTPS catalogs. Launch seeds `assets/opennative-provider-tabs.json` (FitGirl JSON and Skidrow RSS) when those tabs are missing. The application does not embed a game catalog.
+OpenNative `1.3.1` reads **user-supplied** HTTPS catalogs. Launch seeds `assets/opennative-provider-tabs.json` (FitGirl JSON and Skidrow RSS) when those tabs are missing. The application does not embed a game catalog.
 
 A provider tab accepts one of:
 
@@ -102,7 +102,7 @@ Mapped fields:
 
 WordPress HTML can include a magnet; Install sends it to AllDebrid and writes every file into the game folder.
 
-The shipped **Skidrow** tab is stored as `https://feeds.feedburner.com/SkidrowReloadedGames`. Browse reads the live HTML archive (`https://www.skidrowreloaded.com/` and `/page/N/`). Search uses `https://www.skidrowreloaded.com/?s=<query>&feed=rss2`. The site WordPress REST API and `/feed/` permalink are blocked (403). Later archive pages load as the grid scrolls. Download keeps only 1fichier links and scrapes the post page when the listing has none. Those links are unlocked through AllDebrid (`/v4/link/unlock`), including a labeled post password when AllDebrid reports `LINK_PASS_PROTECTED`. Magnets, Mega, and other hosters on that tab are ignored. The returned file is a rar: OpenNative extracts it into Custom, copies the catalog artwork as `cover.jpg` / `cover.png`, deletes the archive, and does not run Wine `setup.exe`. Play then launches the discovered game exe (crash handlers and redistributables are ignored).
+The shipped **Skidrow** tab is stored as `https://feeds.feedburner.com/SkidrowReloadedGames`. Browse reads the live HTML archive (`https://www.skidrowreloaded.com/` and `/page/N/`). Search uses `https://www.skidrowreloaded.com/?s=<query>&feed=rss2`. The site WordPress REST API and `/feed/` permalink are blocked (403). Later archive pages load as the grid scrolls. Download keeps only 1fichier links and scrapes the post page when the listing has none. Those links are unlocked through AllDebrid (`/v4/link/unlock`), including a labeled post password when AllDebrid reports `LINK_PASS_PROTECTED`. Magnets, Mega, and other hosters on that tab are ignored. OpenNative extracts returned RAR, 7z, ZIP, or verified ISO9660 payloads into Custom, copies the catalog artwork as `cover.jpg` / `cover.png`, and deletes the source archive. Portable releases launch the discovered game exe directly; installer-only payloads run `setup.exe` through Wine and delete the installer pack only after a playable installed executable is verified.
 
 ## Transport
 

@@ -4,6 +4,7 @@ import java.io.File
 import java.io.RandomAccessFile
 
 object PayloadClassifier {
+    private const val ISO_PRIMARY_VOLUME_DESCRIPTOR_OFFSET = 16L * 2048L
     private val zip = byteArrayOf(0x50, 0x4B)
     private val sevenZ = byteArrayOf(0x37, 0x7A, 0xBC.toByte(), 0xAF.toByte())
     private val rar = byteArrayOf(0x52, 0x61, 0x72, 0x21)
@@ -19,6 +20,7 @@ object PayloadClassifier {
         return when {
             startsWith(header, zip) || startsWith(header, sevenZ) || startsWith(header, rar) ->
                 PayloadKind.PORTABLE_ARCHIVE
+            hasIso9660Signature(file) -> PayloadKind.PORTABLE_ARCHIVE
             startsWith(header, mz) && hasPeSignature(file) -> PayloadKind.WINDOWS_EXE
             startsWith(header, ole) && ext == "msi" -> PayloadKind.WINDOWS_MSI
             ext == "exe" -> throw ProviderException(
@@ -45,6 +47,16 @@ object PayloadClassifier {
             if (peOffset + 4 > raf.length()) return false
             raf.seek(peOffset)
             return raf.read() == 0x50 && raf.read() == 0x45 && raf.read() == 0x00 && raf.read() == 0x00
+        }
+    }
+
+    internal fun hasIso9660Signature(file: File): Boolean {
+        RandomAccessFile(file, "r").use { raf ->
+            if (raf.length() < ISO_PRIMARY_VOLUME_DESCRIPTOR_OFFSET + 6L) return false
+            raf.seek(ISO_PRIMARY_VOLUME_DESCRIPTOR_OFFSET + 1L)
+            val identifier = ByteArray(5)
+            raf.readFully(identifier)
+            return identifier.contentEquals("CD001".toByteArray(Charsets.US_ASCII))
         }
     }
 

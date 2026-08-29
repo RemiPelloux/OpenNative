@@ -32,6 +32,7 @@ import app.gamenative.provider.ProviderTransferCoordinator
 import app.gamenative.provider.ProviderUrlPolicy
 import app.gamenative.provider.ProviderWineSetup
 import app.gamenative.provider.TransferJob
+import app.gamenative.provider.TransferState
 import app.gamenative.ui.screen.library.provider.ProviderTabDraft
 import app.gamenative.ui.screen.library.provider.toTab
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -277,9 +278,11 @@ class ProviderLibraryViewModel @Inject constructor(
                 return@launch
             }
             runCatching {
-                val ready = ProviderInstallHandler.install(transfers, job, item, tab.withGlobalCredential())
-                if (ProviderTabPolicy.extractOnly(tab.feedUrl)) return@launch
+                val ready = latest
+                    ?.takeIf { it.state == TransferState.READY && File(it.destinationPath).isDirectory }
+                    ?: ProviderInstallHandler.install(transfers, job, item, tab.withGlobalCredential())
                 val dest = File(ready.destinationPath.ifBlank { ProviderLocalPayload.folder(item).absolutePath })
+                if (!ProviderInstallHandler.shouldLaunchSetup(tab, dest)) return@launch
                 val launch = ProviderWineSetup.start(context, dest, tab.cleanupPolicy)
                 if (launch != null && ProviderLocalPayload.findInstaller(launch.pack) != null) {
                     PluviaApp.events.emit(AndroidEvent.ExternalGameLaunch(launch.appId))

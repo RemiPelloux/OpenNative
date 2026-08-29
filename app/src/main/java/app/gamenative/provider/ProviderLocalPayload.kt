@@ -4,7 +4,7 @@ import app.gamenative.utils.CustomGameScanner
 import java.io.File
 
 object ProviderLocalPayload {
-    private val INSTALLER_EXT = setOf("exe", "msi", "rar", "zip", "7z", "bin")
+    private val INSTALLER_EXT = setOf("exe", "msi", "rar", "zip", "7z", "iso", "bin")
 
     fun writeRoot(): File = File(CustomGameScanner.importRootPath)
 

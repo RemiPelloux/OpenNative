@@ -2,16 +2,16 @@
 
 OpenNative can take a FitGirl pack or a Skidrow archive from a provider tab all the way to Play, on the AYN Thor. You do not need a PC. FitGirl unpack is slow. That is the tradeoff.
 
-## Skidrow (extract, then Play)
+## Skidrow (extract, then Play or Install)
 
-Skidrow is extract-only. There is no Wine `setup.exe` step.
+OpenNative treats ready-to-play Skidrow archives as extract-only. If an archive or ISO contains only an installer (`setup.exe`) and no playable game executable, OpenNative starts that installer through Wine instead.
 
 1. Open the Skidrow tab. Browse is the live site archive; search is RSS.
 2. Open a game. Tap **Extract to Custom**. Stay on the device until the bar finishes.
-3. OpenNative unlocks the 1fichier link through AllDebrid, downloads the rar, extracts it into `GameNative/CustomGames/<slug>/`, copies the catalog cover as `cover.jpg` or `cover.png`, and deletes the archive.
-4. Open **Custom** and tap **Play**. OpenNative launches the game exe. Crash handlers (`UnityCrashHandler64.exe`), redistributables and setup tools are ignored.
+3. OpenNative unlocks the 1fichier link through AllDebrid, downloads the rar or ISO, extracts it into `GameNative/CustomGames/<slug>/`, copies the catalog cover as `cover.jpg` or `cover.png`, and deletes the source archive.
+4. For a portable release, open **Custom** and tap **Play**. For an installer-only release, complete the Wine setup; after a verified game install, OpenNative deletes the extracted installer pack too.
 
-If Play ever opened the Wine file manager instead of the game, that was the old unique-exe check. `1.3.0` picks the real game exe automatically. You can still open the container and tap a specific `.exe` if you want another one.
+If Play ever opened the Wine file manager instead of the game, that was the old unique-exe check. `1.3.1` picks the real game exe automatically. You can still open the container and tap a specific `.exe` if you want another one.
 
 ## What you do
 

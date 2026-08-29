@@ -22,7 +22,7 @@ OpenNative is an independent open-source project. It does not include games, fir
 
 | Channel | Version | Status |
 | --- | --- | --- |
-| Stable | `1.3.0` | Skidrow extract-to-Custom, Play launches the game exe, catalog covers in Custom |
+| Stable | `1.3.1` | Skidrow ZIP/RAR/7z/ISO extraction, runtime refresh and upstream compatibility fixes |
 | Next milestone | `1.5.0` | Settings sharing, cockpit polish and remaining certification |
 | Architecture milestone | `2.0.0` | Long-term roadmap |
 
@@ -53,8 +53,11 @@ OpenNative is an independent open-source project. It does not include games, fir
 
 Performance varies by game, runtime, driver and thermal conditions. OpenNative does not claim universal FPS improvements. Changes are promoted only after controlled before/after measurements.
 
-## Shipped in 1.3.0
+## Shipped in 1.3.1
 
+- Skidrow accepts verified ISO9660 images, extracts them into Custom, and removes the source image after successful registration.
+- Turnip, FEX, Box64 and WOWBox64 catalogs include the latest integrated upstream releases.
+- Wine container copying, Bionic verification, GOG v1 installation, portrait placement and shared-memory pacing carry current upstream fixes.
 - Skidrow browses the live site archive, pages on scroll, and searches the whole catalog.
 - Skidrow downloads unlock 1fichier through AllDebrid, extract into Custom, and delete the archive.
 - The catalog header is compact, search hides on scroll, and covers show **Installed** when the title is already in Custom.
@@ -65,7 +68,7 @@ See [provider tabs](docs/CUSTOM_PROVIDER_TABS.md) and [feed contract](docs/PROVI
 
 ## Planned for 1.5.0
 
-The following work remains after `1.3.0`:
+The following work remains after `1.3.1`:
 
 | Area | Planned capability |
 | --- | --- |

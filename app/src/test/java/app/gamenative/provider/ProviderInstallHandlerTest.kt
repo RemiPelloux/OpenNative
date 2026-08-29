@@ -1,7 +1,9 @@
 package app.gamenative.provider
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ProviderInstallHandlerTest {
@@ -32,7 +34,7 @@ class ProviderInstallHandlerTest {
     }
 
     @Test
-    fun `finds zip rar or 7z in a downloaded folder`() {
+    fun `finds zip rar 7z or iso in a downloaded folder`() {
         val root = kotlin.io.path.createTempDirectory("skidrow-pack").toFile()
         java.io.File(root, "readme.txt").writeText("x")
         val zip = java.io.File(root, "game.zip")
@@ -42,6 +44,12 @@ class ProviderInstallHandlerTest {
         val rar = java.io.File(root, "game.rar")
         rar.writeBytes(byteArrayOf(0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00, 0x00))
         assertEquals(rar.absolutePath, ProviderInstallHandler.findArchive(root)?.absolutePath)
+        rar.delete()
+        val iso = java.io.File(root, "game.iso")
+        val isoBytes = ByteArray(16 * 2048 + 7)
+        "CD001".toByteArray(Charsets.US_ASCII).copyInto(isoBytes, destinationOffset = 16 * 2048 + 1)
+        iso.writeBytes(isoBytes)
+        assertEquals(iso.absolutePath, ProviderInstallHandler.findArchive(root)?.absolutePath)
         root.deleteRecursively()
     }
 
@@ -51,6 +59,24 @@ class ProviderInstallHandlerTest {
         java.io.File(root, "setup.exe").writeBytes(byteArrayOf(0x4D, 0x5A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00))
         java.io.File(root, "fg-01.bin").writeBytes(ByteArray(8))
         assertNull(ProviderInstallHandler.findArchive(root))
+        root.deleteRecursively()
+    }
+
+    @Test
+    fun `skidrow installer-only payload launches setup but portable payload does not`() {
+        val skidrow = ProviderTab(
+            id = "skidrow",
+            name = "Skidrow",
+            position = 1,
+            feedUrl = "https://feeds.feedburner.com/SkidrowReloadedGames",
+        )
+        val root = kotlin.io.path.createTempDirectory("skidrow-installer").toFile()
+        java.io.File(root, "SETUP.exe").writeBytes(byteArrayOf(0x4D, 0x5A, 0x00, 0x00))
+
+        assertTrue(ProviderInstallHandler.shouldLaunchSetup(skidrow, root))
+
+        java.io.File(root, "Divinum.exe").writeBytes(byteArrayOf(0x4D, 0x5A, 0x00, 0x00))
+        assertFalse(ProviderInstallHandler.shouldLaunchSetup(skidrow, root))
         root.deleteRecursively()
     }
 }

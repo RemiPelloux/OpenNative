@@ -91,7 +91,7 @@ class ProviderFeedClient(
     }
 
     companion object {
-        private const val USER_AGENT = "OpenNative/1.3.0 (Android)"
+        private const val USER_AGENT = "OpenNative/1.3.1 (Android)"
 
         fun defaultClient(): OkHttpClient = OkHttpClient.Builder()
             .followRedirects(true)

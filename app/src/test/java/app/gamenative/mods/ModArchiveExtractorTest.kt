@@ -146,6 +146,15 @@ class ModArchiveExtractorTest {
         assertTrue(ModArchiveExtractor.isUnsafeArchivePath("C:/absolute/file.txt"))
     }
 
+    @Test
+    fun archiveRootEntry_acceptsIsoRootMarkerOnly() {
+        assertTrue(ModArchiveExtractor.isArchiveRootEntry("."))
+        assertTrue(ModArchiveExtractor.isArchiveRootEntry("./"))
+        assertTrue(!ModArchiveExtractor.isArchiveRootEntry("../"))
+        assertTrue(!ModArchiveExtractor.isArchiveRootEntry("/"))
+        assertTrue(!ModArchiveExtractor.isArchiveRootEntry("./setup.exe"))
+    }
+
     private fun zip(file: File, vararg entries: Pair<String, String>) {
         ZipOutputStream(file.outputStream()).use { zip ->
             entries.forEach { (path, content) ->

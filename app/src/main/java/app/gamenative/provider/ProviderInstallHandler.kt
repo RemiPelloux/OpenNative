@@ -3,6 +3,7 @@ package app.gamenative.provider
 import app.gamenative.PluviaApp
 import app.gamenative.events.AndroidEvent
 import java.io.File
+import timber.log.Timber
 
 object ProviderInstallHandler {
     suspend fun install(
@@ -32,12 +33,15 @@ object ProviderInstallHandler {
             val extracted = transfers.extractArchive(aligned.copy(finalPath = archive.absolutePath))
             copyExtracted(extracted.destinationPath, dest)
             File(extracted.destinationPath).deleteRecursively()
-            if (shouldDeleteArchive(tab)) archive.delete()
             saveCover(item, dest)
-            return finish(transfers, aligned, tab, dest)
+            val ready = finish(transfers, aligned, tab, dest)
+            if (shouldDeleteArchive(tab) && archive.exists() && !archive.delete()) {
+                Timber.tag("ProviderInstall").w("Could not delete extracted archive: ${archive.absolutePath}")
+            }
+            return ready
         }
         if (ProviderTabPolicy.extractOnly(tab.feedUrl)) {
-            return transfers.markFailed(aligned, "Skidrow downloads must be a zip, rar, or 7z archive")
+            return transfers.markFailed(aligned, "Skidrow downloads must be a zip, rar, 7z, or ISO archive")
         }
         if (payload.isDirectory && ProviderLocalPayload.hasPayload(payload)) {
             saveCover(item, payload)
@@ -50,6 +54,11 @@ object ProviderInstallHandler {
 
     internal fun shouldDeleteArchive(tab: ProviderTab): Boolean =
         ProviderTabPolicy.extractOnly(tab.feedUrl) || tab.cleanupPolicy != CleanupPolicy.KEEP
+
+    internal fun shouldLaunchSetup(tab: ProviderTab, destination: File): Boolean {
+        if (ProviderLocalPayload.findInstaller(destination) == null) return false
+        return !ProviderTabPolicy.extractOnly(tab.feedUrl) || ExecutableDiscovery.discover(destination).isEmpty()
+    }
 
     internal fun findArchive(payload: File): File? {
         val files = if (payload.isFile) listOf(payload) else payload.walkTopDown().filter { it.isFile }.toList()

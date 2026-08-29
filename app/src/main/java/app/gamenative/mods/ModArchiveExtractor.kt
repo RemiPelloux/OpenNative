@@ -9,6 +9,7 @@ import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.util.zip.ZipFile
 
@@ -43,7 +44,8 @@ object ModArchiveExtractor {
     private const val MAX_PATH_SEGMENTS =
         ModImportSafetyLimits.MAX_DIRECTORY_DEPTH + 1 // Directory levels plus a file name.
     private const val ARCHIVE_READ_BLOCK_SIZE = 1024 * 1024
-    private val supportedArchiveExtensions = setOf("zip", "7z", "rar", "exe")
+    private const val ISO_PRIMARY_VOLUME_DESCRIPTOR_OFFSET = 16L * 2048L
+    private val supportedArchiveExtensions = setOf("zip", "7z", "rar", "iso", "exe")
 
     suspend fun extract(
         archiveFile: File,
@@ -67,6 +69,7 @@ object ModArchiveExtractor {
                     "zip" -> extractZip(archiveFile, destination, onProgress)
                     "7z" -> extractSevenZip(archiveFile, destination, onProgress)
                     "rar" -> extractRar(archiveFile, destination, onProgress)
+                    "iso" -> extractIso(archiveFile, destination, onProgress)
                     "exe" -> preserveExecutableFile(archiveFile, destination, preservedSingleFileName, onProgress)
                     else -> throw UnsupportedModArchiveException("Unsupported archive type: .$archiveExtension")
                 }
@@ -123,7 +126,18 @@ object ModArchiveExtractor {
                 header[3] == 0x21.toByte() &&
                 header[4] == 0x1A.toByte() &&
                 header[5] == 0x07.toByte() -> "rar"
+            hasIso9660Signature(archiveFile) -> "iso"
             else -> ""
+        }
+    }
+
+    private fun hasIso9660Signature(archiveFile: File): Boolean {
+        RandomAccessFile(archiveFile, "r").use { raf ->
+            if (raf.length() < ISO_PRIMARY_VOLUME_DESCRIPTOR_OFFSET + 6L) return false
+            raf.seek(ISO_PRIMARY_VOLUME_DESCRIPTOR_OFFSET + 1L)
+            val identifier = ByteArray(5)
+            raf.readFully(identifier)
+            return identifier.contentEquals("CD001".toByteArray(Charsets.US_ASCII))
         }
     }
 
@@ -208,6 +222,15 @@ object ModArchiveExtractor {
             Archive.readSupportFormatRar5(it)
         }
 
+    private fun extractIso(
+        archiveFile: File,
+        destination: File,
+        onProgress: (ModArchiveExtractionProgress) -> Unit,
+    ): List<ModArchiveEntry> =
+        extractLibarchive(archiveFile, destination, "iso", onProgress) {
+            Archive.readSupportFormatIso9660(it)
+        }
+
     private fun preserveExecutableFile(
         archiveFile: File,
         destination: File,
@@ -275,9 +298,14 @@ object ModArchiveExtractor {
                 }
 
                 val entryName = archiveEntryName(entry)
-                val outFile = safeDestination(destination, entryName)
                 val normalized = normalizeArchivePath(entryName)
-                when (ArchiveEntry.filetype(entry)) {
+                val entryType = ArchiveEntry.filetype(entry)
+                // ISO9660 readers expose the volume root as a synthetic "." directory.
+                // It has no payload or destination of its own, so ignore only that exact root marker.
+                if (entryType == ArchiveEntry.AE_IFDIR && isArchiveRootEntry(entryName)) continue
+
+                val outFile = safeDestination(destination, entryName)
+                when (entryType) {
                     ArchiveEntry.AE_IFDIR -> {
                         outFile.mkdirs()
                         entries += ModArchiveEntry(normalized, true, 0L)
@@ -410,6 +438,9 @@ object ModArchiveExtractor {
             trimmed.startsWith("\\") ||
             Regex("^[A-Za-z]:.*").containsMatchIn(trimmed)
     }
+
+    internal fun isArchiveRootEntry(path: String): Boolean =
+        path.trim().replace('\\', '/').trimEnd('/') == "."
 
     private fun normalizeArchivePath(path: String): String =
         path.replace('\\', '/')

@@ -48,6 +48,24 @@ class ArchiveAndPayloadTest {
     }
 
     @Test
+    fun `classifies iso9660 as portable archive`() {
+        val iso = temp.newFile("game.iso")
+        val bytes = ByteArray(16 * 2048 + 7)
+        "CD001".toByteArray(Charsets.US_ASCII).copyInto(bytes, destinationOffset = 16 * 2048 + 1)
+        iso.writeBytes(bytes)
+
+        assertEquals(PayloadKind.PORTABLE_ARCHIVE, PayloadClassifier.classify(iso))
+    }
+
+    @Test
+    fun `does not trust iso extension without iso9660 descriptor`() {
+        val fake = temp.newFile("game.iso")
+        fake.writeBytes(ByteArray(16 * 2048 + 7))
+
+        assertEquals(PayloadKind.UNKNOWN, PayloadClassifier.classify(fake))
+    }
+
+    @Test
     fun `rejects exe extension without pe signature`() {
         val fake = temp.newFile("setup.exe")
         fake.writeBytes(byteArrayOf(1, 2, 3, 4))

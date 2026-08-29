@@ -14,6 +14,7 @@ Dates are intentionally omitted until the preceding quality gate passes. A featu
 | `1.2.0` | User-configured provider tabs, RSS/JSON feeds, AllDebrid, transfers and verified cleanup | Released |
 | `1.2.1` | Default provider tab, cover-grid catalog and verified installer cleanup | Released |
 | `1.3.0` | Skidrow extract-to-Custom, Play picks the game exe, catalog covers in Custom | Released |
+| `1.3.1` | ISO9660 extraction, runtime catalog refresh and upstream compatibility fixes | Released |
 | `1.5.0` | Settings sharing, cockpit polish and remaining installer-session certification | Planned |
 | `2.0.0` | Introduce modular runtimes and a safe OpenNative identity/data migration | Future architecture |
 
