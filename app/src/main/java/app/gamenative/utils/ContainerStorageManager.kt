@@ -358,6 +358,11 @@ object ContainerStorageManager {
     }
 
     suspend fun removeContainer(context: Context, containerId: String): Boolean = withContext(Dispatchers.IO) {
+        SharedWinePrefix.release(context, containerId)
+        if (SharedWinePrefix.isSharedId(containerId)) {
+            Timber.tag("ContainerStorageManager").w("Refusing to delete the shared Wine prefix")
+            return@withContext false
+        }
         val homeDir = File(ImageFs.find(context).rootDir, "home")
         val containerDir = File(homeDir, "${ImageFs.USER}-$containerId")
         if (!containerDir.exists()) {
@@ -396,6 +401,7 @@ object ContainerStorageManager {
         val gameId = extractGameId(normalizedContainerId)
             ?: return@withContext Result.failure(IllegalArgumentException("Invalid container id"))
 
+        SharedWinePrefix.release(context, normalizedContainerId)
         Timber.tag("ContainerStorageManager").i(
             "Uninstalling game+container for %s (source=%s, gameId=%d, displayName=%s, hasContainer=%s)",
             entry.containerId,

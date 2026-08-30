@@ -23,7 +23,7 @@ OpenNative is an independent open-source project. It does not include games, fir
 
 | Channel | Version | Status |
 | --- | --- | --- |
-| Stable | `1.3.1` | Skidrow ZIP/RAR/7z/ISO extraction, runtime refresh and upstream compatibility fixes |
+| Stable | `1.4.0` | Shared Wine prefix for large libraries, plus 1.3.1 catalog/runtime work |
 | Next milestone | `1.5.0` | Settings sharing, cockpit polish and remaining certification |
 | Architecture milestone | `2.0.0` | Long-term roadmap |
 
@@ -34,6 +34,7 @@ OpenNative is an independent open-source project. It does not include games, fir
 - Unified Steam, Epic, GOG, Amazon and custom-executable library flows.
 - User-created provider tabs after **Custom**, backed by a user-supplied HTTPS JSON or RSS/Atom feed. Launch seeds the bundled FitGirl and Skidrow tabs.
 - Wine/Proton containers with Box64 and FEX translation options.
+- Optional shared Wine prefix so a large library does not create one container per game.
 - Per-title graphics, runtime, controller and display configuration.
 - Versioned portable profiles without embedded device-local paths.
 
@@ -54,6 +55,12 @@ OpenNative is an independent open-source project. It does not include games, fir
 
 Performance varies by game, runtime, driver and thermal conditions. OpenNative does not claim universal FPS improvements. Changes are promoted only after controlled before/after measurements.
 
+## Shipped in 1.4.0
+
+- New games share one Wine prefix by default (GameHub/Winlator style). Existing dedicated containers stay isolated.
+- Each shared-prefix game keeps its own `A:` mapping and executable overlay.
+- Toggle the mode under **Settings → Emulation**. See [shared Wine prefix](docs/SHARED_WINE_PREFIX.md).
+
 ## Shipped in 1.3.1
 
 - Skidrow accepts verified ISO9660 images, extracts them into Custom, and removes the source image after successful registration.
@@ -69,7 +76,7 @@ See [provider tabs](docs/CUSTOM_PROVIDER_TABS.md) and [feed contract](docs/PROVI
 
 ## Planned for 1.5.0
 
-The following work remains after `1.3.1`:
+The following work remains after `1.4.0`:
 
 | Area | Planned capability |
 | --- | --- |

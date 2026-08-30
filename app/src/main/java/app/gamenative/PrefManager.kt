@@ -1461,6 +1461,13 @@ object PrefManager {
         get() = getPref(PROVIDER_DEFAULTS_SEEDED, false)
         set(value) { setPref(PROVIDER_DEFAULTS_SEEDED, value) }
 
+    private val USE_SHARED_WINE_PREFIX = booleanPreferencesKey("use_shared_wine_prefix")
+    var useSharedWinePrefix: Boolean
+        get() = getPref(USE_SHARED_WINE_PREFIX, true)
+        set(value) {
+            setPref(USE_SHARED_WINE_PREFIX, value)
+        }
+
     private val NEXUS_LAST_PLACEMENT_JSON = stringPreferencesKey("nexus_last_placement_json")
     var nexusLastPlacementJson: String
         get() = getPref(NEXUS_LAST_PLACEMENT_JSON, "{}")

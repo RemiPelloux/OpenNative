@@ -269,7 +269,7 @@ This mode should deliver most safe storage savings without creating cross-game c
 
 #### Container groups
 
-**Status: Candidate: 2.x**
+**Status: Shipped baseline: 1.4.0 shared prefix; Candidate: 2.x named groups**
 
 - Let the user create named groups such as **General 64-bit**, **Legacy 32-bit** or **Visual novels**, then explicitly assign compatible games.
 - Share one mutable Wine prefix within the group while retaining per-game executable, drive mapping, graphics, translator, display, input, environment and performance overlays.

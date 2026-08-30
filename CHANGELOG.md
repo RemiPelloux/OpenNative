@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.0 - 2026-08-30
+
+- Add a shared Wine prefix so new games reuse one container, like GameHub and Winlator, instead of copying Proton for every title.
+- Keep existing per-game containers isolated. Nothing is migrated automatically.
+- Store each shared-prefix game’s executable in a local overlay and remap `A:` to that game folder at launch.
+- Refuse to delete the shared prefix when one game is uninstalled.
+- Add **Settings → Emulation → Shared Wine prefix** (on by default). Turn it off to create a dedicated prefix for the next new game.
+
 ## 1.3.1 - 2026-08-29
 
 - Recognize verified ISO9660 Skidrow downloads and extract them natively with the same path, entry-count and expanded-size safeguards as RAR and 7z archives.

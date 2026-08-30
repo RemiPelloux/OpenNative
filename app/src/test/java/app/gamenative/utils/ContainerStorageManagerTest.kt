@@ -21,6 +21,7 @@ class ContainerStorageManagerTest {
         assertEquals(GameSource.EPIC, ContainerStorageManager.detectGameSource("EPIC_8"))
         assertEquals(GameSource.AMAZON, ContainerStorageManager.detectGameSource("AMAZON_9"))
         assertNull(ContainerStorageManager.detectGameSource("12345"))
+        assertNull(ContainerStorageManager.detectGameSource("SHARED_PREFIX"))
     }
 
     @Test

@@ -15,6 +15,7 @@ Dates are intentionally omitted until the preceding quality gate passes. A featu
 | `1.2.1` | Default provider tab, cover-grid catalog and verified installer cleanup | Released |
 | `1.3.0` | Skidrow extract-to-Custom, Play picks the game exe, catalog covers in Custom | Released |
 | `1.3.1` | ISO9660 extraction, runtime catalog refresh and upstream compatibility fixes | Released |
+| `1.4.0` | Shared Wine prefix for large libraries | Released |
 | `1.5.0` | Daily-driver quality: recovery, settings sharing, cockpit polish and installer certification | Committed next milestone |
 | `2.0.0` | Modular runtimes, compatibility profiles and safe OpenNative identity/data migration | Future architecture |
 | `2.x` | Broader graphics, CPU-translation, input, audio and device compatibility | Candidate portfolio |
@@ -53,6 +54,7 @@ Version numbers indicate dependency order, not dates. A candidate becomes commit
 ### Product outcomes
 
 - Users can create provider tabs through a `+` immediately after **Custom**.
+- Optional AnkerGames, GOGUnlocked and SteamRIP adapters use the same reviewed provider, transfer and verified-install pipeline as FitGirl and Skidrow.
 - Provider metadata remains usable offline through validated cached snapshots.
 - Optional AllDebrid resolution works without exposing the user's API key.
 - Transfers survive interruption, cancellation, low-space failures and process recreation.
@@ -70,7 +72,7 @@ Version numbers indicate dependency order, not dates. A candidate becomes commit
 | Phase | Scope | Required gate |
 | --- | --- | --- |
 | 0. Foundations | Schemas, migrations, secret store, URL policy, typed errors and fake servers | Malformed input fails closed; no secret reaches logs/entities/exports |
-| 1. Provider library | Dynamic tabs, read-only feeds, paging, cache, search and ordering | Built-in sources unchanged; 10,000-item fixture remains responsive |
+| 1. Provider library | Dynamic tabs plus AnkerGames, GOGUnlocked and SteamRIP adapters, paging, cache, search and ordering | Existing sources unchanged; adapter fixtures and a 10,000-item catalog remain responsive |
 | 2. Resolution and transfer | AllDebrid adapter, foreground jobs, resume, retry and storage reservation | Contract, 429, redirect, timeout, cancellation and low-space tests pass |
 | 3. Portable installation | Archive inspection, staging, verification and atomic promotion | No path escape; failed promotion preserves prior destination |
 | 4. Installer Manager | Wine `.exe`/`.msi` sessions, process-tree tracking and executable discovery | Parent/child, timeout, reboot, cancel and missing-executable cases recover |

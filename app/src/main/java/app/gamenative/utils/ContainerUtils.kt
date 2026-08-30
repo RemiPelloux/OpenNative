@@ -369,8 +369,11 @@ object ContainerUtils {
     }
 
     fun applyToContainer(context: Context, appId: String, containerData: ContainerData) {
-        val container = getContainer(context, appId)
+        val container = getOrCreateContainer(context, appId)
         applyToContainer(context, container, containerData)
+        if (containerData.executablePath.isNotEmpty()) {
+            SharedWinePrefix.saveExecutable(context, appId, containerData.executablePath)
+        }
     }
 
     /**
@@ -559,24 +562,15 @@ object ContainerUtils {
         container.setLC_ALL(lcAll)
         // If language changed, remove the STEAM_DLL_REPLACED marker so settings regenerate
         if (previousLanguage.lowercase() != containerData.language.lowercase()) {
-            val steamAppId = extractGameIdFromContainerId(container.id)
-            val appDirPath = SteamService.getAppDirPath(steamAppId)
-            MarkerUtils.removeMarker(appDirPath, Marker.STEAM_DLL_REPLACED)
-            MarkerUtils.removeMarker(appDirPath, Marker.STEAM_COLDCLIENT_USED)
+            clearSteamDllMarkersIfDedicated(container)
             Timber.i("Language changed from '$previousLanguage' to '${containerData.language}'. Cleared STEAM_DLL_REPLACED marker for container ${container.id}.")
         }
         if (previousForceDlc != containerData.forceDlc) {
-            val steamAppId = extractGameIdFromContainerId(container.id)
-            val appDirPath = SteamService.getAppDirPath(steamAppId)
-            MarkerUtils.removeMarker(appDirPath, Marker.STEAM_DLL_REPLACED)
-            MarkerUtils.removeMarker(appDirPath, Marker.STEAM_COLDCLIENT_USED)
+            clearSteamDllMarkersIfDedicated(container)
             Timber.i("forceDlc changed from '$previousForceDlc' to '${containerData.forceDlc}'. Cleared STEAM_DLL_REPLACED marker for container ${container.id}.")
         }
         if (previousSteamOfflineMode != containerData.steamOfflineMode) {
-            val steamAppId = extractGameIdFromContainerId(container.id)
-            val appDirPath = SteamService.getAppDirPath(steamAppId)
-            MarkerUtils.removeMarker(appDirPath, Marker.STEAM_DLL_REPLACED)
-            MarkerUtils.removeMarker(appDirPath, Marker.STEAM_COLDCLIENT_USED)
+            clearSteamDllMarkersIfDedicated(container)
             Timber.i("steamOfflineMode changed from '$previousSteamOfflineMode' to '${containerData.steamOfflineMode}'. Cleared STEAM_DLL_REPLACED marker for container ${container.id}.")
         }
 
@@ -598,6 +592,14 @@ object ContainerUtils {
             container.saveData()
         }
         Timber.d("Set container.execArgs to '${containerData.execArgs}'")
+    }
+
+    private fun clearSteamDllMarkersIfDedicated(container: Container) {
+        if (SharedWinePrefix.isSharedId(container.id)) return
+        val steamAppId = extractGameIdFromContainerId(container.id)
+        val appDirPath = SteamService.getAppDirPath(steamAppId)
+        MarkerUtils.removeMarker(appDirPath, Marker.STEAM_DLL_REPLACED)
+        MarkerUtils.removeMarker(appDirPath, Marker.STEAM_COLDCLIENT_USED)
     }
 
     private fun mapLanguageToLocale(language: String): String {
@@ -641,13 +643,18 @@ object ContainerUtils {
 
     fun hasContainer(context: Context, appId: String): Boolean {
         val containerManager = ContainerManager(context)
-        return containerManager.hasContainer(appId)
+        return containerManager.hasContainer(appId) || SharedWinePrefix.hasMembership(context, appId)
     }
 
     fun getContainer(context: Context, appId: String): Container {
         val containerManager = ContainerManager(context)
-        return if (containerManager.hasContainer(appId)) {
-            containerManager.getContainerById(appId)
+        val resolvedId = SharedWinePrefix.resolveContainerId(
+            containerManager,
+            appId,
+            PrefManager.useSharedWinePrefix,
+        )
+        return if (containerManager.hasContainer(resolvedId)) {
+            containerManager.getContainerById(resolvedId)
         } else {
             throw Exception("Container does not exist for game $appId")
         }
@@ -766,7 +773,10 @@ object ContainerUtils {
 
         // Set up data for container creation
         val data = JSONObject()
-        data.put("name", "container_$containerId")
+        data.put(
+            "name",
+            if (SharedWinePrefix.isSharedId(containerId)) "Shared Wine prefix" else "container_$containerId",
+        )
 
         // Create the actual container
         var container = containerManager.createContainerFuture(containerId, data).get()
@@ -956,11 +966,16 @@ object ContainerUtils {
 
     fun getOrCreateContainer(context: Context, appId: String): Container {
         val containerManager = ContainerManager(context)
+        val resolvedId = SharedWinePrefix.resolveContainerId(
+            containerManager,
+            appId,
+            PrefManager.useSharedWinePrefix,
+        )
 
-        val container = if (containerManager.hasContainer(appId)) {
-            containerManager.getContainerById(appId)
+        val container = if (containerManager.hasContainer(resolvedId)) {
+            containerManager.getContainerById(resolvedId)
         } else {
-            createNewContainer(context, appId, appId, containerManager)
+            createNewContainer(context, appId, resolvedId, containerManager)
         }
 
         // Ensure Custom Games have the A: drive mapped to the game folder
@@ -1048,14 +1063,22 @@ object ContainerUtils {
             val pack = resolvedGameFolderPath?.let(::File) ?: InstallerWineEnv.packFolder(container)
             InstallerWineEnv.applyIfInstaller(container, pack)
         }
+        if (SharedWinePrefix.isSharedId(resolvedId)) {
+            SharedWinePrefix.bindLaunch(context, container, appId)
+        }
         return container
     }
 
     fun getOrCreateContainerWithOverride(context: Context, appId: String): Container {
         val containerManager = ContainerManager(context)
+        val resolvedId = SharedWinePrefix.resolveContainerId(
+            containerManager,
+            appId,
+            PrefManager.useSharedWinePrefix,
+        )
 
-        val container = if (containerManager.hasContainer(appId)) {
-            val existing = containerManager.getContainerById(appId)
+        val container = if (containerManager.hasContainer(resolvedId)) {
+            val existing = containerManager.getContainerById(resolvedId)
 
             // Apply temporary override if present (without saving to disk)
             if (IntentLaunchManager.hasTemporaryOverride(appId)) {
@@ -1085,10 +1108,13 @@ object ContainerUtils {
                 null
             }
 
-            createNewContainer(context, appId, appId, containerManager, overrideConfig)
+            createNewContainer(context, appId, resolvedId, containerManager, overrideConfig)
         }
         if (extractGameSourceFromContainerId(appId) == GameSource.CUSTOM_GAME) {
             InstallerWineEnv.applyIfInstaller(container)
+        }
+        if (SharedWinePrefix.isSharedId(resolvedId)) {
+            SharedWinePrefix.bindLaunch(context, container, appId)
         }
         return container
     }
@@ -1098,6 +1124,11 @@ object ContainerUtils {
      */
     fun deleteContainer(context: Context, appId: String) {
         Timber.i("[ContainerDeletion] Attempting to delete container for appId=$appId")
+        SharedWinePrefix.release(context, appId)
+        if (SharedWinePrefix.isSharedId(appId)) {
+            Timber.i("[ContainerDeletion] Shared Wine prefix is kept for other games")
+            return
+        }
         val manager = ContainerManager(context)
         val hasContainer = manager.hasContainer(appId)
         Timber.i("[ContainerDeletion] hasContainer($appId) = $hasContainer")
@@ -1188,6 +1219,7 @@ object ContainerUtils {
      * looking up the appropriate store service.
      */
     fun resolveGameName(containerId: String): String {
+        if (SharedWinePrefix.isSharedId(containerId)) return "Shared Wine prefix"
         val gameSource = extractGameSourceFromContainerId(containerId)
         val gameId = extractGameIdFromContainerId(containerId)
         return when (gameSource) {

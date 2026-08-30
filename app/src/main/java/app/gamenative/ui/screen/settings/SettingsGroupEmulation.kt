@@ -22,6 +22,7 @@ import app.gamenative.ui.theme.settingsTileColors
 import app.gamenative.utils.ContainerUtils
 import com.alorma.compose.settings.ui.SettingsGroup
 import com.alorma.compose.settings.ui.SettingsMenuLink
+import com.alorma.compose.settings.ui.SettingsSwitch
 
 @Composable
 fun SettingsGroupEmulation() {
@@ -75,6 +76,18 @@ fun SettingsGroupEmulation() {
         if (showWineProtonManager) {
             WineProtonManagerDialog(open = showWineProtonManager, onDismiss = { showWineProtonManager = false })
         }
+
+        var useSharedPrefix by rememberSaveable { mutableStateOf(PrefManager.useSharedWinePrefix) }
+        SettingsSwitch(
+            colors = settingsTileColors(),
+            title = { Text(text = stringResource(R.string.settings_emulation_shared_prefix_title)) },
+            subtitle = { Text(text = stringResource(R.string.settings_emulation_shared_prefix_subtitle)) },
+            state = useSharedPrefix,
+            onCheckedChange = {
+                useSharedPrefix = it
+                PrefManager.useSharedWinePrefix = it
+            },
+        )
 
         SettingsMenuLink(
             colors = settingsTileColors(),

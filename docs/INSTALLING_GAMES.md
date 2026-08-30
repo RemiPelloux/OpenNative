@@ -13,6 +13,8 @@ OpenNative treats ready-to-play Skidrow archives as extract-only. If an archive 
 
 If Play ever opened the Wine file manager instead of the game, that was the old unique-exe check. `1.3.1` picks the real game exe automatically. You can still open the container and tap a specific `.exe` if you want another one.
 
+`1.4.0` puts new games on one **shared Wine prefix** so a large library does not copy Proton for every title. Games you already launched keep their old isolated container. Toggle this under **Settings → Emulation**. Details: [shared Wine prefix](SHARED_WINE_PREFIX.md).
+
 ## What you do
 
 1. Open the FitGirl (or other) provider tab.

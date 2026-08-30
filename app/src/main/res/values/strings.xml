@@ -1036,6 +1036,8 @@
 
     <!-- Settings: Emulation Group -->
     <string name="settings_emulation_title">Emulation</string>
+    <string name="settings_emulation_shared_prefix_title">Shared Wine prefix</string>
+    <string name="settings_emulation_shared_prefix_subtitle">New games share one Wine container like GameHub. Existing per-game containers stay isolated. Turn off to create a dedicated prefix per game.</string>
     <string name="settings_emulation_orientations_title">Allowed Orientations</string>
     <string name="settings_emulation_orientations_subtitle">Choose which orientations can be rotated to when in-game</string>
     <string name="settings_emulation_default_config_title">Modify Default Config</string>
