@@ -7,6 +7,7 @@
 - Detect archive formats from their verified signature when a debrid host returns a RAR with a misleading ZIP filename, and preserve the latest persisted transfer state when reporting failures.
 - Recursively unwrap up to four verified archive layers, retain multipart siblings during extraction, and support source-post passwords for encrypted ZIP, RAR and 7z payloads.
 - Recover valid ZIP entries when Android or Zip4j reject a malformed central directory, using local-header streaming and a libarchive ZIP fallback, while rejecting incomplete downloads that have no ZIP end record.
+- Keep GitHub release builds compiling when optional PostHog, SteamGridDB and Play Integrity secrets are unset.
 - Fix AllDebrid keys saved in older per-tab entries overriding a newly configured device-wide key.
 - Use the current AllDebrid POST request contract for link unlock, redirector and delayed-link polling.
 - Trim credentials, verify encrypted readback and keep resolver validation off the UI thread.

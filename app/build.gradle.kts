@@ -81,13 +81,18 @@ android {
 
         buildConfigField("boolean", "GOLD", "false")
         buildConfigField("boolean", "SELF_UPDATE_ENABLED", "false")
-        fun secret(name: String) =
-            project.findProperty(name) as String? ?: System.getenv(name) ?: ""
+        fun secretLiteral(name: String, fallback: String = ""): String {
+            val raw = (project.findProperty(name) as String? ?: System.getenv(name) ?: "")
+                .ifBlank { fallback }
+            val escaped = raw.replace("\\", "\\\\").replace("\"", "\\\"")
+            return "\"$escaped\""
+        }
 
-        buildConfigField("String", "POSTHOG_API_KEY", "\"${secret("POSTHOG_API_KEY")}\"")
-        buildConfigField("String", "POSTHOG_HOST",  "\"${secret("POSTHOG_HOST")}\"")
-        buildConfigField("String", "STEAMGRIDDB_API_KEY", "\"${secret("STEAMGRIDDB_API_KEY")}\"")
-        buildConfigField("String", "CLOUD_PROJECT_NUMBER", "\"${secret("CLOUD_PROJECT_NUMBER")}\"")
+        // Always emit quoted Java strings. Empty GitHub secrets must not become `= ;`.
+        buildConfigField("String", "POSTHOG_API_KEY", secretLiteral("POSTHOG_API_KEY"))
+        buildConfigField("String", "POSTHOG_HOST", secretLiteral("POSTHOG_HOST", "https://us.i.posthog.com"))
+        buildConfigField("String", "STEAMGRIDDB_API_KEY", secretLiteral("STEAMGRIDDB_API_KEY"))
+        buildConfigField("String", "CLOUD_PROJECT_NUMBER", secretLiteral("CLOUD_PROJECT_NUMBER"))
         val iconValue = "@mipmap/ic_launcher"
         val iconRoundValue = "@mipmap/ic_launcher_round"
         manifestPlaceholders.putAll(
@@ -432,6 +437,14 @@ dependencies {
 
     "modernXrImplementation"("com.meta.horizon.platform.sdk:core-kotlin:0.2.2")
     "modernXrImplementation"("com.meta.horizon.platform.sdk:iap-kotlin:0.2.2")
+}
+
+secrets {
+    defaultPropertiesFileName = "local.defaults.properties"
+    ignoreList.add("sdk.*")
+    ignoreList.add("POSTHOG_.*")
+    ignoreList.add("STEAMGRIDDB_API_KEY")
+    ignoreList.add("CLOUD_PROJECT_NUMBER")
 }
 
 tasks.withType<Test>().configureEach {
