@@ -11,7 +11,7 @@ import kotlinx.coroutines.withContext
 import me.zhanghai.android.libarchive.Archive
 import me.zhanghai.android.libarchive.ArchiveEntry
 import me.zhanghai.android.libarchive.ArchiveException
-import net.lingala.zip4j.exception.ZipException
+import net.lingala.zip4j.exception.ZipException as Zip4jException
 import net.lingala.zip4j.model.FileHeader
 import timber.log.Timber
 
@@ -48,7 +48,19 @@ object ModArchiveExtractor {
         ModImportSafetyLimits.MAX_DIRECTORY_DEPTH + 1 // Directory levels plus a file name.
     private const val ARCHIVE_READ_BLOCK_SIZE = 1024 * 1024
     private const val ISO_PRIMARY_VOLUME_DESCRIPTOR_OFFSET = 16L * 2048L
+    private const val ZIP_EOCD_MIN_SIZE = 22
+    private const val ZIP_MAX_COMMENT_SIZE = 65_535
     private val supportedArchiveExtensions = setOf("zip", "7z", "rar", "iso", "exe")
+
+    @Volatile
+    internal var testMaxEntries: Int? = null
+
+    @Volatile
+    internal var testMaxExpandedBytes: Long? = null
+
+    private fun maxEntries(): Int = testMaxEntries ?: MAX_ENTRIES
+
+    private fun maxExpandedBytes(): Long = testMaxExpandedBytes ?: MAX_EXPANDED_BYTES
 
     suspend fun extract(
         archiveFile: File,
@@ -151,7 +163,7 @@ object ModArchiveExtractor {
         val base = root.canonicalFile
         return root.walkTopDown()
             .filter { it != root }
-            .take(MAX_ENTRIES)
+            .take(maxEntries())
             .mapNotNull { file ->
                 val rel = file.canonicalFile.relativeToOrNull(base)?.invariantSeparatorsPath ?: return@mapNotNull null
                 ModArchiveEntry(rel, file.isDirectory, if (file.isFile) file.length() else 0L)
@@ -167,30 +179,97 @@ object ModArchiveExtractor {
         onProgress: (ModArchiveExtractionProgress) -> Unit,
     ): List<ModArchiveEntry> {
         val encryptedZip = net.lingala.zip4j.ZipFile(archiveFile)
-        if (encryptedZip.isEncrypted) {
+        val isEncrypted = try {
+            encryptedZip.isEncrypted
+        } catch (error: Exception) {
+            return recoverZipFromLocalHeaders(archiveFile, destination, password, onProgress, error)
+        }
+        if (isEncrypted) {
             if (password.isBlank()) {
                 throw ModArchivePasswordException("This archive needs the password from the source post")
             }
             encryptedZip.setPassword(password.toCharArray())
-            return extractEncryptedZip(encryptedZip, destination, onProgress)
+            return try {
+                extractEncryptedZip(encryptedZip, destination, onProgress)
+            } catch (error: Exception) {
+                if (error is ModArchivePasswordException || isProtectedArchiveFailure(error)) throw error
+                recoverZipFromLocalHeaders(archiveFile, destination, password, onProgress, error)
+            }
         }
 
+        return try {
+            extractIndexedZip(archiveFile, destination, onProgress)
+        } catch (error: Exception) {
+            if (isProtectedArchiveFailure(error)) throw error
+            recoverZipFromLocalHeaders(archiveFile, destination, password, onProgress, error)
+        }
+    }
+
+    private fun recoverZipFromLocalHeaders(
+        archiveFile: File,
+        destination: File,
+        password: String,
+        onProgress: (ModArchiveExtractionProgress) -> Unit,
+        cause: Exception,
+    ): List<ModArchiveEntry> {
+        if (!hasZipEndOfCentralDirectory(archiveFile)) {
+            throw IOException("ZIP download is incomplete or corrupt; download it again", cause)
+        }
+        Timber.w(cause, "Indexed ZIP extraction failed; retrying from local entry headers")
+        resetExtractionDestination(destination)
+        return try {
+            extractStreamingZip(archiveFile, destination, password, onProgress)
+        } catch (streamError: Exception) {
+            if (streamError is ModArchivePasswordException || isProtectedArchiveFailure(streamError)) {
+                throw streamError
+            }
+            Timber.w(streamError, "Local-header ZIP recovery failed; trying libarchive")
+            resetExtractionDestination(destination)
+            try {
+                extractLibarchive(archiveFile, destination, "zip", password, onProgress) {
+                    Archive.readSupportFormatZip(it)
+                }
+            } catch (fallbackError: Exception) {
+                if (fallbackError is ModArchivePasswordException || isProtectedArchiveFailure(fallbackError)) {
+                    throw fallbackError
+                }
+                if (fallbackError is LinkageError || fallbackError is UnsupportedModArchiveException) {
+                    throw streamError
+                }
+                throw IOException("ZIP archive could not be recovered from local headers", fallbackError)
+            }
+        }
+    }
+
+    private fun isProtectedArchiveFailure(error: Throwable): Boolean {
+        val message = error.message.orEmpty()
+        return message.contains("Unsafe archive path", ignoreCase = true) ||
+            message.contains("escapes extraction", ignoreCase = true) ||
+            message.contains("too many entries", ignoreCase = true) ||
+            message.contains("expands beyond", ignoreCase = true)
+    }
+
+    private fun extractIndexedZip(
+        archiveFile: File,
+        destination: File,
+        onProgress: (ModArchiveExtractionProgress) -> Unit,
+    ): List<ModArchiveEntry> {
         val entries = mutableListOf<ModArchiveEntry>()
         var expandedBytes = 0L
         ZipFile(archiveFile).use { zip ->
             val totalEntries = zip.size()
-            if (totalEntries > MAX_ENTRIES) throw IOException("Archive has too many entries")
+            if (totalEntries > maxEntries()) throw IOException("Archive has too many entries")
             var totalBytes = 0L
             zip.entries().asSequence().forEach { entry ->
                 if (!entry.isDirectory && entry.size > 0L) {
                     totalBytes += entry.size
-                    if (totalBytes > MAX_EXPANDED_BYTES) {
+                    if (totalBytes > maxExpandedBytes()) {
                         throw IOException("Archive expands beyond the safety limit")
                     }
                 }
             }
             zip.entries().asSequence().forEach { entry ->
-                if (entries.size >= MAX_ENTRIES) throw IOException("Archive has too many entries")
+                if (entries.size >= maxEntries()) throw IOException("Archive has too many entries")
                 val outFile = safeDestination(destination, entry.name)
                 if (entry.isDirectory) {
                     outFile.mkdirs()
@@ -204,7 +283,7 @@ object ModArchiveExtractor {
                                 val read = input.read(buffer)
                                 if (read <= 0) break
                                 expandedBytes += read
-                                if (expandedBytes > MAX_EXPANDED_BYTES) {
+                                if (expandedBytes > maxExpandedBytes()) {
                                     throw IOException("Archive expands beyond the safety limit")
                                 }
                                 output.write(buffer, 0, read)
@@ -220,6 +299,104 @@ object ModArchiveExtractor {
         return entries
     }
 
+    private fun extractStreamingZip(
+        archiveFile: File,
+        destination: File,
+        password: String,
+        onProgress: (ModArchiveExtractionProgress) -> Unit,
+    ): List<ModArchiveEntry> {
+        val entries = mutableListOf<ModArchiveEntry>()
+        var expandedBytes = 0L
+        val passwordChars = password.takeIf { it.isNotBlank() }?.toCharArray()
+        net.lingala.zip4j.io.inputstream.ZipInputStream(
+            archiveFile.inputStream().buffered(ARCHIVE_READ_BLOCK_SIZE),
+            passwordChars,
+        ).use { zip ->
+            while (true) {
+                val header = try {
+                    zip.nextEntry ?: break
+                } catch (error: Zip4jException) {
+                    if (password.isNotBlank()) {
+                        throw ModArchivePasswordException(
+                            "The archive password from the source post was rejected",
+                            error,
+                        )
+                    }
+                    throw error
+                }
+                val entryName = header.fileName
+                if (header.isEncrypted && password.isBlank()) {
+                    throw ModArchivePasswordException("This archive needs the password from the source post")
+                }
+                if (entries.size >= maxEntries()) throw IOException("Archive has too many entries")
+                val outFile = safeDestination(destination, entryName)
+                if (header.isDirectory) {
+                    if (!outFile.mkdirs() && !outFile.isDirectory) {
+                        throw IOException("Could not create archive directory: $entryName")
+                    }
+                    entries += ModArchiveEntry(normalizeArchivePath(entryName), true, 0L)
+                } else {
+                    val declaredSize = header.uncompressedSize
+                    if (declaredSize > 0L && declaredSize > maxExpandedBytes() - expandedBytes) {
+                        throw IOException("Archive expands beyond the safety limit")
+                    }
+                    outFile.parentFile?.let { parent ->
+                        if (!parent.mkdirs() && !parent.isDirectory) {
+                            throw IOException("Could not create archive directory: ${parent.absolutePath}")
+                        }
+                    }
+                    FileOutputStream(outFile).buffered(ARCHIVE_READ_BLOCK_SIZE).use { output ->
+                        val buffer = ByteArray(ARCHIVE_READ_BLOCK_SIZE)
+                        while (true) {
+                            val read = zip.read(buffer)
+                            if (read <= 0) break
+                            if (read.toLong() > maxExpandedBytes() - expandedBytes) {
+                                throw IOException("Archive expands beyond the safety limit")
+                            }
+                            expandedBytes += read
+                            output.write(buffer, 0, read)
+                            emitProgress(onProgress, "zip", entries.size, 0, expandedBytes, 0, entryName)
+                        }
+                    }
+                    entries += ModArchiveEntry(normalizeArchivePath(entryName), false, outFile.length())
+                }
+                emitProgress(onProgress, "zip", entries.size, 0, expandedBytes, 0, entryName)
+            }
+        }
+        if (entries.isEmpty()) throw IOException("ZIP archive contains no readable entries")
+        return entries
+    }
+
+    private fun hasZipEndOfCentralDirectory(archiveFile: File): Boolean {
+        RandomAccessFile(archiveFile, "r").use { raf ->
+            val windowSize = minOf(raf.length(), (ZIP_EOCD_MIN_SIZE + ZIP_MAX_COMMENT_SIZE).toLong()).toInt()
+            if (windowSize < ZIP_EOCD_MIN_SIZE) return false
+            val tail = ByteArray(windowSize)
+            raf.seek(raf.length() - windowSize)
+            raf.readFully(tail)
+            for (index in tail.size - ZIP_EOCD_MIN_SIZE downTo 0) {
+                if (
+                    tail[index] == 0x50.toByte() &&
+                    tail[index + 1] == 0x4B.toByte() &&
+                    tail[index + 2] == 0x05.toByte() &&
+                    tail[index + 3] == 0x06.toByte()
+                ) {
+                    return true
+                }
+            }
+            return false
+        }
+    }
+
+    private fun resetExtractionDestination(destination: File) {
+        if (destination.exists() && !destination.deleteRecursively()) {
+            throw IOException("Could not clear extraction directory: ${destination.absolutePath}")
+        }
+        if (!destination.mkdirs() && !destination.isDirectory) {
+            throw IOException("Could not create extraction directory: ${destination.absolutePath}")
+        }
+    }
+
     private fun extractEncryptedZip(
         zip: net.lingala.zip4j.ZipFile,
         destination: File,
@@ -227,16 +404,16 @@ object ModArchiveExtractor {
     ): List<ModArchiveEntry> {
         val headers = try {
             zip.fileHeaders
-        } catch (error: ZipException) {
+        } catch (error: Zip4jException) {
             throw IOException("ZIP archive could not be read", error)
         }
-        if (headers.size > MAX_ENTRIES) throw IOException("Archive has too many entries")
+        if (headers.size > maxEntries()) throw IOException("Archive has too many entries")
 
         var totalBytes = 0L
         headers.forEach { header ->
             safeDestination(destination, header.fileName)
             val size = header.uncompressedSize.coerceAtLeast(0L)
-            if (!header.isDirectory && size > MAX_EXPANDED_BYTES - totalBytes) {
+            if (!header.isDirectory && size > maxExpandedBytes() - totalBytes) {
                 throw IOException("Archive expands beyond the safety limit")
             }
             totalBytes += size
@@ -280,8 +457,12 @@ object ModArchiveExtractor {
                     header.fileName,
                 )
             }
-        } catch (error: ZipException) {
-            throw ModArchivePasswordException("The archive password from the source post was rejected", error)
+        } catch (error: Zip4jException) {
+            val message = error.message.orEmpty()
+            if (message.contains("password", ignoreCase = true)) {
+                throw ModArchivePasswordException("The archive password from the source post was rejected", error)
+            }
+            throw IOException("ZIP archive could not be read", error)
         }
         return entries
     }
@@ -303,7 +484,7 @@ object ModArchiveExtractor {
                 while (true) {
                     val read = input.read(buffer)
                     if (read <= 0) break
-                    if (read.toLong() > MAX_EXPANDED_BYTES - expandedBytes) {
+                    if (read.toLong() > maxExpandedBytes() - expandedBytes) {
                         throw IOException("Archive expands beyond the safety limit")
                     }
                     expandedBytes += read
@@ -369,7 +550,7 @@ object ModArchiveExtractor {
                     val read = input.read(buffer)
                     if (read <= 0) break
                     copiedBytes += read
-                    if (copiedBytes > MAX_EXPANDED_BYTES) {
+                    if (copiedBytes > maxExpandedBytes()) {
                         throw IOException("Archive expands beyond the safety limit")
                     }
                     output.write(buffer, 0, read)
@@ -417,7 +598,7 @@ object ModArchiveExtractor {
                     if (e.code == Archive.ERRNO_EOF) break else throw e
                 }
                 if (entry == 0L) break
-                if (entries.size >= MAX_ENTRIES) throw IOException("Archive has too many entries")
+                if (entries.size >= maxEntries()) throw IOException("Archive has too many entries")
                 if (ArchiveEntry.isEncrypted(entry) && password.isBlank()) {
                     throw ModArchivePasswordException("This archive needs the password from the source post")
                 }
@@ -502,7 +683,7 @@ object ModArchiveExtractor {
             val read = buffer.position()
             if (read <= 0) break
             written += read.toLong()
-            if (alreadyExpandedBytes + written > MAX_EXPANDED_BYTES) {
+            if (alreadyExpandedBytes + written > maxExpandedBytes()) {
                 throw IOException("Archive expands beyond the safety limit")
             }
             onBytesCopied(alreadyExpandedBytes + written)

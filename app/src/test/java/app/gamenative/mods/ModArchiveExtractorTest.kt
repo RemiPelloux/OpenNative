@@ -2,6 +2,7 @@ package app.gamenative.mods
 
 import java.io.File
 import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.createTempDirectory
 import kotlinx.coroutines.runBlocking
@@ -24,6 +25,8 @@ class ModArchiveExtractorTest {
 
     @After
     fun tearDown() {
+        ModArchiveExtractor.testMaxEntries = null
+        ModArchiveExtractor.testMaxExpandedBytes = null
         tempDir.deleteRecursively()
     }
 
@@ -126,6 +129,98 @@ class ModArchiveExtractorTest {
     }
 
     @Test
+    fun extractZip_recoversFromInvalidCentralDirectorySignature() = runBlocking {
+        val archive = File(tempDir, "invalid-cen.zip")
+        zip(archive, "Decktamer/game.exe" to "game")
+        corruptFirstSignature(archive, byteArrayOf(0x50, 0x4B, 0x01, 0x02))
+
+        assertTrue(runCatching { ZipFile(archive).use { it.size() } }.isFailure)
+
+        val result = ModArchiveExtractor.extract(archive, File(tempDir, "out-invalid-cen"))
+
+        assertEquals("game", File(result.destination, "Decktamer/game.exe").readText())
+    }
+
+    @Test
+    fun extractZip_recoversEncryptedArchiveWithInvalidCentralDirectory() = runBlocking {
+        val source = File(tempDir, "game.exe").apply { writeText("decktamer exe") }
+        val archive = File(tempDir, "protected-invalid-cen.zip")
+        val parameters = ZipParameters().apply {
+            isEncryptFiles = true
+            encryptionMethod = EncryptionMethod.ZIP_STANDARD
+        }
+        Zip4jFile(archive, "skidrowreloaded".toCharArray()).addFile(source, parameters)
+        corruptFirstSignature(archive, byteArrayOf(0x50, 0x4B, 0x01, 0x02))
+
+        val result = ModArchiveExtractor.extract(
+            archiveFile = archive,
+            destination = File(tempDir, "out-protected-invalid-cen"),
+            password = "skidrowreloaded",
+        )
+
+        assertEquals("decktamer exe", File(result.destination, "game.exe").readText())
+    }
+
+    @Test
+    fun extractZip_blocksZipSlipAfterInvalidCentralDirectory() = runBlocking {
+        val archive = File(tempDir, "slip-invalid-cen.zip")
+        zip(archive, "../escape.txt" to "bad")
+        corruptFirstSignature(archive, byteArrayOf(0x50, 0x4B, 0x01, 0x02))
+
+        val result = runCatching {
+            ModArchiveExtractor.extract(archive, File(tempDir, "out-slip-invalid-cen"))
+        }
+
+        assertTrue(result.isFailure)
+        assertTrue(!File(tempDir.parentFile, "escape.txt").exists())
+        assertTrue(!File(tempDir, "out-slip-invalid-cen").exists())
+    }
+
+    @Test
+    fun extractZip_rejectsEntryCountLimit() = runBlocking {
+        val archive = File(tempDir, "too-many.zip")
+        zip(archive, "a.exe" to "a", "b.exe" to "b", "c.exe" to "c")
+        ModArchiveExtractor.testMaxEntries = 2
+
+        val result = runCatching {
+            ModArchiveExtractor.extract(archive, File(tempDir, "out-too-many"))
+        }
+
+        assertTrue(result.exceptionOrNull()?.message.orEmpty().contains("too many entries"))
+        assertTrue(!File(tempDir, "out-too-many").exists())
+    }
+
+    @Test
+    fun extractZip_rejectsExpandedSizeLimit() = runBlocking {
+        val archive = File(tempDir, "too-big.zip")
+        zip(archive, "game.exe" to "0123456789")
+        ModArchiveExtractor.testMaxExpandedBytes = 4
+
+        val result = runCatching {
+            ModArchiveExtractor.extract(archive, File(tempDir, "out-too-big"))
+        }
+
+        assertTrue(result.exceptionOrNull()?.message.orEmpty().contains("expands beyond"))
+        assertTrue(!File(tempDir, "out-too-big").exists())
+    }
+
+    @Test
+    fun extractZip_rejectsIncompleteDownloadWithoutEndRecord() = runBlocking {
+        val archive = File(tempDir, "incomplete.zip")
+        zip(archive, "Decktamer/game.exe" to "game")
+        val bytes = archive.readBytes()
+        val centralDirectory = findSignature(bytes, byteArrayOf(0x50, 0x4B, 0x01, 0x02))
+        archive.writeBytes(bytes.copyOf(centralDirectory))
+
+        val result = runCatching {
+            ModArchiveExtractor.extract(archive, File(tempDir, "out-incomplete"))
+        }
+
+        assertTrue(result.exceptionOrNull()?.message.orEmpty().contains("incomplete or corrupt"))
+        assertTrue(!File(tempDir, "out-incomplete").exists())
+    }
+
+    @Test
     fun extractArchive_prefersSignatureOverMisleadingExtension() = runBlocking {
         val archive = File(tempDir, "download.rar")
         zip(archive, "Decktamer/game.exe" to "game")
@@ -214,5 +309,19 @@ class ModArchiveExtractorTest {
                 zip.closeEntry()
             }
         }
+    }
+
+    private fun corruptFirstSignature(file: File, signature: ByteArray) {
+        val bytes = file.readBytes()
+        val index = findSignature(bytes, signature)
+        bytes[index] = (bytes[index].toInt() xor 0x01).toByte()
+        file.writeBytes(bytes)
+    }
+
+    private fun findSignature(bytes: ByteArray, signature: ByteArray): Int {
+        val index = bytes.indices.firstOrNull { start ->
+            start + signature.size <= bytes.size && signature.indices.all { bytes[start + it] == signature[it] }
+        }
+        return requireNotNull(index) { "ZIP signature was not found" }
     }
 }
