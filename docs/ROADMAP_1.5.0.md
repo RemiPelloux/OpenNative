@@ -125,6 +125,27 @@ Exit criteria: no known N+1 query remains in a library page or launch path, and 
 
 Exit criteria: the cockpit survives 20 hot-plug/rotation cycles, every action is reachable by touch and controller, and loss of the second display returns controls to the primary display without ending the game.
 
+### Compatibility Doctor
+
+- Add a post-failure panel that distinguishes missing component, invalid executable, Wine failure, CPU-translation fault, graphics initialization failure, low storage and abnormal process exit.
+- Show the exact active Wine/Proton, Box64/FEX, graphics driver, DirectX wrapper, resolution and frame-limit configuration.
+- Offer only scoped actions: retry, launch with the last known-good profile, repair a failed component, choose another executable or export a sanitized report.
+- Add a **safe launch** preset that disables optional layers and experimental overrides without overwriting the user's saved profile.
+- Record a bounded local launch timeline so a user can see which stage failed without reading Logcat.
+- Keep diagnosis deterministic and local; do not upload logs or silently change settings.
+
+Exit criteria: fixture failures map to a stable reason and recovery action, safe launch is reversible, reports redact private paths and credentials, and a repair cannot replace unrelated components.
+
+### Daily-play reliability
+
+- Preserve controller assignment, audio route, display selection and game focus across activity recreation and ordinary device suspend/resume.
+- Detect disconnected external storage before launch and identify the affected game, prefix or component rather than failing later in Wine.
+- Add a clean-session marker and offer recovery after Android kills the process during a game or installer session.
+- Validate XInput, DirectInput, SDL, keyboard/mouse and touch-overlay paths with reconnect and multi-controller fixtures.
+- Measure audio underruns and latency before changing PulseAudio buffering; promote per-device defaults only when they improve stability without persistent latency.
+
+Exit criteria: suspend/reconnect scenarios retain a playable input/audio/display state, interrupted sessions leave recoverable metadata, and no generic device is forced onto an unverified tuning profile.
+
 ## 5. Profiles and components
 
 - Add **Share settings** for exporting either one game's container profile or a reusable global settings preset.

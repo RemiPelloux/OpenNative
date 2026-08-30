@@ -15,14 +15,28 @@ Dates are intentionally omitted until the preceding quality gate passes. A featu
 | `1.2.1` | Default provider tab, cover-grid catalog and verified installer cleanup | Released |
 | `1.3.0` | Skidrow extract-to-Custom, Play picks the game exe, catalog covers in Custom | Released |
 | `1.3.1` | ISO9660 extraction, runtime catalog refresh and upstream compatibility fixes | Released |
-| `1.5.0` | Settings sharing, cockpit polish and remaining installer-session certification | Planned |
-| `2.0.0` | Introduce modular runtimes and a safe OpenNative identity/data migration | Future architecture |
+| `1.5.0` | Daily-driver quality: recovery, settings sharing, cockpit polish and installer certification | Committed next milestone |
+| `2.0.0` | Modular runtimes, compatibility profiles and safe OpenNative identity/data migration | Future architecture |
+| `2.x` | Broader graphics, CPU-translation, input, audio and device compatibility | Candidate portfolio |
 
 Detailed plans:
 
 - [OpenNative 1.5.0](docs/ROADMAP_1.5.0.md)
 - [OpenNative 2.0.0](docs/ROADMAP_2.0.0.md)
+- [Feature and emulation roadmap](docs/EMULATION_ROADMAP.md)
 - [Custom provider tabs and Installer Manager](docs/CUSTOM_PROVIDER_TABS.md)
+
+## Roadmap confidence
+
+Roadmap entries use three confidence levels:
+
+| Level | Meaning |
+| --- | --- |
+| **Committed** | Accepted into a named milestone with an implementation boundary and release gate |
+| **Candidate** | Prioritized for design or prototyping, but not assigned to a release until evidence and maintenance cost are understood |
+| **Research** | Technically valuable exploration with no delivery promise; it may be rejected if stability, licensing or performance is inadequate |
+
+Version numbers indicate dependency order, not dates. A candidate becomes committed only when its detailed design names supported devices, compatible component combinations, rollback behavior and test evidence.
 
 ## Engineering principles
 
@@ -47,6 +61,9 @@ Detailed plans:
 - Game/global settings can be shared without paths, secrets, saves or protected content.
 - The secondary-screen cockpit is consistent with OpenNative branding and reliable with touch/controller input.
 - Performance work produces measurable frame-pacing, memory, thermal or responsiveness improvements.
+- A failed launch offers a useful recovery path: retry the previous known-good configuration, open diagnostics or repair only the affected component.
+- Per-game health information explains the active Wine/Proton, CPU translator, graphics wrapper, driver and shader generation without requiring log inspection.
+- Controller, audio and display state survives normal suspend, rotation, external-display and reconnect events.
 
 ### Delivery phases
 
@@ -112,13 +129,37 @@ The `2.0.0` milestone begins only after `1.5.0` certification. Its scope include
 - Broader validation across Qualcomm/Adreno, Mali and additional Android ARM64 platforms.
 - Unified phone, tablet, handheld and secondary-display navigation architecture.
 
+### Compatibility platform outcomes
+
+- Install Wine/Proton, Box64/FEX, Turnip/Mesa and DXVK/VKD3D components independently without replacing a working stack.
+- Resolve only tested component combinations and keep a one-action rollback to the last known-good set.
+- Offer clear per-title launch profiles for DirectX 8/9/10/11/12, OpenGL and native Vulkan paths.
+- Compare cold and warm shader behavior, CPU-translation pressure, frame pacing and thermals through repeatable local captures.
+- Share signed compatibility profiles while preserving local overrides and never bundling games, saves, credentials or shader binaries.
+- Expand validation beyond Qualcomm/Adreno without hiding device-specific limitations behind universal defaults.
+
 See [docs/ROADMAP_2.0.0.md](docs/ROADMAP_2.0.0.md) for the complete architecture plan.
+
+## Feature portfolio after 1.5
+
+The detailed [feature and emulation roadmap](docs/EMULATION_ROADMAP.md) covers the candidate portfolio. Its headline directions are:
+
+1. **Compatibility Doctor:** explain failed launches and offer scoped repair, safe-mode launch and known-good rollback.
+2. **Runtime Lab:** install and compare side-by-side Wine/Proton, Box64/FEX, graphics-driver and DirectX-wrapper combinations.
+3. **Graphics paths:** improve DirectX 8-12, OpenGL/Zink and native Vulkan routing with per-title fallbacks and visual-conformance tests.
+4. **Frame quality:** reduce presentation copies, improve frame pacing, harden LSFG integration and evaluate spatial upscaling without overstating generated frames as native performance.
+5. **Translation efficiency:** measure JIT/code-cache behavior, thread placement and WoW64/ARM64EC compatibility before applying reversible per-title recommendations.
+6. **Console-like play:** faster first launch, controller hot-plug and multi-controller reliability, gyro/touch profiles, low-latency audio and docked-display modes.
+7. **Storage and recovery:** resumable installs, prefix snapshots, save-aware backup, external-storage diagnostics and transaction-like component activation.
+8. **Compatibility knowledge:** signed profiles with provenance, device scope, confidence, user-visible diffs and local override protection.
+9. **Large-library efficiency:** share immutable runtime data by default and offer opt-in container groups for games that can safely use one Wine prefix.
 
 ## Explicit non-goals
 
 - Downloaded third-party shader caches.
 - Built-in copyrighted-content discovery or indexing.
 - DRM bypass or silent execution of provider downloads.
+- Claims that kernel anti-cheat, platform DRM or every Windows game can be made compatible through configuration alone.
 - Forced device clocks, fan firmware, unsafe math flags or global Android changes.
 - Device-specific tuning enabled without consent.
 - Package/storage renaming without atomic migration and rollback.

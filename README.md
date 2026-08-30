@@ -9,8 +9,9 @@
 [![Release](https://img.shields.io/github/v/release/RemiPelloux/OpenNative?style=flat-square&logo=github)](https://github.com/RemiPelloux/OpenNative/releases)
 [![Android](https://img.shields.io/badge/Android-ARM64-3DDC84?style=flat-square&logo=android&logoColor=white)](#platform-support)
 [![License](https://img.shields.io/badge/license-GPL--3.0-36C5F0?style=flat-square)](LICENSE)
+[![Sponsor](https://img.shields.io/badge/Sponsor-RemiPelloux-EA4AAA?style=flat-square&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/RemiPelloux)
 
-[Download](https://github.com/RemiPelloux/OpenNative/releases) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
+[Download](https://github.com/RemiPelloux/OpenNative/releases) · [Sponsor](https://github.com/sponsors/RemiPelloux) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
 
 </div>
 
@@ -147,6 +148,7 @@ Mockito and MockK use an explicit ByteBuddy agent for JDKs that restrict dynamic
 | --- | --- |
 | [Roadmap](ROADMAP.md) | Milestones, delivery phases and release gates |
 | [1.5.0 roadmap](docs/ROADMAP_1.5.0.md) | Detailed implementation and validation plan |
+| [Feature and emulation roadmap](docs/EMULATION_ROADMAP.md) | Planned runtime, graphics, translation, input, audio and recovery improvements |
 | [Provider tabs](docs/CUSTOM_PROVIDER_TABS.md) | Provider, AllDebrid, transfer and Installer Manager contract |
 | [Provider feeds](docs/PROVIDER_FEEDS.md) | User-supplied JSON and RSS/Atom catalog contract |
 | [Installing games](docs/INSTALLING_GAMES.md) | FitGirl and Skidrow on-device install, Play exe and catalog covers |
