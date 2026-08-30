@@ -31,6 +31,7 @@ enum class DialogType(val icon: ImageVector? = null) {
     SAVE_CONTAINER_CONFIG,
     EXECUTABLE_NOT_FOUND,
     WORKSHOP_UPDATE_PROMPT,
+    APP_UPDATE,
 
     NONE,
 

@@ -97,7 +97,7 @@ import app.gamenative.ui.internal.fakeAppInfo
 import app.gamenative.ui.model.LibraryViewModel
 import app.gamenative.ui.model.ProviderLibraryViewModel
 import app.gamenative.ui.screen.library.provider.AddProviderTabDialog
-import app.gamenative.ui.screen.library.provider.AllDebridKeyDialog
+import app.gamenative.ui.screen.library.provider.DebridKeyDialog
 import app.gamenative.ui.screen.library.provider.ProviderCatalogScreen
 import app.gamenative.service.SteamService
 import app.gamenative.ui.screen.library.components.LibraryCarouselPane
@@ -212,8 +212,9 @@ fun HomeLibraryScreen(
         isOffline = isOffline,
         isSteamConnected = isSteamConnected,
     )
-    AllDebridKeyDialog(
+    DebridKeyDialog(
         visible = providerUi.showKeyDialog,
+        provider = providerUi.selectedDebridProvider,
         busy = providerUi.keyBusy,
         errorText = providerUi.keyError,
         onDismiss = providerViewModel::dismissKeyDialog,

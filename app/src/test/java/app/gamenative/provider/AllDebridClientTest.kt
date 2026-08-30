@@ -35,11 +35,12 @@ class AllDebridClientTest {
         server.enqueue(
             MockResponse().setBody("""{"status":"success","data":{"user":{"username":"remi"}}}"""),
         )
-        val state = client.validateCredential("secret-key")
+        val state = client.validateCredential("  secret-key\n")
         assertTrue(state.valid)
         assertEquals("remi", state.username)
         val request = server.takeRequest()
         assertEquals("Bearer secret-key", request.getHeader("Authorization"))
+        assertEquals("GET", request.method)
         assertTrue(request.requestUrl?.queryParameter("apikey") == null)
     }
 
@@ -55,6 +56,18 @@ class AllDebridClientTest {
             assertEquals(ProviderErrorCode.AUTHENTICATION, error.code)
             assertTrue(!error.message.orEmpty().contains("bad"))
             assertTrue(error.message.orEmpty().contains("authentication"))
+        }
+    }
+
+    @Test
+    fun `rejects a success response without an account`() = runBlocking {
+        server.enqueue(MockResponse().setBody("""{"status":"success","data":{}}"""))
+
+        try {
+            client.validateCredential("secret-key")
+            throw AssertionError("expected failure")
+        } catch (error: ProviderException) {
+            assertEquals(ProviderErrorCode.MALFORMED_RESPONSE, error.code)
         }
     }
 
@@ -85,8 +98,9 @@ class AllDebridClientTest {
         val resolved = client.resolve("secret-key", "https://1fichier.com/?abcd1234", "hunter2")
         assertEquals("game.zip", resolved.filename)
         val request = server.takeRequest()
-        assertEquals("https://1fichier.com/?abcd1234", request.requestUrl?.queryParameter("link"))
-        assertEquals("hunter2", request.requestUrl?.queryParameter("password"))
+        assertEquals("POST", request.method)
+        assertEquals("link=https%3A%2F%2F1fichier.com%2F%3Fabcd1234&password=hunter2", request.body.readUtf8())
+        assertTrue(request.requestUrl?.queryParameter("link") == null)
     }
 
     @Test
@@ -129,6 +143,11 @@ class AllDebridClientTest {
         assertEquals("game.rar", resolved.filename)
         assertEquals("https://cdn.example/file", resolved.url)
         assertEquals(3, server.requestCount)
+        assertEquals("POST", server.takeRequest().method)
+        assertEquals("POST", server.takeRequest().method)
+        val delayed = server.takeRequest()
+        assertEquals("POST", delayed.method)
+        assertEquals("id=99", delayed.body.readUtf8())
     }
 
     @Test
@@ -151,7 +170,7 @@ class AllDebridClientTest {
             ),
         )
         val uploaded = client.uploadMagnet("secret-key", "magnet:?xt=urn:btih:abc")
-        assertEquals(77, uploaded.id)
+        assertEquals("77", uploaded.id)
         val files = client.magnetFiles("secret-key", uploaded.id)
         assertEquals("game.rar", files.single().relativePath)
         assertEquals("https://alldebrid.com/f/a", files.single().link)

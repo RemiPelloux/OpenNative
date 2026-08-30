@@ -10,7 +10,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.gamenative.R
 import app.gamenative.ui.model.ProviderLibraryViewModel
-import app.gamenative.ui.screen.library.provider.AllDebridKeyDialog
+import app.gamenative.ui.screen.library.provider.DebridKeyDialog
 import app.gamenative.ui.theme.settingsTileColors
 import com.alorma.compose.settings.ui.SettingsGroup
 import com.alorma.compose.settings.ui.SettingsMenuLink
@@ -27,14 +27,23 @@ fun SettingsGroupProviders(
     val importer = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri -> uri?.let(viewModel::importTabs) }
-    SettingsGroup() {
+    SettingsGroup {
         SettingsMenuLink(
             colors = settingsTileColors(),
-            title = { Text(stringResource(R.string.provider_settings_alldebrid)) },
+            title = { Text(stringResource(R.string.provider_settings_service)) },
+            subtitle = { Text(ui.selectedDebridProvider.displayName) },
+            onClick = viewModel::openDebridProvider,
+        )
+        SettingsMenuLink(
+            colors = settingsTileColors(),
+            title = { Text(stringResource(R.string.provider_settings_key, ui.selectedDebridProvider.displayName)) },
             subtitle = {
                 Text(
-                    if (ui.hasGlobalCredential) stringResource(R.string.provider_settings_alldebrid_set)
-                    else stringResource(R.string.provider_settings_alldebrid_subtitle),
+                    if (ui.hasGlobalCredential) {
+                        stringResource(R.string.provider_settings_key_set)
+                    } else {
+                        stringResource(R.string.provider_settings_key_subtitle)
+                    },
                 )
             },
             onClick = viewModel::openGlobalKey,
@@ -69,15 +78,25 @@ fun SettingsGroupProviders(
                 colors = settingsTileColors(),
                 title = { Text(tab.name) },
                 subtitle = { Text(tab.feedUrl) },
-                onClick = { viewModel.selectTab(tab.id); viewModel.refreshActive() },
+                onClick = {
+                    viewModel.selectTab(tab.id)
+                    viewModel.refreshActive()
+                },
             )
         }
     }
-    AllDebridKeyDialog(
+    DebridKeyDialog(
         visible = ui.showGlobalKeyDialog,
+        provider = ui.selectedDebridProvider,
         busy = ui.keyBusy,
         errorText = ui.keyError,
         onDismiss = viewModel::dismissKeyDialog,
         onSave = viewModel::saveGlobalKey,
+    )
+    DebridProviderDialog(
+        visible = ui.showDebridProviderDialog,
+        selected = ui.selectedDebridProvider,
+        onSelect = viewModel::selectDebridProvider,
+        onDismiss = viewModel::dismissDebridProvider,
     )
 }

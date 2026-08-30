@@ -6,7 +6,7 @@ import org.json.JSONObject
 import timber.log.Timber
 
 data class MagnetUpload(
-    val id: Int,
+    val id: String,
     val ready: Boolean,
     val name: String = "",
     val sizeBytes: Long = 0L,
@@ -29,7 +29,7 @@ class AllDebridMagnetApi(
         return parseUpload(json)
     }
 
-    suspend fun waitReady(apiKey: String, magnetId: Int) {
+    suspend fun waitReady(apiKey: String, magnetId: String) {
         repeat(attempts) {
             val status = statusCode(apiKey, magnetId)
             if (status == 4) return
@@ -41,7 +41,7 @@ class AllDebridMagnetApi(
         throw ProviderException(ProviderErrorCode.TIMEOUT, "Magnet processing timed out")
     }
 
-    fun files(apiKey: String, magnetId: Int): List<MagnetRemoteFile> {
+    fun files(apiKey: String, magnetId: String): List<MagnetRemoteFile> {
         val json = http.post("/v4/magnet/files", apiKey, listOf("id[]" to magnetId.toString()))
         if (json.optString("status") != "success") {
             throw http.mapError(json, ProviderErrorCode.UNAVAILABLE_LINK)
@@ -64,14 +64,14 @@ class AllDebridMagnetApi(
             throw ProviderException(ProviderErrorCode.UNAVAILABLE_LINK, "Magnet upload did not return an id")
         }
         return MagnetUpload(
-            id = id,
+            id = id.toString(),
             ready = magnet.optBoolean("ready"),
             name = magnet.optString("name"),
             sizeBytes = magnet.optLong("size"),
         )
     }
 
-    private fun statusCode(apiKey: String, magnetId: Int): Int {
+    private fun statusCode(apiKey: String, magnetId: String): Int {
         val json = http.post("/v4.1/magnet/status", apiKey, listOf("id" to magnetId.toString()))
         if (json.optString("status") != "success") {
             throw http.mapError(json, ProviderErrorCode.UNAVAILABLE_LINK)

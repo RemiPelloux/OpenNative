@@ -14,10 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import app.gamenative.R
+import app.gamenative.provider.DebridProvider
 
 @Composable
-fun AllDebridKeyDialog(
+fun DebridKeyDialog(
     visible: Boolean,
+    provider: DebridProvider,
     busy: Boolean,
     errorText: String?,
     onDismiss: () -> Unit,
@@ -27,10 +29,10 @@ fun AllDebridKeyDialog(
     var key by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.provider_key_title)) },
+        title = { Text(stringResource(R.string.provider_key_title, provider.displayName)) },
         text = {
             androidx.compose.foundation.layout.Column {
-                Text(stringResource(R.string.provider_key_body))
+                Text(stringResource(R.string.provider_key_body, provider.displayName))
                 OutlinedTextField(
                     value = key,
                     onValueChange = { key = it },
@@ -38,7 +40,7 @@ fun AllDebridKeyDialog(
                     enabled = !busy,
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
-                    label = { Text(stringResource(R.string.provider_alldebrid_optional)) },
+                    label = { Text(stringResource(R.string.provider_debrid_key_label, provider.displayName)) },
                 )
                 if (!errorText.isNullOrBlank()) {
                     Text(errorText)

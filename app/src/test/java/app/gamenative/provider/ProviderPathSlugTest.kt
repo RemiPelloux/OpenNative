@@ -23,6 +23,17 @@ class ProviderPathSlugTest {
     }
 
     @Test
+    fun `rejects unsafe resolver filenames`() {
+        try {
+            ProviderPathSlug.safeFileName("../game.zip")
+            throw AssertionError("expected failure")
+        } catch (error: ProviderException) {
+            assertEquals(ProviderErrorCode.PATH_ESCAPE, error.code)
+        }
+        assertEquals("download.bin", ProviderPathSlug.safeFileName("  "))
+    }
+
+    @Test
     fun `renames a legacy title folder to the slug`() {
         val root = kotlin.io.path.createTempDirectory("provider-slug").toFile()
         val title = "Darkest Dungeon The Collectors Edition v27760  7 DLCsBonuses"

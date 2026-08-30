@@ -19,7 +19,12 @@ class StreamingDownloader(
         isCancelled: () -> Boolean = { false },
     ): File {
         partialFile.parentFile?.mkdirs()
-        val existing = if (partialFile.exists()) partialFile.length() else 0L
+        val existingLength = if (partialFile.exists()) partialFile.length() else 0L
+        if (expectedBytes > 0L && existingLength == expectedBytes) {
+            onProgress(existingLength, expectedBytes)
+            return partialFile
+        }
+        val existing = existingLength.takeIf { expectedBytes <= 0L || it < expectedBytes } ?: 0L
         val request = Request.Builder().url(url).get().apply {
             if (existing > 0L) header("Range", "bytes=$existing-")
         }.build()
@@ -32,12 +37,16 @@ class StreamingDownloader(
             if (!resp.isSuccessful && resp.code != 206) {
                 throw ProviderException(ProviderErrorCode.NETWORK, "Download request failed")
             }
-            val total = totalBytes(resp.header("Content-Length"), existing, expectedBytes, resp.code)
+            // Some hosts ignore Range and return the entire payload with 200. Appending that
+            // response to a partial file would corrupt archives and make retries unrecoverable.
+            val resumeOffset = existing.takeIf { it > 0L && resp.code == 206 } ?: 0L
+            val total = totalBytes(resp.header("Content-Length"), resumeOffset, expectedBytes, resp.code)
             val body = resp.body ?: throw ProviderException(ProviderErrorCode.NETWORK, "Download body is empty")
             RandomAccessFile(partialFile, "rw").use { raf ->
-                raf.seek(existing)
+                if (resumeOffset == 0L) raf.setLength(0L)
+                raf.seek(resumeOffset)
                 val buffer = ByteArray(bufferSize)
-                var downloaded = existing
+                var downloaded = resumeOffset
                 body.byteStream().use { input ->
                     while (true) {
                         if (isCancelled()) {

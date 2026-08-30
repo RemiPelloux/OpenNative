@@ -9,11 +9,13 @@ import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import app.gamenative.PrefManager
 import app.gamenative.R
 import app.gamenative.provider.HosterAllowlist
 import app.gamenative.provider.ProviderCatalogRepository
+import app.gamenative.provider.ProviderCredentials
 import app.gamenative.provider.ProviderInstallHandler
+import app.gamenative.provider.ProviderSecretStore
+import app.gamenative.provider.DebridResolverRegistry
 import app.gamenative.provider.ProviderTab
 import app.gamenative.provider.ProviderTabPolicy
 import app.gamenative.provider.ProviderTransferCoordinator
@@ -32,6 +34,8 @@ import timber.log.Timber
 class ProviderTransferService : Service() {
     @Inject lateinit var catalog: ProviderCatalogRepository
     @Inject lateinit var transfers: ProviderTransferCoordinator
+    @Inject lateinit var secrets: ProviderSecretStore
+    @Inject lateinit var resolverRegistry: DebridResolverRegistry
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val running = HashSet<String>()
@@ -97,11 +101,8 @@ class ProviderTransferService : Service() {
         }
     }
 
-    private fun ProviderTab.withGlobal(): ProviderTab {
-        if (hasCredential()) return this
-        val global = PrefManager.providerGlobalCredentialRef
-        return if (global.isBlank()) this else copy(credentialRef = global)
-    }
+    private fun ProviderTab.withGlobal(): ProviderTab =
+        ProviderCredentials.attachAvailable(this, resolverRegistry.selectedProvider, secrets)
 
     private fun notify(title: String) {
         val manager = getSystemService(NotificationManager::class.java)

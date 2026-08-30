@@ -23,7 +23,7 @@ OpenNative is an independent open-source project. It does not include games, fir
 
 | Channel | Version | Status |
 | --- | --- | --- |
-| Stable | `1.4.0` | Shared Wine prefix for large libraries, plus 1.3.1 catalog/runtime work |
+| Stable | `1.4.2` | Secure in-app updates, five selectable debrid services and transfer reliability fixes |
 | Next milestone | `1.5.0` | Settings sharing, cockpit polish and remaining certification |
 | Architecture milestone | `2.0.0` | Long-term roadmap |
 
@@ -61,6 +61,15 @@ Performance varies by game, runtime, driver and thermal conditions. OpenNative d
 - Each shared-prefix game keeps its own `A:` mapping and executable overlay.
 - Toggle the mode under **Settings → Emulation**. See [shared Wine prefix](docs/SHARED_WINE_PREFIX.md).
 
+## Shipped in 1.4.2
+
+- AllDebrid device-wide keys now take precedence over stale per-tab credentials.
+- Settings can select AllDebrid, Real-Debrid, Premiumize, Debrid-Link or TorBox, each with its own encrypted API key.
+- OpenNative checks GitHub Releases once per day and verifies the downloaded APK package, version, signing certificate and published SHA-256 digest before opening Android's installer.
+- Provider transfers use the current AllDebrid request contract and keep key validation responsive.
+- Interrupted downloads recover safely when a host does not honor byte ranges.
+- Resolver filenames are confined before staging, preventing path traversal.
+
 ## Shipped in 1.3.1
 
 - Skidrow accepts verified ISO9660 images, extracts them into Custom, and removes the source image after successful registration.
@@ -76,7 +85,7 @@ See [provider tabs](docs/CUSTOM_PROVIDER_TABS.md) and [feed contract](docs/PROVI
 
 ## Planned for 1.5.0
 
-The following work remains after `1.4.0`:
+The following work remains after `1.4.2`:
 
 | Area | Planned capability |
 | --- | --- |

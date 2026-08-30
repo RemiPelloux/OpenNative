@@ -19,6 +19,21 @@ object ProviderPathSlug {
         return name.ifBlank { "file" }
     }
 
+    fun safeFileName(raw: String): String {
+        val filename = raw.trim()
+        if (filename.isBlank()) return "download.bin"
+        if (
+            filename == "."
+            || filename == ".."
+            || filename.contains('/')
+            || filename.contains('\\')
+            || filename.any { it.isISOControl() }
+        ) {
+            throw ProviderException(ProviderErrorCode.PATH_ESCAPE, "Resolved filename is unsafe")
+        }
+        return filename
+    }
+
     fun slugDirectories(relativePath: String): String {
         val parts = relativePath.replace('\\', '/').trim('/').split('/').filter { it.isNotBlank() }
         if (parts.isEmpty()) return ""

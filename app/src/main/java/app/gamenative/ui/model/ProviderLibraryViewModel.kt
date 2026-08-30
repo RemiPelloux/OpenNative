@@ -9,10 +9,12 @@ import app.gamenative.PluviaApp
 import app.gamenative.PrefManager
 import app.gamenative.R
 import app.gamenative.events.AndroidEvent
-import app.gamenative.provider.AllDebridResolver
+import app.gamenative.provider.DebridProvider
+import app.gamenative.provider.DebridResolverRegistry
 import app.gamenative.provider.CatalogFilter
 import app.gamenative.provider.ProviderCatalogPaging
 import app.gamenative.provider.ProviderCatalogRepository
+import app.gamenative.provider.ProviderCredentials
 import app.gamenative.provider.ProviderDefaultTabs
 import app.gamenative.provider.ProviderDeviceKeyImport
 import app.gamenative.provider.ProviderException
@@ -71,6 +73,8 @@ data class ProviderLibraryUi(
     val hasGlobalCredential: Boolean = false,
     val bundleStatus: String? = null,
     val showGlobalKeyDialog: Boolean = false,
+    val showDebridProviderDialog: Boolean = false,
+    val selectedDebridProvider: DebridProvider = DebridProvider.ALL_DEBRID,
 )
 
 @HiltViewModel
@@ -78,7 +82,7 @@ class ProviderLibraryViewModel @Inject constructor(
     private val catalog: ProviderCatalogRepository,
     private val transfers: ProviderTransferCoordinator,
     private val secrets: ProviderSecretStore,
-    private val resolver: AllDebridResolver,
+    private val resolverRegistry: DebridResolverRegistry,
     private val refreshCoordinator: ProviderRefreshCoordinator,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
@@ -89,6 +93,7 @@ class ProviderLibraryViewModel @Inject constructor(
     val ui: StateFlow<ProviderLibraryUi> = _ui.asStateFlow()
 
     init {
+        _ui.update { it.copy(selectedDebridProvider = resolverRegistry.selectedProvider) }
         syncGlobalFlag()
     }
 
@@ -101,7 +106,13 @@ class ProviderLibraryViewModel @Inject constructor(
 
     fun onAppOpen() {
         viewModelScope.launch {
-            runCatching { ProviderDeviceKeyImport.consume(context, secrets, resolver) }
+            runCatching {
+                ProviderDeviceKeyImport.consume(
+                    context,
+                    secrets,
+                    resolverRegistry.require(DebridProvider.ALL_DEBRID) as app.gamenative.provider.AllDebridResolver,
+                )
+            }
             runCatching {
                 ProviderDefaultTabs.seedIfEmpty(catalog, ProviderDefaultTabs.readAsset(context))
             }.onFailure { error ->
@@ -124,6 +135,22 @@ class ProviderLibraryViewModel @Inject constructor(
     }
 
     fun openGlobalKey() = _ui.update { it.copy(showGlobalKeyDialog = true, keyError = null) }
+
+    fun openDebridProvider() = _ui.update { it.copy(showDebridProviderDialog = true) }
+
+    fun dismissDebridProvider() = _ui.update { it.copy(showDebridProviderDialog = false) }
+
+    fun selectDebridProvider(provider: DebridProvider) {
+        resolverRegistry.select(provider)
+        _ui.update {
+            it.copy(
+                selectedDebridProvider = provider,
+                showDebridProviderDialog = false,
+                keyError = null,
+            )
+        }
+        syncGlobalFlag()
+    }
 
     fun selectTab(tabId: String?) {
         if (tabId == activeTabId && catalogJob?.isActive == true) return
@@ -381,20 +408,22 @@ class ProviderLibraryViewModel @Inject constructor(
     }
 
     private suspend fun persistGlobalKeyValue(rawKey: String) {
-        resolver.validateCredential(rawKey)
-        val ref = secrets.saveNamed(ProviderTabBundle.GLOBAL_CREDENTIAL_REF, rawKey)
-        PrefManager.providerGlobalCredentialRef = ref
+        withContext(Dispatchers.IO) {
+            val provider = resolverRegistry.selectedProvider
+            resolverRegistry.require(provider).validateCredential(rawKey)
+            val ref = secrets.saveNamed(provider.credentialRef, rawKey)
+            PrefManager.providerGlobalCredentialRef = ref
+        }
     }
 
     private fun syncGlobalFlag() {
-        _ui.update { it.copy(hasGlobalCredential = PrefManager.providerGlobalCredentialRef.isNotBlank()) }
+        _ui.update {
+            it.copy(hasGlobalCredential = ProviderCredentials.hasGlobal(resolverRegistry.selectedProvider, secrets))
+        }
     }
 
-    private fun ProviderTab.withGlobalCredential(): ProviderTab {
-        if (hasCredential()) return this
-        val global = PrefManager.providerGlobalCredentialRef
-        return if (global.isBlank()) this else copy(credentialRef = global)
-    }
+    private fun ProviderTab.withGlobalCredential(): ProviderTab =
+        ProviderCredentials.attachAvailable(this, resolverRegistry.selectedProvider, secrets)
 
     private fun resetSearch(clearQuery: Boolean = false) {
         searchJob?.cancel()

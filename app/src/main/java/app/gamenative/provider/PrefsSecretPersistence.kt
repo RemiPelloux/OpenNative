@@ -6,12 +6,16 @@ class PrefsSecretPersistence(
     private val prefs: SharedPreferences,
 ) : SecretPersistence {
     override fun put(ref: String, ciphertext: String) {
-        prefs.edit().putString(ref, ciphertext).apply()
+        check(prefs.edit().putString(ref, ciphertext).commit()) {
+            "Could not persist provider credential"
+        }
     }
 
     override fun get(ref: String): String? = prefs.getString(ref, null)
 
     override fun remove(ref: String) {
-        prefs.edit().remove(ref).apply()
+        check(prefs.edit().remove(ref).commit()) {
+            "Could not remove provider credential"
+        }
     }
 }

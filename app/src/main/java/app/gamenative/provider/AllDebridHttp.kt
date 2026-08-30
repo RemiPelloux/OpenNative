@@ -45,13 +45,15 @@ class AllDebridHttp(
         query: Map<String, String>,
         fields: List<Pair<String, String>>?,
     ): JSONObject {
+        val normalizedKey = apiKey.trim()
+        requireKey(normalizedKey)
         val builder = baseUrl.toHttpUrl().newBuilder()
             .addPathSegments(path.trimStart('/'))
             .addQueryParameter("agent", "OpenNative")
         query.forEach { (key, value) -> builder.addQueryParameter(key, value) }
         val request = Request.Builder()
             .url(builder.build())
-            .header("Authorization", "Bearer $apiKey")
+            .header("Authorization", "Bearer $normalizedKey")
         if (fields != null) {
             val form = FormBody.Builder()
             fields.forEach { (key, value) -> form.add(key, value) }

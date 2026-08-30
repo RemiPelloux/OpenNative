@@ -97,6 +97,8 @@ import app.gamenative.utils.ManifestInstaller
 import app.gamenative.utils.IntentLaunchManager
 import app.gamenative.utils.SteamUtils
 import app.gamenative.utils.LaunchDependencies
+import app.gamenative.utils.GitHubReleaseUpdater
+import app.gamenative.utils.UpdateInfo
 import app.gamenative.workshop.WorkshopManager
 import app.gamenative.workshop.compatibility.SlayTheSpireModTheSpireCompatibility
 import com.google.android.play.core.splitcompat.SplitCompat
@@ -293,6 +295,9 @@ fun PluviaMain(
 
     var gameBackAction by remember { mutableStateOf<() -> Unit?>({}) }
 
+    var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
+    var updateCheckComplete by remember { mutableStateOf(false) }
+
     var openContainerConfigForAppId by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Track if connection banner was dismissed by user
@@ -314,6 +319,11 @@ fun PluviaMain(
         if (state.connectionState != ConnectionState.CONNECTING) {
             initialConnectDone = true
         }
+    }
+
+    LaunchedEffect(Unit) {
+        updateInfo = GitHubReleaseUpdater.check(context)
+        updateCheckComplete = true
     }
 
     // shared intent-launch path. resolves isOffline at the call site because intent launches can
@@ -938,6 +948,36 @@ fun PluviaMain(
             }
         }
 
+        DialogType.APP_UPDATE -> {
+            onConfirmClick = {
+                setMessageDialogState(MessageDialogState(false))
+                updateInfo?.let { update ->
+                    scope.launch {
+                        viewModel.setLoadingDialogVisible(true)
+                        viewModel.setLoadingDialogMessage(context.getString(R.string.main_update_downloading))
+                        viewModel.setLoadingDialogProgress(0f)
+                        val success = GitHubReleaseUpdater.downloadVerifyAndInstall(
+                            context = context,
+                            update = update,
+                            onProgress = viewModel::setLoadingDialogProgress,
+                        )
+                        viewModel.setLoadingDialogVisible(false)
+                        if (!success) {
+                            msgDialogState = MessageDialogState(
+                                visible = true,
+                                type = DialogType.SYNC_FAIL,
+                                title = context.getString(R.string.main_update_failed_title),
+                                message = context.getString(R.string.main_update_failed_message),
+                                dismissBtnText = context.getString(R.string.ok),
+                            )
+                        }
+                    }
+                }
+            }
+            onDismissClick = { setMessageDialogState(MessageDialogState(false)) }
+            onDismissRequest = { setMessageDialogState(MessageDialogState(false)) }
+        }
+
         DialogType.SAVE_CONTAINER_CONFIG -> {
             onConfirmClick = {
                 // Save the container config permanently
@@ -1153,11 +1193,27 @@ fun PluviaMain(
 
                     // Show the previous-session crash dialog when Home is first displayed.
                     // Skip when offline with Steam credentials (avoid flash when Steam reconnects)
-                    LaunchedEffect(Unit) {
+                    LaunchedEffect(updateCheckComplete, updateInfo, state.hasCrashedLastStart) {
+                        if (!updateCheckComplete) return@LaunchedEffect
                         val shouldShowDialogs = !isOffline || !SteamUtils.hasStoredCredentials()
 
                         if (shouldShowDialogs && !state.annoyingDialogShown && PluviaApp.xEnvironment == null && !SteamService.keepAlive && !MainActivity.wasLaunchedViaExternalIntent) {
-                            if (state.hasCrashedLastStart) {
+                            val availableUpdate = updateInfo
+                            if (availableUpdate != null) {
+                                viewModel.setAnnoyingDialogShown(true)
+                                msgDialogState = MessageDialogState(
+                                    visible = true,
+                                    type = DialogType.APP_UPDATE,
+                                    title = context.getString(R.string.main_update_available_title),
+                                    message = context.getString(
+                                        R.string.main_update_available_message,
+                                        availableUpdate.versionName,
+                                        availableUpdate.releaseNotes.takeIf { it.isNotBlank() }?.let { "\n\n$it" }.orEmpty(),
+                                    ),
+                                    confirmBtnText = context.getString(R.string.main_update_button),
+                                    dismissBtnText = context.getString(R.string.main_later_button),
+                                )
+                            } else if (state.hasCrashedLastStart) {
                                 viewModel.setAnnoyingDialogShown(true)
                                 msgDialogState = MessageDialogState(
                                     visible = true,

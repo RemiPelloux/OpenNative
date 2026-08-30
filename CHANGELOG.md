@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.2 - 2026-08-30
+
+- Fix AllDebrid keys saved in older per-tab entries overriding a newly configured device-wide key.
+- Use the current AllDebrid POST request contract for link unlock, redirector and delayed-link polling.
+- Trim credentials, verify encrypted readback and keep resolver validation off the UI thread.
+- Recover resumable downloads when a host ignores `Range` and returns the full payload with HTTP 200.
+- Reject unsafe resolver filenames before creating staging paths.
+- Add selectable AllDebrid, Real-Debrid, Premiumize, Debrid-Link and TorBox accounts with separate encrypted credentials.
+- Add a daily GitHub release check, an update modal, bounded APK download, checksum/package/signature verification and Android installer handoff.
+
 ## 1.4.0 - 2026-08-30
 
 - Add a shared Wine prefix so new games reuse one container, like GameHub and Winlator, instead of copying Proton for every title.

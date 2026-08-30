@@ -24,9 +24,13 @@ class AllDebridClient(
             throw http.mapError(json, ProviderErrorCode.AUTHENTICATION)
         }
         val data = json.optJSONObject("data")?.optJSONObject("user")
+            ?: throw ProviderException(
+                ProviderErrorCode.MALFORMED_RESPONSE,
+                "Resolver account response is malformed",
+            )
         return AllDebridAccountState(
             valid = true,
-            username = data?.optString("username").orEmpty(),
+            username = data.optString("username"),
         )
     }
 
@@ -39,10 +43,10 @@ class AllDebridClient(
     override suspend fun uploadMagnet(apiKey: String, magnet: String): MagnetUpload =
         magnets.upload(apiKey, magnet)
 
-    override suspend fun waitMagnetReady(apiKey: String, magnetId: Int) =
+    override suspend fun waitMagnetReady(apiKey: String, magnetId: String) =
         magnets.waitReady(apiKey, magnetId)
 
-    override suspend fun magnetFiles(apiKey: String, magnetId: Int): List<MagnetRemoteFile> =
+    override suspend fun magnetFiles(apiKey: String, magnetId: String): List<MagnetRemoteFile> =
         magnets.files(apiKey, magnetId)
 
     private suspend fun resolve(
@@ -53,11 +57,11 @@ class AllDebridClient(
     ): ResolvedDownload {
         http.requireKey(apiKey)
         ProviderUrlPolicy.validate(userSelectedLink, allowLoopbackHttp).getOrThrow()
-        val query = buildMap {
-            put("link", userSelectedLink)
-            if (password.isNotBlank()) put("password", password)
+        val fields = buildList {
+            add("link" to userSelectedLink)
+            if (password.isNotBlank()) add("password" to password)
         }
-        val json = http.get("/v4/link/unlock", apiKey, query)
+        val json = http.post("/v4/link/unlock", apiKey, fields)
         if (json.optString("status") == "success") return fromUnlock(apiKey, json)
         val error = http.mapError(json, ProviderErrorCode.UNAVAILABLE_LINK)
         if (allowRedirector && error.code == ProviderErrorCode.UNSUPPORTED_HOST) {
@@ -92,7 +96,7 @@ class AllDebridClient(
     ): ResolvedDownload {
         repeat(delayedAttempts) {
             delay(delayedPollMs)
-            val json = http.get("/v4/link/delayed", apiKey, mapOf("id" to delayedId.toString()))
+            val json = http.post("/v4/link/delayed", apiKey, listOf("id" to delayedId.toString()))
             if (json.optString("status") != "success") {
                 throw http.mapError(json, ProviderErrorCode.UNAVAILABLE_LINK)
             }
@@ -113,7 +117,7 @@ class AllDebridClient(
 
     private fun redirectorLinks(apiKey: String, userSelectedLink: String): List<String> {
         val json = runCatching {
-            http.get("/v4/link/redirector", apiKey, mapOf("link" to userSelectedLink))
+            http.post("/v4/link/redirector", apiKey, listOf("link" to userSelectedLink))
         }.getOrNull() ?: return emptyList()
         if (json.optString("status") != "success") return emptyList()
         val array = json.optJSONObject("data")?.optJSONArray("links") ?: return emptyList()

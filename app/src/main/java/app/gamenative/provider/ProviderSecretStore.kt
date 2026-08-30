@@ -17,18 +17,23 @@ class ProviderSecretStore(
     }
 
     fun saveNamed(ref: String, secret: String): String {
-        require(secret.isNotBlank()) { "Credential cannot be blank" }
+        val normalized = secret.trim()
+        require(normalized.isNotBlank()) { "Credential cannot be blank" }
         require(ref.isNotBlank()) { "Credential ref cannot be blank" }
-        val encrypted = cipher.encrypt(secret.toByteArray(Charsets.UTF_8))
+        val encrypted = cipher.encrypt(normalized.toByteArray(Charsets.UTF_8))
         persistence.put(ref, Base64.getEncoder().encodeToString(encrypted))
         return ref
     }
 
     fun read(ref: String?): String? {
         if (ref.isNullOrBlank()) return null
-        val stored = persistence.get(ref) ?: return null
-        val bytes = Base64.getDecoder().decode(stored)
-        return cipher.decrypt(bytes).toString(Charsets.UTF_8)
+        return try {
+            val stored = persistence.get(ref) ?: return null
+            val bytes = Base64.getDecoder().decode(stored)
+            cipher.decrypt(bytes).toString(Charsets.UTF_8).trim().ifBlank { null }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     fun delete(ref: String?) {

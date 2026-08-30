@@ -3,6 +3,12 @@ package app.gamenative.di
 import android.content.Context
 import app.gamenative.provider.AllDebridClient
 import app.gamenative.provider.AllDebridResolver
+import app.gamenative.provider.DebridLinkClient
+import app.gamenative.provider.DebridProviderStore
+import app.gamenative.provider.DebridResolverRegistry
+import app.gamenative.provider.PremiumizeClient
+import app.gamenative.provider.RealDebridClient
+import app.gamenative.provider.TorBoxClient
 import app.gamenative.provider.PrefsSecretPersistence
 import app.gamenative.provider.ProviderFeedClient
 import app.gamenative.provider.ProviderKeystoreCipher
@@ -37,6 +43,27 @@ class ProviderModule {
     @Provides
     @Singleton
     fun provideAllDebridResolver(): AllDebridResolver = AllDebridClient()
+
+    @Provides
+    @Singleton
+    fun provideDebridProviderStore(@ApplicationContext context: Context): DebridProviderStore =
+        DebridProviderStore(context.getSharedPreferences("provider_settings", Context.MODE_PRIVATE))
+
+    @Provides
+    @Singleton
+    fun provideDebridResolverRegistry(
+        allDebrid: AllDebridResolver,
+        store: DebridProviderStore,
+    ): DebridResolverRegistry = DebridResolverRegistry(
+        listOf(
+            allDebrid,
+            RealDebridClient(),
+            PremiumizeClient(),
+            DebridLinkClient(),
+            TorBoxClient(),
+        ),
+        store,
+    )
 
     @Provides
     @Singleton

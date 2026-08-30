@@ -135,7 +135,7 @@ private fun FeedStep(draft: ProviderTabDraft, onChange: (ProviderTabDraft) -> Un
         value = draft.allDebridKey,
         onValueChange = { onChange(draft.copy(allDebridKey = it)) },
         modifier = Modifier.fillMaxWidth(),
-        label = { Text(stringResource(R.string.provider_alldebrid_optional)) },
+        label = { Text(stringResource(R.string.provider_debrid_optional)) },
         singleLine = true,
     )
     OutlinedTextField(

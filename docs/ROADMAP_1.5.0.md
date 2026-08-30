@@ -20,8 +20,11 @@ Gate: schemas survive upgrade/downgrade fixtures, malformed inputs fail closed a
 - Add the `+` immediately after **Custom**, the three-step creator and persisted tab ordering.
 - Ship read-only metadata feeds first, with paging, ETag/Last-Modified, bulk upserts and stale offline snapshots.
 - Add search, refresh, trust state and provider edit/disable/delete controls.
+- Add isolated catalog adapters for AnkerGames, GOGUnlocked and SteamRIP behind the existing provider contract.
+- Normalize titles, versions, sizes, artwork and source links without letting site HTML define commands, paths or cleanup policy.
+- Keep each adapter independently disableable so a broken or changed site cannot block other provider tabs.
 
-Gate: existing sources and launches are unchanged, recomposition performs no network/database request, and a 10,000-item fixture stays responsive.
+Gate: existing sources and launches are unchanged, recomposition performs no network/database request, every adapter passes saved-response fixtures, and a 10,000-item catalog stays responsive.
 
 ### Stage 2: resolution and transfers
 
@@ -183,6 +186,31 @@ Exit criteria: profile round trips preserve all supported settings, exported pac
 - Offer cleanup policies `Keep installer`, `Delete after verified install` and `Ask after install`. Cleanup runs only after the final installed files pass verification; failures keep the installer and staging report.
 - Never auto-launch an installed executable. The user reviews the detected `.exe`, creates or links a container and confirms its settings separately.
 - Define the data contract, state machine, threat model and implementation boundaries in [`CUSTOM_PROVIDER_TABS.md`](CUSTOM_PROVIDER_TABS.md).
+
+### Additional 1.5 provider adapters
+
+AnkerGames, GOGUnlocked and SteamRIP support must reuse the generic provider pipeline. An adapter discovers metadata and user-selectable links; it does not receive direct filesystem, Wine or cleanup authority.
+
+For each source:
+
+- Implement catalog browse, pagination and search using bounded HTTPS requests.
+- Extract title, release/version text, declared size, description, artwork and candidate download links into the existing provider model.
+- Cache the last valid catalog snapshot and fail independently when the source is unavailable or changes format.
+- Resolve only the item and link selected by the user. Route supported host or magnet resolution through the existing credential-safe resolver boundary.
+- Classify the downloaded payload by content before offering extraction or installation; never trust a filename extension or page label alone.
+- Reuse resumable transfers, space reservation, archive path confinement, executable discovery, install receipts and verified cleanup.
+- Display the source domain and resolved host before download, plus any missing hash or size information.
+- Ship no account credential, game file, mirrored catalog database or source-controlled download URL in the APK.
+
+Source-specific targets:
+
+| Adapter | Initial 1.5 scope | Required fixture coverage |
+| --- | --- | --- |
+| AnkerGames | Catalog, search, artwork and supported outbound file links | Listing/detail changes, missing artwork, multiple hosts, dead link and unsupported payload |
+| GOGUnlocked | Catalog, search and portable/installer payload discovery | Multi-part downloads, archive/installer distinction, missing size/hash and link expiration |
+| SteamRIP | Catalog, search and portable archive discovery | Pagination, password metadata, archive variants, host fallback and executable discovery |
+
+Gate: adapters use captured public test fixtures and fake resolver/download servers in CI; no live site, user credential or copyrighted payload is required for tests. A parser failure disables only that adapter, preserves its last valid snapshot and cannot trigger a download or install.
 
 Exit criteria: provider tabs do not alter built-in sources, refresh has bounded network/database work, secrets never appear outside encrypted storage, folder access survives restart, failed/cancelled transfers are resumable or recoverable, and cleanup cannot delete an installer before a verified installation.
 

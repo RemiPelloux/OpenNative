@@ -1240,6 +1240,7 @@
     <string name="main_update_available_title">Update Available</string>
     <string name="main_update_available_message">A new version (%1$s) is available!%2$s</string>
     <string name="main_update_button">Update</string>
+    <string name="main_update_downloading">Downloading and verifying update…</string>
     <string name="main_later_button">Later</string>
     <string name="main_update_failed_title">Update Failed</string>
     <string name="main_update_failed_message">Failed to download or install the update. Please try again later.</string>
@@ -2234,7 +2235,8 @@
     <string name="provider_order">Order (desc or asc)</string>
     <string name="provider_load_more">Load next page</string>
     <string name="provider_search">Search this feed</string>
-    <string name="provider_alldebrid_optional">AllDebrid API key (optional)</string>
+    <string name="provider_debrid_key_label">%1$s API key</string>
+    <string name="provider_debrid_optional">Debrid API key (optional)</string>
     <string name="provider_install_folder">Install folder</string>
     <string name="provider_pick_folder">Choose folder</string>
     <string name="provider_cleanup_keep">Keep installer</string>
@@ -2254,9 +2256,9 @@
     <string name="provider_download">Download</string>
     <string name="provider_install">Install to Custom</string>
     <string name="provider_extract">Extract to Custom</string>
-    <string name="provider_download_blocked">Add an AllDebrid key to download</string>
-    <string name="provider_key_title">AllDebrid required</string>
-    <string name="provider_key_body">Enter an AllDebrid API key to resolve the selected link. You can dismiss this and keep browsing. Download stays disabled until a key is saved.</string>
+    <string name="provider_download_blocked">Configure the selected debrid service to download</string>
+    <string name="provider_key_title">%1$s required</string>
+    <string name="provider_key_body">Enter your %1$s API key to resolve download links. The key is encrypted on this device.</string>
     <string name="provider_key_save">Validate and save</string>
     <string name="provider_key_dismiss">Not now</string>
     <string name="provider_size">Download %1$s</string>
@@ -2269,9 +2271,10 @@
     <string name="settings_providers_title">Provider tabs</string>
     <string name="provider_settings_refresh_all">Refresh all feeds</string>
     <string name="provider_settings_refresh_subtitle">Fetches the latest pages from each enabled tab</string>
-    <string name="provider_settings_alldebrid">AllDebrid key</string>
-    <string name="provider_settings_alldebrid_subtitle">Saved on this device and used by every provider tab</string>
-    <string name="provider_settings_alldebrid_set">Configured on this device</string>
+    <string name="provider_settings_service">Debrid service</string>
+    <string name="provider_settings_key">%1$s API key</string>
+    <string name="provider_settings_key_subtitle">Not configured on this device</string>
+    <string name="provider_settings_key_set">Configured on this device</string>
     <string name="provider_settings_export">Export provider tabs</string>
     <string name="provider_settings_export_subtitle">Writes a JSON bundle of names and feed URLs. Keys stay on this device.</string>
     <string name="provider_settings_import">Import provider tabs</string>

@@ -24,7 +24,7 @@ class ProviderTransferCoordinator @Inject constructor(
     private val jobDao: ProviderTransferJobDao,
     private val receiptDao: ProviderInstallReceiptDao,
     private val secrets: ProviderSecretStore,
-    private val resolver: AllDebridResolver,
+    private val resolverRegistry: DebridResolverRegistry,
     private val downloader: StreamingDownloader,
     private val feedClient: ProviderFeedClient,
     @Named("providerStagingRoot") private val stagingRoot: File,
@@ -122,10 +122,14 @@ class ProviderTransferCoordinator @Inject constructor(
         magnet: String,
         cancelled: () -> Boolean,
     ): TransferJob {
-        val apiKey = secrets.read(tab.credentialRef)
-            ?: throw ProviderException(ProviderErrorCode.AUTHENTICATION, "Resolver credential is missing")
+        val credential = ProviderCredentials.requireFor(tab, resolverRegistry.selectedProvider, secrets)
+        val resolver = resolverRegistry.require(credential.provider) as? MagnetDebridResolver
+            ?: throw ProviderException(
+                ProviderErrorCode.UNSUPPORTED_HOST,
+                "${credential.provider.displayName} magnet downloads are not supported yet",
+            )
         return ProviderMagnetDownload.downloadAll(
-            apiKey = apiKey,
+            apiKey = credential.apiKey,
             magnet = magnet,
             job = job,
             title = job.title,
@@ -222,16 +226,17 @@ class ProviderTransferCoordinator @Inject constructor(
         candidates: List<String>,
         pageUrl: String,
     ): TransferJob {
-        val apiKey = secrets.read(tab.credentialRef)
-            ?: throw ProviderException(ProviderErrorCode.AUTHENTICATION, "Resolver credential is missing")
+        val credential = ProviderCredentials.requireFor(tab, resolverRegistry.selectedProvider, secrets)
+        val resolver = resolverRegistry.require(credential.provider)
         persist(job.copy(state = TransferState.RESOLVING))
         val links = unlockTargets(job.selectedLink, candidates, pageUrl, tab.feedUrl)
         Timber.tag("ProviderTransfer").i("Unlocking ${links.size} hoster(s) for ${job.title}")
-        return unlockFirst(apiKey, job, links, pageUrl)
+        return unlockFirst(credential.apiKey, resolver, job, links, pageUrl)
     }
 
     private suspend fun unlockFirst(
         apiKey: String,
+        resolver: DebridResolver,
         job: TransferJob,
         links: List<String>,
         pageUrl: String,
@@ -240,9 +245,13 @@ class ProviderTransferCoordinator @Inject constructor(
         var password: String? = null
         for (link in links) {
             try {
-                return persistResolved(job, link, unlockLink(apiKey, link) {
-                    password ?: pagePassword(pageUrl).also { password = it }
-                })
+                return persistResolved(
+                    job,
+                    link,
+                    unlockLink(resolver, apiKey, link) {
+                        password ?: pagePassword(pageUrl).also { password = it }
+                    },
+                )
             } catch (error: ProviderException) {
                 if (isFatalResolver(error)) throw error
                 lastError = error
@@ -255,6 +264,7 @@ class ProviderTransferCoordinator @Inject constructor(
     }
 
     private suspend fun unlockLink(
+        resolver: DebridResolver,
         apiKey: String,
         link: String,
         password: () -> String,
@@ -299,13 +309,14 @@ class ProviderTransferCoordinator @Inject constructor(
         selectedLink: String,
         resolved: ResolvedDownload,
     ): TransferJob {
-        val partial = File(stagingRoot, "${job.jobId}/${resolved.filename}.partial")
+        val filename = ProviderPathSlug.safeFileName(resolved.filename)
+        val partial = File(stagingRoot, "${job.jobId}/$filename.partial")
         return persist(
             job.copy(
                 state = TransferState.DOWNLOADING,
                 selectedLink = selectedLink,
                 resolvedUrl = resolved.url,
-                filename = resolved.filename,
+                filename = filename,
                 partialPath = partial.absolutePath,
                 bytesTotal = resolved.sizeBytes,
             ),

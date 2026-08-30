@@ -76,8 +76,8 @@ android {
         buildConfigField("boolean", "XR_BUILD", "false")
         buildConfigField("boolean", "MODERN_XR", "false")
 
-        versionCode = 35
-        versionName = "1.4.0"
+        versionCode = 37
+        versionName = "1.4.2"
 
         buildConfigField("boolean", "GOLD", "false")
         buildConfigField("boolean", "SELF_UPDATE_ENABLED", "false")
@@ -157,6 +157,7 @@ android {
             targetSdk = 36
             ndk.abiFilters += listOf("arm64-v8a")
             buildConfigField("boolean", "MODERN_ANDROID", "true")
+            buildConfigField("boolean", "SELF_UPDATE_ENABLED", "true")
             buildConfigField("String", "PRELOAD_BIONIC_SO", "\"libredirect-bionic-wx.so\"")
         }
         create("modernXr") {

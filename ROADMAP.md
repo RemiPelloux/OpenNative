@@ -16,6 +16,7 @@ Dates are intentionally omitted until the preceding quality gate passes. A featu
 | `1.3.0` | Skidrow extract-to-Custom, Play picks the game exe, catalog covers in Custom | Released |
 | `1.3.1` | ISO9660 extraction, runtime catalog refresh and upstream compatibility fixes | Released |
 | `1.4.0` | Shared Wine prefix for large libraries | Released |
+| `1.4.2` | Secure self-update, selectable debrid services and transfer reliability hardening | Released |
 | `1.5.0` | Daily-driver quality: recovery, settings sharing, cockpit polish and installer certification | Committed next milestone |
 | `2.0.0` | Modular runtimes, compatibility profiles and safe OpenNative identity/data migration | Future architecture |
 | `2.x` | Broader graphics, CPU-translation, input, audio and device compatibility | Candidate portfolio |
