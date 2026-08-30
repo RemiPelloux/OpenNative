@@ -8,6 +8,7 @@
 - Recover resumable downloads when a host ignores `Range` and returns the full payload with HTTP 200.
 - Reject unsafe resolver filenames before creating staging paths.
 - Add selectable AllDebrid, Real-Debrid, Premiumize, Debrid-Link and TorBox accounts with separate encrypted credentials.
+- Make the debrid service picker scrollable on short landscape displays.
 - Add a daily GitHub release check, an update modal, bounded APK download, checksum/package/signature verification and Android installer handoff.
 
 ## 1.4.0 - 2026-08-30
