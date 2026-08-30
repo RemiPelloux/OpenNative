@@ -18,6 +18,9 @@ interface ProviderTransferJobDao {
     @Query("SELECT * FROM provider_transfer_jobs WHERE job_id = :jobId LIMIT 1")
     suspend fun getById(jobId: String): ProviderTransferJobEntity?
 
+    @Query("SELECT * FROM provider_transfer_jobs WHERE tab_id = :tabId AND item_id = :itemId AND state = 'FAILED'")
+    suspend fun getFailedForItem(tabId: String, itemId: String): List<ProviderTransferJobEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: ProviderTransferJobEntity)
 

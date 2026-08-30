@@ -5,6 +5,7 @@ import app.gamenative.db.dao.ProviderInstallReceiptDao
 import app.gamenative.db.dao.ProviderTransferJobDao
 import app.gamenative.db.entity.ProviderInstallReceiptEntity
 import app.gamenative.db.entity.ProviderTransferJobEntity
+import app.gamenative.mods.ModArchivePasswordException
 import java.io.File
 import java.util.UUID
 import javax.inject.Inject
@@ -43,12 +44,17 @@ class ProviderTransferCoordinator @Inject constructor(
 
     fun observeAllJobs(): Flow<List<TransferJob>> = jobDao.observeAll().mapRows()
 
+    suspend fun getJob(jobId: String): TransferJob? = jobDao.getById(jobId)?.toDomain()
+
     suspend fun enqueue(
         tab: ProviderTab,
         item: ProviderFeedItem,
         availableBytes: Long,
         includeWineHeadroom: Boolean,
     ): TransferJob {
+        jobDao.getFailedForItem(tab.id, item.itemId)
+            .map { it.toDomain() }
+            .forEach(::cleanupFailedStaging)
         val required = StorageReservation.requiredBytes(
             downloadSize = item.downloadSizeBytes,
             uncompressedSize = item.uncompressedSizeBytes,
@@ -201,24 +207,62 @@ class ProviderTransferCoordinator @Inject constructor(
 
     suspend fun extractPortable(job: TransferJob): TransferJob = extractArchive(job)
 
-    suspend fun extractArchive(job: TransferJob): TransferJob = withContext(Dispatchers.IO) {
+    suspend fun extractArchive(
+        job: TransferJob,
+        password: String = "",
+        layer: Int = 0,
+    ): TransferJob = withContext(Dispatchers.IO) {
         val archive = File(job.finalPath)
-        val dest = File(stagingRoot, "${job.jobId}-extract")
-        runCatching {
-            app.gamenative.mods.ModArchiveExtractor.extract(archive, dest)
-        }.getOrElse { error ->
+        val suffix = if (layer == 0) "" else "-$layer"
+        val dest = File(stagingRoot, "${job.jobId}-extract$suffix")
+        try {
+            app.gamenative.mods.ModArchiveExtractor.extract(archive, dest, password = password)
+        } catch (error: Throwable) {
             dest.deleteRecursively()
-            throw ProviderException(
-                ProviderErrorCode.MALFORMED_RESPONSE,
-                error.message ?: "Could not extract archive",
-            )
+            val code = when {
+                error is ProviderException -> error.code
+                error is ModArchivePasswordException -> ProviderErrorCode.PASSWORD_PROTECTED
+                error.message.orEmpty().contains("unsafe archive path", ignoreCase = true) ||
+                    error.message.orEmpty().contains("escapes extraction", ignoreCase = true) ->
+                    ProviderErrorCode.PATH_ESCAPE
+                else -> ProviderErrorCode.MALFORMED_RESPONSE
+            }
+            throw ProviderException(code, error.message ?: "Could not extract archive", error)
         }
         persist(job.copy(state = TransferState.INSTALLING, destinationPath = dest.absolutePath))
     }
 
-    suspend fun markFailed(job: TransferJob, message: String): TransferJob = persist(
-        job.copy(state = TransferState.FAILED, errorCode = ProviderErrorCode.NETWORK, errorMessage = message),
-    )
+    suspend fun markFailed(
+        job: TransferJob,
+        message: String,
+        code: ProviderErrorCode = ProviderErrorCode.UNKNOWN,
+    ): TransferJob = persist(job.copy(state = TransferState.FAILED, errorCode = code, errorMessage = message))
+
+    suspend fun markFailed(
+        job: TransferJob,
+        error: Throwable,
+        cleanupStaging: Boolean = false,
+    ): TransferJob {
+        if (cleanupStaging) cleanupFailedStaging(job)
+        val providerError = error as? ProviderException
+        return markFailed(
+            job = job,
+            message = error.message ?: error.toString(),
+            code = providerError?.code ?: ProviderErrorCode.UNKNOWN,
+        )
+    }
+
+    fun archivePassword(description: String, pageUrl: String): String =
+        HosterPassword.fromHtml(description).ifBlank { pagePassword(pageUrl) }
+
+    internal fun cleanupFailedStaging(job: TransferJob) {
+        // Only delete paths derived from our own job ID under the injected staging root.
+        File(stagingRoot, job.jobId).deleteRecursively()
+        val extractPrefix = "${job.jobId}-extract"
+        stagingRoot.listFiles()
+            ?.filter { it.name == extractPrefix || it.name.startsWith("$extractPrefix-") }
+            ?.forEach(File::deleteRecursively)
+    }
 
     private suspend fun resolve(
         tab: ProviderTab,

@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -43,7 +44,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -188,7 +188,6 @@ private fun GameActionBar(
     onInstall: () -> Unit,
 ) {
     val downloading = job?.state == TransferState.DOWNLOADING
-    val hasLocal = ProviderLocalPayload.hasInstaller(item)
     val canInstall = ProviderGameUi.canInstall(job, item)
     Column(
         modifier = Modifier
@@ -216,7 +215,7 @@ private fun GameActionBar(
         }
         if (job != null) {
             Text(
-                ProviderGameUi.statusLabel(job, hasLocal),
+                ProviderGameUi.statusLabel(job, canInstall),
                 color = Color.White.copy(alpha = 0.9f),
             )
         }

@@ -76,7 +76,7 @@ android {
         buildConfigField("boolean", "XR_BUILD", "false")
         buildConfigField("boolean", "MODERN_XR", "false")
 
-        versionCode = 38
+        versionCode = 41
         versionName = "1.4.2"
 
         buildConfigField("boolean", "GOLD", "false")
@@ -387,6 +387,7 @@ dependencies {
     implementation(libs.kotlin.coroutines)
     implementation(libs.timber)
     implementation(libs.zxing)
+    implementation(libs.zip4j)
 
     // Google Protobufs
     implementation(libs.protobuf.java)

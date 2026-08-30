@@ -53,6 +53,7 @@ object ProviderGameUi {
         job.state == TransferState.DOWNLOADING -> "Downloading ${job.progressPercent}%"
         job.state == TransferState.RESOLVING -> "Resolving link"
         job.state == TransferState.INSTALLING || job.state == TransferState.VERIFYING_INSTALL -> "Installing"
+        job.state == TransferState.FAILED && job.finalPath.isNotBlank() -> "Install failed"
         job.state == TransferState.FAILED -> "Download failed"
         job.state == TransferState.NEEDS_REVIEW -> "Needs review"
         else -> job.state.name.lowercase().replace('_', ' ')

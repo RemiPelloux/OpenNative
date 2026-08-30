@@ -9,9 +9,9 @@ import app.gamenative.PluviaApp
 import app.gamenative.PrefManager
 import app.gamenative.R
 import app.gamenative.events.AndroidEvent
+import app.gamenative.provider.CatalogFilter
 import app.gamenative.provider.DebridProvider
 import app.gamenative.provider.DebridResolverRegistry
-import app.gamenative.provider.CatalogFilter
 import app.gamenative.provider.ProviderCatalogPaging
 import app.gamenative.provider.ProviderCatalogRepository
 import app.gamenative.provider.ProviderCredentials
@@ -24,17 +24,15 @@ import app.gamenative.provider.ProviderInstallHandler
 import app.gamenative.provider.ProviderJobLookup
 import app.gamenative.provider.ProviderLocalPayload
 import app.gamenative.provider.ProviderRefreshCoordinator
-import app.gamenative.service.ProviderTransferService
 import app.gamenative.provider.ProviderSecretStore
 import app.gamenative.provider.ProviderTab
-import app.gamenative.provider.ProviderTabBundle
 import app.gamenative.provider.ProviderTabCodec
-import app.gamenative.provider.ProviderTabPolicy
 import app.gamenative.provider.ProviderTransferCoordinator
 import app.gamenative.provider.ProviderUrlPolicy
 import app.gamenative.provider.ProviderWineSetup
 import app.gamenative.provider.TransferJob
 import app.gamenative.provider.TransferState
+import app.gamenative.service.ProviderTransferService
 import app.gamenative.ui.screen.library.provider.ProviderTabDraft
 import app.gamenative.ui.screen.library.provider.toTab
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,14 +40,14 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -315,7 +313,7 @@ class ProviderLibraryViewModel @Inject constructor(
                     PluviaApp.events.emit(AndroidEvent.ExternalGameLaunch(launch.appId))
                 }
             }.onFailure { error ->
-                transfers.markFailed(job, error.message ?: error.toString())
+                transfers.markFailed(job, error, cleanupStaging = true)
             }
         }
     }

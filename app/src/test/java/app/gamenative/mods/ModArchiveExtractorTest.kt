@@ -1,15 +1,18 @@
 package app.gamenative.mods
 
+import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import kotlin.io.path.createTempDirectory
 import kotlinx.coroutines.runBlocking
+import net.lingala.zip4j.ZipFile as Zip4jFile
+import net.lingala.zip4j.model.ZipParameters
+import net.lingala.zip4j.model.enums.EncryptionMethod
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.io.File
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
-import kotlin.io.path.createTempDirectory
 
 class ModArchiveExtractorTest {
     private lateinit var tempDir: File
@@ -120,6 +123,54 @@ class ModArchiveExtractorTest {
         val result = ModArchiveExtractor.extract(archive, File(tempDir, "out-fomod"))
 
         assertTrue(File(result.destination, "Data/plugin.esp").isFile)
+    }
+
+    @Test
+    fun extractArchive_prefersSignatureOverMisleadingExtension() = runBlocking {
+        val archive = File(tempDir, "download.rar")
+        zip(archive, "Decktamer/game.exe" to "game")
+
+        val result = ModArchiveExtractor.extract(archive, File(tempDir, "out-mislabeled"))
+
+        assertEquals("zip", ModArchiveExtractor.archiveExtension(archive))
+        assertTrue(File(result.destination, "Decktamer/game.exe").isFile)
+    }
+
+    @Test
+    fun extractZip_supportsPasswordProtectedArchives() = runBlocking {
+        val source = File(tempDir, "secret.txt").apply { writeText("decktamer payload") }
+        val archive = File(tempDir, "protected.zip")
+        val parameters = ZipParameters().apply {
+            isEncryptFiles = true
+            encryptionMethod = EncryptionMethod.ZIP_STANDARD
+        }
+        Zip4jFile(archive, "skidrowreloaded".toCharArray()).addFile(source, parameters)
+
+        val result = ModArchiveExtractor.extract(
+            archiveFile = archive,
+            destination = File(tempDir, "out-protected"),
+            password = "skidrowreloaded",
+        )
+
+        assertEquals("decktamer payload", File(result.destination, "secret.txt").readText())
+    }
+
+    @Test
+    fun extractZip_rejectsMissingPasswordForProtectedArchives() = runBlocking {
+        val source = File(tempDir, "secret.txt").apply { writeText("secret") }
+        val archive = File(tempDir, "protected.zip")
+        val parameters = ZipParameters().apply {
+            isEncryptFiles = true
+            encryptionMethod = EncryptionMethod.ZIP_STANDARD
+        }
+        Zip4jFile(archive, "skidrowreloaded".toCharArray()).addFile(source, parameters)
+
+        val result = runCatching {
+            ModArchiveExtractor.extract(archive, File(tempDir, "out-protected"))
+        }
+
+        assertTrue(result.exceptionOrNull() is ModArchivePasswordException)
+        assertTrue(!File(tempDir, "out-protected").exists())
     }
 
     @Test

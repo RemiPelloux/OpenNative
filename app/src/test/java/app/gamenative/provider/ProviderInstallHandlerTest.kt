@@ -54,6 +54,56 @@ class ProviderInstallHandlerTest {
     }
 
     @Test
+    fun `archive discovery uses signatures and selects first multipart volume`() {
+        val root = kotlin.io.path.createTempDirectory("nested-archives").toFile()
+        val second = java.io.File(root, "game.part02.rar")
+        val first = java.io.File(root, "game.part01.rar")
+        val disguised = java.io.File(root, "payload.data")
+        val rarHeader = byteArrayOf(0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00, 0x00)
+        second.writeBytes(rarHeader)
+        first.writeBytes(rarHeader)
+        disguised.writeBytes(byteArrayOf(0x50, 0x4B, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00))
+
+        val archives = ProviderInstallHandler.findArchives(root)
+
+        assertEquals(first.absolutePath, archives.first().absolutePath)
+        assertTrue(archives.any { it.absolutePath == disguised.absolutePath })
+        root.deleteRecursively()
+    }
+
+    @Test
+    fun `publishing extraction replaces only an empty destination`() {
+        val root = kotlin.io.path.createTempDirectory("publish-extraction").toFile()
+        val source = java.io.File(root, "source").apply { mkdirs() }
+        java.io.File(source, "game.exe").writeText("game")
+        val destination = java.io.File(root, "game").apply { mkdirs() }
+
+        ProviderInstallHandler.publishExtracted(source.absolutePath, destination, "job-1")
+
+        assertEquals("game", java.io.File(destination, "game.exe").readText())
+        assertFalse(java.io.File(root, ".game.installing-job-1").exists())
+        root.deleteRecursively()
+    }
+
+    @Test
+    fun `publishing extraction preserves an existing populated destination`() {
+        val root = kotlin.io.path.createTempDirectory("publish-conflict").toFile()
+        val source = java.io.File(root, "source").apply { mkdirs() }
+        java.io.File(source, "new.exe").writeText("new")
+        val destination = java.io.File(root, "game").apply { mkdirs() }
+        val existing = java.io.File(destination, "save.dat").apply { writeText("keep") }
+
+        val result = runCatching {
+            ProviderInstallHandler.publishExtracted(source.absolutePath, destination, "job-2")
+        }
+
+        assertTrue(result.isFailure)
+        assertEquals("keep", existing.readText())
+        assertFalse(java.io.File(root, ".game.installing-job-2").exists())
+        root.deleteRecursively()
+    }
+
+    @Test
     fun `fitgirl setup folder is not treated as an archive`() {
         val root = kotlin.io.path.createTempDirectory("fitgirl-pack").toFile()
         java.io.File(root, "setup.exe").writeBytes(byteArrayOf(0x4D, 0x5A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00))

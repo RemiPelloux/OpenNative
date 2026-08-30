@@ -1,17 +1,19 @@
 package app.gamenative.mods
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import me.zhanghai.android.libarchive.Archive
-import me.zhanghai.android.libarchive.ArchiveEntry
-import me.zhanghai.android.libarchive.ArchiveException
-import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.util.zip.ZipFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import me.zhanghai.android.libarchive.Archive
+import me.zhanghai.android.libarchive.ArchiveEntry
+import me.zhanghai.android.libarchive.ArchiveException
+import net.lingala.zip4j.exception.ZipException
+import net.lingala.zip4j.model.FileHeader
+import timber.log.Timber
 
 data class ModArchiveEntry(
     val path: String,
@@ -34,6 +36,7 @@ data class ModArchiveExtractionProgress(
 )
 
 class UnsupportedModArchiveException(message: String) : IOException(message)
+class ModArchivePasswordException(message: String, cause: Throwable? = null) : IOException(message, cause)
 
 object ModArchiveExtractor {
     // Hard ceilings prevent archive bombs and bound memory, disk, and path handling costs.
@@ -51,6 +54,7 @@ object ModArchiveExtractor {
         archiveFile: File,
         destination: File,
         preservedSingleFileName: String? = null,
+        password: String = "",
         onProgress: (ModArchiveExtractionProgress) -> Unit = {},
     ): ModArchiveExtractionResult =
         withContext(Dispatchers.IO) {
@@ -66,10 +70,10 @@ object ModArchiveExtractor {
             val startedAt = System.nanoTime()
             val entries = try {
                 when (archiveExtension) {
-                    "zip" -> extractZip(archiveFile, destination, onProgress)
-                    "7z" -> extractSevenZip(archiveFile, destination, onProgress)
-                    "rar" -> extractRar(archiveFile, destination, onProgress)
-                    "iso" -> extractIso(archiveFile, destination, onProgress)
+                    "zip" -> extractZip(archiveFile, destination, password, onProgress)
+                    "7z" -> extractSevenZip(archiveFile, destination, password, onProgress)
+                    "rar" -> extractRar(archiveFile, destination, password, onProgress)
+                    "iso" -> extractIso(archiveFile, destination, password, onProgress)
                     "exe" -> preserveExecutableFile(archiveFile, destination, preservedSingleFileName, onProgress)
                     else -> throw UnsupportedModArchiveException("Unsupported archive type: .$archiveExtension")
                 }
@@ -92,7 +96,7 @@ object ModArchiveExtractor {
             )
         }
 
-    private fun archiveExtension(archiveFile: File): String {
+    internal fun archiveExtension(archiveFile: File): String {
         // Keep .exe installers as single placeable files, but allow nonstandard Nexus
         // extensions to fall back to safe archive header detection.
         val extension = archiveFile.extension.lowercase()
@@ -102,7 +106,8 @@ object ModArchiveExtractor {
             extension
         }
         if (inferred == "exe") return inferred
-        if (inferred in supportedArchiveExtensions) return inferred
+        // Debrid hosts sometimes return a source RAR with a URL-derived .zip filename.
+        // The verified payload signature must choose the decoder, not that filename.
         return archiveExtensionFromHeader(archiveFile).ifBlank { inferred }
     }
 
@@ -158,8 +163,18 @@ object ModArchiveExtractor {
     private fun extractZip(
         archiveFile: File,
         destination: File,
+        password: String,
         onProgress: (ModArchiveExtractionProgress) -> Unit,
     ): List<ModArchiveEntry> {
+        val encryptedZip = net.lingala.zip4j.ZipFile(archiveFile)
+        if (encryptedZip.isEncrypted) {
+            if (password.isBlank()) {
+                throw ModArchivePasswordException("This archive needs the password from the source post")
+            }
+            encryptedZip.setPassword(password.toCharArray())
+            return extractEncryptedZip(encryptedZip, destination, onProgress)
+        }
+
         val entries = mutableListOf<ModArchiveEntry>()
         var expandedBytes = 0L
         ZipFile(archiveFile).use { zip ->
@@ -205,19 +220,124 @@ object ModArchiveExtractor {
         return entries
     }
 
+    private fun extractEncryptedZip(
+        zip: net.lingala.zip4j.ZipFile,
+        destination: File,
+        onProgress: (ModArchiveExtractionProgress) -> Unit,
+    ): List<ModArchiveEntry> {
+        val headers = try {
+            zip.fileHeaders
+        } catch (error: ZipException) {
+            throw IOException("ZIP archive could not be read", error)
+        }
+        if (headers.size > MAX_ENTRIES) throw IOException("Archive has too many entries")
+
+        var totalBytes = 0L
+        headers.forEach { header ->
+            safeDestination(destination, header.fileName)
+            val size = header.uncompressedSize.coerceAtLeast(0L)
+            if (!header.isDirectory && size > MAX_EXPANDED_BYTES - totalBytes) {
+                throw IOException("Archive expands beyond the safety limit")
+            }
+            totalBytes += size
+        }
+
+        val entries = mutableListOf<ModArchiveEntry>()
+        var expandedBytes = 0L
+        try {
+            headers.forEach { header ->
+                val outFile = safeDestination(destination, header.fileName)
+                if (header.isDirectory) {
+                    if (!outFile.mkdirs() && !outFile.isDirectory) {
+                        throw IOException("Could not create archive directory: ${header.fileName}")
+                    }
+                    entries += ModArchiveEntry(normalizeArchivePath(header.fileName), true, 0L)
+                } else {
+                    outFile.parentFile?.let { parent ->
+                        if (!parent.mkdirs() && !parent.isDirectory) {
+                            throw IOException("Could not create archive directory: ${parent.absolutePath}")
+                        }
+                    }
+                    expandedBytes = copyEncryptedZipEntry(
+                        zip = zip,
+                        header = header,
+                        outFile = outFile,
+                        alreadyExpandedBytes = expandedBytes,
+                        totalEntries = headers.size,
+                        totalBytes = totalBytes,
+                        entriesProcessed = entries.size,
+                        onProgress = onProgress,
+                    )
+                    entries += ModArchiveEntry(normalizeArchivePath(header.fileName), false, outFile.length())
+                }
+                emitProgress(
+                    onProgress,
+                    "zip",
+                    entries.size,
+                    headers.size,
+                    expandedBytes,
+                    totalBytes,
+                    header.fileName,
+                )
+            }
+        } catch (error: ZipException) {
+            throw ModArchivePasswordException("The archive password from the source post was rejected", error)
+        }
+        return entries
+    }
+
+    private fun copyEncryptedZipEntry(
+        zip: net.lingala.zip4j.ZipFile,
+        header: FileHeader,
+        outFile: File,
+        alreadyExpandedBytes: Long,
+        totalEntries: Int,
+        totalBytes: Long,
+        entriesProcessed: Int,
+        onProgress: (ModArchiveExtractionProgress) -> Unit,
+    ): Long {
+        var expandedBytes = alreadyExpandedBytes
+        zip.getInputStream(header).buffered(ARCHIVE_READ_BLOCK_SIZE).use { input ->
+            FileOutputStream(outFile).buffered(ARCHIVE_READ_BLOCK_SIZE).use { output ->
+                val buffer = ByteArray(ARCHIVE_READ_BLOCK_SIZE)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read <= 0) break
+                    if (read.toLong() > MAX_EXPANDED_BYTES - expandedBytes) {
+                        throw IOException("Archive expands beyond the safety limit")
+                    }
+                    expandedBytes += read
+                    output.write(buffer, 0, read)
+                    emitProgress(
+                        onProgress,
+                        "zip",
+                        entriesProcessed,
+                        totalEntries,
+                        expandedBytes,
+                        totalBytes,
+                        header.fileName,
+                    )
+                }
+            }
+        }
+        return expandedBytes
+    }
+
     private fun extractSevenZip(
         archiveFile: File,
         destination: File,
+        password: String,
         onProgress: (ModArchiveExtractionProgress) -> Unit,
     ): List<ModArchiveEntry> =
-        extractLibarchive(archiveFile, destination, "7z", onProgress) { Archive.readSupportFormat7zip(it) }
+        extractLibarchive(archiveFile, destination, "7z", password, onProgress) { Archive.readSupportFormat7zip(it) }
 
     private fun extractRar(
         archiveFile: File,
         destination: File,
+        password: String,
         onProgress: (ModArchiveExtractionProgress) -> Unit,
     ): List<ModArchiveEntry> =
-        extractLibarchive(archiveFile, destination, "rar", onProgress) {
+        extractLibarchive(archiveFile, destination, "rar", password, onProgress) {
             Archive.readSupportFormatRar(it)
             Archive.readSupportFormatRar5(it)
         }
@@ -225,9 +345,10 @@ object ModArchiveExtractor {
     private fun extractIso(
         archiveFile: File,
         destination: File,
+        password: String,
         onProgress: (ModArchiveExtractionProgress) -> Unit,
     ): List<ModArchiveEntry> =
-        extractLibarchive(archiveFile, destination, "iso", onProgress) {
+        extractLibarchive(archiveFile, destination, "iso", password, onProgress) {
             Archive.readSupportFormatIso9660(it)
         }
 
@@ -264,6 +385,7 @@ object ModArchiveExtractor {
         archiveFile: File,
         destination: File,
         format: String,
+        password: String,
         onProgress: (ModArchiveExtractionProgress) -> Unit,
         supportFormat: (Long) -> Unit,
     ): List<ModArchiveEntry> {
@@ -279,6 +401,9 @@ object ModArchiveExtractor {
             Archive.setCharset(archive, Charsets.UTF_8.name().toByteArray(Charsets.UTF_8))
             Archive.readSupportFilterAll(archive)
             supportFormat(archive)
+            if (password.isNotBlank()) {
+                Archive.readAddPassphrase(archive, password.toByteArray(Charsets.UTF_8))
+            }
             Archive.readOpenFileName(
                 archive,
                 archiveFile.absolutePath.toByteArray(Charsets.UTF_8),
@@ -293,8 +418,8 @@ object ModArchiveExtractor {
                 }
                 if (entry == 0L) break
                 if (entries.size >= MAX_ENTRIES) throw IOException("Archive has too many entries")
-                if (ArchiveEntry.isEncrypted(entry)) {
-                    throw UnsupportedModArchiveException("Encrypted ${format.uppercase()} archives are not supported")
+                if (ArchiveEntry.isEncrypted(entry) && password.isBlank()) {
+                    throw ModArchivePasswordException("This archive needs the password from the source post")
                 }
 
                 val entryName = archiveEntryName(entry)
@@ -320,8 +445,12 @@ object ModArchiveExtractor {
                         expandedBytes += written
                         entries += ModArchiveEntry(normalized, false, outFile.length())
                     }
-                    ArchiveEntry.AE_IFLNK -> throw UnsupportedModArchiveException("${format.uppercase()} archives with symlinks are not supported")
-                    else -> throw UnsupportedModArchiveException("${format.uppercase()} archive contains an unsupported entry type: $entryName")
+                    ArchiveEntry.AE_IFLNK -> throw UnsupportedModArchiveException(
+                        "${format.uppercase()} archives with symlinks are not supported",
+                    )
+                    else -> throw UnsupportedModArchiveException(
+                        "${format.uppercase()} archive contains an unsupported entry type: $entryName",
+                    )
                 }
                 emitProgress(onProgress, format, entries.size, 0, expandedBytes, 0, normalized)
             }
@@ -398,7 +527,10 @@ object ModArchiveExtractor {
         val label = format.uppercase()
         return when {
             message.contains("encrypted", ignoreCase = true) ->
-                UnsupportedModArchiveException("Encrypted $label archives are not supported")
+                ModArchivePasswordException("The archive password from the source post was rejected", error)
+            message.contains("passphrase", ignoreCase = true) ||
+                message.contains("password", ignoreCase = true) ->
+                ModArchivePasswordException("The archive password from the source post was rejected", error)
             message.contains("multi-volume", ignoreCase = true) ||
                 message.contains("multi volume", ignoreCase = true) ||
                 message.contains("volume", ignoreCase = true) ->
@@ -453,5 +585,4 @@ object ModArchiveExtractor {
             ?.replace('\\', '/')
             ?.substringAfterLast('/')
             ?.takeIf { it.isNotBlank() && !isUnsafeArchivePath(it) }
-
 }

@@ -59,4 +59,19 @@ class ProviderGameUiTest {
         assertEquals("Ready to install", ProviderGameUi.statusLabel(verifying, hasLocalInstaller = true))
         root.deleteRecursively()
     }
+
+    @Test
+    fun `failed job after download reports install failure`() {
+        val failed = TransferJob(
+            jobId = "job",
+            tabId = "tab",
+            itemId = "item",
+            title = "Game",
+            selectedLink = "https://example.com/game.zip",
+            state = TransferState.FAILED,
+            finalPath = "/data/user/0/app/files/provider-staging/job/game.zip",
+        )
+
+        assertEquals("Install failed", ProviderGameUi.statusLabel(failed))
+    }
 }

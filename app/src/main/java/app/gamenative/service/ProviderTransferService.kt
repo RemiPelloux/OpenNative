@@ -10,12 +10,12 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import app.gamenative.R
+import app.gamenative.provider.DebridResolverRegistry
 import app.gamenative.provider.HosterAllowlist
 import app.gamenative.provider.ProviderCatalogRepository
 import app.gamenative.provider.ProviderCredentials
 import app.gamenative.provider.ProviderInstallHandler
 import app.gamenative.provider.ProviderSecretStore
-import app.gamenative.provider.DebridResolverRegistry
 import app.gamenative.provider.ProviderTab
 import app.gamenative.provider.ProviderTabPolicy
 import app.gamenative.provider.ProviderTransferCoordinator
@@ -32,10 +32,17 @@ import timber.log.Timber
 
 @AndroidEntryPoint
 class ProviderTransferService : Service() {
-    @Inject lateinit var catalog: ProviderCatalogRepository
-    @Inject lateinit var transfers: ProviderTransferCoordinator
-    @Inject lateinit var secrets: ProviderSecretStore
-    @Inject lateinit var resolverRegistry: DebridResolverRegistry
+    @Inject
+    lateinit var catalog: ProviderCatalogRepository
+
+    @Inject
+    lateinit var transfers: ProviderTransferCoordinator
+
+    @Inject
+    lateinit var secrets: ProviderSecretStore
+
+    @Inject
+    lateinit var resolverRegistry: DebridResolverRegistry
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val running = HashSet<String>()
@@ -90,7 +97,8 @@ class ProviderTransferService : Service() {
                     latest = ProviderInstallHandler.install(transfers, latest, item, tab)
                 }
             } catch (error: Throwable) {
-                transfers.markFailed(latest, error.message ?: error.toString())
+                val persisted = transfers.getJob(latest.jobId) ?: latest
+                transfers.markFailed(persisted, error, cleanupStaging = true)
                 throw error
             }
         } catch (error: Throwable) {
