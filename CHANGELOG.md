@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add the `1.6.0` runtime-quality roadmap for Wine warm-start, container activate, shared-prefix remap, prefix trim and launch smoothness.
+- Expand the feature and emulation roadmap with wineserver, ImageFs, guest I/O and XServer idle-cost work.
+
 ## 1.5.0 - 2026-08-31
 
 - Batch Steam installed-app and package-license reads on the library page, DLC unlock, and depot resolution so those paths no longer query one row at a time.

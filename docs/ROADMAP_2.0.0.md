@@ -2,7 +2,7 @@
 
 ## Goal
 
-`2.0.0` is an architectural release: OpenNative-owned identity and data migration, modular runtime components, broader device validation and a stable compatibility contract. Work starts only after the `1.5.0` quality gates are met.
+`2.0.0` is an architectural release: OpenNative-owned identity and data migration, modular runtime components, broader device validation and a stable compatibility contract. Work starts after the `1.5.0` quality gates are met. Wine warm-start, container activate and prefix hygiene that fit the current architecture belong in [`1.6.0`](ROADMAP_1.6.0.md) and may proceed in parallel.
 
 ## 1. Identity and data migration
 
@@ -31,6 +31,7 @@ Exit criteria: runtime modules can be upgraded or rolled back independently, man
 
 ### Compact containers and shared prefix groups
 
+- Reuse the `1.6.0` prefix generation marker, transactional activate and shared-prefix lock so modular components do not reintroduce full wineboot on every launch.
 - Measure container disk use by immutable runtime files, Wine prefix, redistributables, caches, saves and game-owned data before changing storage policy.
 - Store verified immutable runtime/component payloads once and reference them from isolated per-game containers, preserving isolation while removing safe duplication.
 - Introduce an opt-in **container group** that lets multiple compatible games share one mutable Wine prefix.

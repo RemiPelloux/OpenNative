@@ -24,8 +24,8 @@ OpenNative is an independent open-source project. It does not include games, fir
 | Channel | Version | Status |
 | --- | --- | --- |
 | Stable | `1.5.0` | Handheld appearance, provider adapters, installer review, profile import safety and cockpit tabs |
-| Next milestone | `2.0.0` | Identity migration, modular runtimes and measured device-certification follow-up |
-| Architecture milestone | `2.0.0` | Long-term roadmap |
+| Next milestone | `1.6.0` | Wine warm-start, container activate, shared-prefix remap and prefix hygiene |
+| Architecture milestone | `2.0.0` | Identity migration, modular runtimes and measured device-certification follow-up |
 
 ## Current capabilities
 
@@ -163,7 +163,8 @@ Mockito and MockK use an explicit ByteBuddy agent for JDKs that restrict dynamic
 | Document | Purpose |
 | --- | --- |
 | [Roadmap](ROADMAP.md) | Milestones, delivery phases and release gates |
-| [1.5.0 roadmap](docs/ROADMAP_1.5.0.md) | Detailed implementation and validation plan |
+| [1.5.0 roadmap](docs/ROADMAP_1.5.0.md) | Handheld-quality implementation and validation plan |
+| [1.6.0 roadmap](docs/ROADMAP_1.6.0.md) | Wine, container, prefix and launch-smoothness plan |
 | [Feature and emulation roadmap](docs/EMULATION_ROADMAP.md) | Planned runtime, graphics, translation, input, audio and recovery improvements |
 | [Provider tabs](docs/CUSTOM_PROVIDER_TABS.md) | Provider, AllDebrid, transfer and Installer Manager contract |
 | [Provider feeds](docs/PROVIDER_FEEDS.md) | User-supplied JSON and RSS/Atom catalog contract |

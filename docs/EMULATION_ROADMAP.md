@@ -19,6 +19,7 @@ Improving compatibility means treating these layers as a tested system. Updating
 | Status | Delivery meaning |
 | --- | --- |
 | **Committed: 1.5** | Daily-driver work accepted for `1.5.0`; it must fit the current architecture |
+| **Committed: 1.6** | Wine, container and launch-path work accepted for `1.6.0`; no identity migration |
 | **Committed: 2.0** | Architecture required for the `2.0.0` modular-runtime milestone |
 | **Candidate: 2.x** | Prioritized feature that needs a design, prototype and measured maintenance cost before assignment |
 | **Research** | Exploration only; no release promise |
@@ -81,9 +82,23 @@ Every promoted stack must pass:
 
 ## 3. Wine, Proton and prefix evolution
 
-**Status: Committed: 2.0 foundation; Candidate: 2.x features**
+**Status: Committed: 1.6 warm-start and hygiene; Committed: 2.0 foundation; Candidate: 2.x features**
 
-### Planned improvements
+### 1.6 warm-start improvements
+
+- Persist a prefix generation marker (Wine/Proton id, wincomponents, wrapper digest, locale, clean shutdown) and skip `wineboot` when it matches.
+- Copy DX wrappers, wincomponents and original DLLs only when the on-disk digest differs.
+- Install Wine Mono and Gecko once per prefix; never re-run their MSI on a warm launch.
+- Patch `system.reg` / `user.reg` for changed keys only.
+- Default play launches to essential Wine services; keep a Compatibility preset that still runs full wineboot and helper services.
+- Keep `WINEDEBUG` off on the play path. Doctor sessions may enable bounded channels and must turn them off afterwards.
+- Measure wineserver start, ready, idle RSS and stop as first-class launch-timeline stages.
+- Do not run `wineserver -k` between sequential pre-install or interface-generation commands unless the prefix or architecture changed.
+- Keep `WINEESYNC=1` as the default. Offer FSYNC or NTSYNC only as a per-title measured option with one-action rollback.
+- Show prefix storage by Windows, users, temp, crash dumps and caches. **Trim prefix** is opt-in, previewable and cannot touch saves or `A:` game files.
+- Persist font/glyph caches across launches; rebuild them only after Wine or locale changes.
+
+### 2.0 and later planned improvements
 
 - Separate prefix identity from runtime identity so a runtime test does not silently migrate every container.
 - Add prefix snapshots before risky runtime, registry or redistributable changes, with size estimates and explicit retention rules.
@@ -95,14 +110,17 @@ Every promoted stack must pass:
 
 ### Candidate player features
 
+- **Launch profile:** Fast boot, Compatibility and Safe, explained before launch.
 - **Runtime channels:** Stable, Compatibility and Experimental views with clear support boundaries.
 - **Prefix history:** See what changed between the last working and current launch.
 - **Clone for testing:** Create a space-aware copy or snapshot of a prefix before experimenting.
 - **Clean-room launch:** Test a game in a temporary prefix without replacing the main container.
+- **Reviewed redistributable packs:** VC++, .NET, XNA, Media Foundation and PhysX with preview and rollback.
+- **Virtual desktop and DPI:** Optional Wine virtual desktop and per-title DPI for games that mis-handle Android window size.
 
 ### Promotion gate
 
-No feature may auto-modify an existing prefix without a preview, backup/rollback path and a fixture proving interrupted recovery.
+No feature may auto-modify an existing prefix without a preview, backup/rollback path and a fixture proving interrupted recovery. A warm-start skip is rejected if it hides a required wineboot after a Wine or wincomponent change.
 
 ## 4. CPU translation: Box64, FEX and ARM64EC
 
@@ -345,7 +363,76 @@ Profiles must be signed, deterministic and reversible. Recommendations without r
 - Add thermal/power profiles only as recommendations backed by measurements; never force clocks, fan firmware or global Android changes.
 - Validate cutouts, portrait displays, unusual aspect ratios, high-refresh panels and display hot-plug.
 
-## 14. Research lab
+## 14. Container boot, ImageFs and shared-prefix activate
+
+**Status: Committed: 1.6**
+
+The current activate path replaces `home/xuser` with a symlink, may extract ImageFs extras, then starts the guest. That work is correct but often repeats when nothing changed.
+
+### Features
+
+- Instrument ImageFs validity, container activate, drive map, wineserver ready and first frame on the Compatibility Doctor timeline.
+- Validate ImageFs with a generation marker instead of walking the rootfs on every launch.
+- Extract graphics-driver and extras archives incrementally; skip payloads whose digest is already present.
+- Make container activate transactional so a crash cannot leave `home/xuser` missing.
+- Index container configs by id and mtime. Do not rescan every `xuser-*` directory from Compose recomposition or settings open.
+- Remap shared-prefix `A:` without deleting the symlink when the same prefix is already active.
+- Hold a prefix lock for `SHARED_PREFIX` so two games or installers cannot mutate it concurrently.
+- After an installer dirties a shared prefix, offer snapshot or **Move to dedicated container** before the next unrelated game launches.
+- Start `explorer.exe` and desktop theme only for installer or Compatibility presets.
+- Load `lsteamclient` and the Steam pipe only for Steam titles, or when the user enables Steam API helpers on a custom game.
+
+### Promotion gate
+
+- Warm second launch: no ImageFs extract, no wineboot, no wrapper copy.
+- Shared-prefix A then B: drive remap only; wineserver stays up unless the runtime changed.
+- Activate-kill fixtures restore the previous container pointer.
+- Custom non-Steam launches create no Steam client DLL.
+
+## 15. Guest I/O, filesystems and Wine networking
+
+**Status: Committed: 1.6 diagnostics; Candidate: 2.x features**
+
+### Planned improvements
+
+- Diagnose FUSE/SAF, FAT case-folding and missing drive letters before the guest reports a generic path error.
+- Stream prefix clones, snapshots and large guest copies with bounded buffers; never hold a whole prefix in memory.
+- Detect disconnected external storage and identify the affected drive letter, game folder or component.
+- Keep Wine DNS and HTTP proxies explicit and per title; do not inherit surprising Android HTTP proxies into every guest.
+- Surface winsock bind failures separately from translator crashes.
+
+### Candidate player features
+
+- **Storage planner for prefixes:** show current size, projected clone size and required free space.
+- **Relink drive:** point `A:` or `D:` at a moved folder without recreating the prefix.
+- **Multi-volume mount:** attach extra ISOs or installer parts as drive letters for the session only.
+
+### Promotion gate
+
+A failed remount or clone must leave the previous drive map and prefix intact. Networking changes cannot leak host credentials into the guest environment dump.
+
+## 16. XServer, windowing and guest desktop cost
+
+**Status: Committed: 1.6 reduce idle cost; Candidate: 2.x window policy**
+
+### Planned improvements
+
+- Skip wallpaper, desktop icons and unused Wine shell services on Fast boot game launches.
+- Reduce X11 round-trips for cursor, focus and fullscreen transitions that currently hop through the UI thread.
+- Keep the existing rule: do not resize a live XServer from Adaptive Engine; resolution changes apply on the next launch.
+- Distinguish guest-presented frames from Android-displayed frames in the HUD when LSFG is active.
+
+### Candidate player features
+
+- Per-title virtual desktop size independent of the Android surface.
+- External-display window policy that does not recreate the container.
+- Optional borderless fullscreen hint for games that open a broken exclusive mode.
+
+### Promotion gate
+
+Desktop-skip must not break installer UIs. Window-policy changes require resize, focus-loss and secondary-display fixtures.
+
+## 17. Research lab
 
 These ideas are intentionally outside committed milestones until prototypes prove that they are maintainable and safe:
 
@@ -357,17 +444,22 @@ These ideas are intentionally outside committed milestones until prototypes prov
 - Lightweight session restoration. This means restoring launch state and UI, not promising a RAM/process snapshot that Android and Wine cannot safely resume.
 - Reproducible automated game-startup probes for user-owned test libraries.
 - Local profile recommendation models trained only from bounded data on the same device.
+- Persistent wineserver across OpenNative activity recreation, only if prefix locks and GPU reset remain deterministic.
+- OverlayFS or reflink clones for prefixes on filesystems that guarantee copy-on-write safety.
+- In-kernel NTSYNC or futex-based Wine sync when Android and the Wine build expose a supported contract.
+- Pre-warm the shared prefix while charging and idle, cancelled immediately when the user launches a game.
 
 Research is rejected if it requires DRM bypass, unsafe host changes, downloaded shader caches, undisclosed telemetry, unreviewable binary sources or a device-specific hack enabled for everyone.
 
 ## Delivery order
 
-1. Finish `1.5.0` recovery, installer certification, cockpit, profiles and daily-play stability.
-2. Land `2.0.0` identity migration and immutable modular-component contracts.
-3. Qualify a small runtime matrix before expanding the number of downloadable versions.
-4. Add Compatibility Doctor data to every layer before automatic recommendations.
-5. Promote graphics, CPU, frame, input and audio improvements one at a time with A/B evidence.
-6. Expand device coverage only after the generic capability model passes on the primary handheld.
+1. Finish remaining `1.5.0` measurement: Thor soak, Perfetto presentation traces and honest FPS evidence.
+2. Land `1.6.0` warm-prefix, wineserver, ImageFs activate, shared-prefix remap and prefix trim on the current architecture.
+3. Land `2.0.0` identity migration and immutable modular-component contracts.
+4. Qualify a small runtime matrix before expanding the number of downloadable versions.
+5. Add Compatibility Doctor data to every layer before automatic recommendations.
+6. Promote graphics, CPU, frame, input and audio improvements one at a time with A/B evidence.
+7. Expand device coverage only after the generic capability model passes on the primary handheld.
 
 ## Release evidence
 
