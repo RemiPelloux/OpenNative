@@ -180,7 +180,7 @@ Supported paths must pass smoke and visual-conformance scenes, five-run performa
 
 ## 6. Frame pacing, scaling and frame generation
 
-**Status: Committed: 1.5 measurement; Candidate: 2.x features**
+**Status: Committed: 1.6 measurement; integer scale and honest LSFG in 1.8; Presentation Engine 2.0 is a 2.0 major**
 
 ### Planned improvements
 
@@ -242,7 +242,7 @@ Every input feature must pass reconnect, suspend, rotation, dialog, multi-contro
 
 ## 9. Audio compatibility and latency
 
-**Status: Candidate: 2.x**
+**Status: Committed: 1.7 profiles; Candidate: 2.x route reconstruction**
 
 ### Planned improvements
 
