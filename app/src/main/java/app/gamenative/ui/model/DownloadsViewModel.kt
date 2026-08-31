@@ -150,6 +150,48 @@ class DownloadsViewModel @Inject constructor(
         return normalizeStatusMessage(message) ?: appContext.getString(R.string.downloads_status_failed)
     }
 
+    private suspend fun prefetchDownloadMetadata() {
+        val steamIds = (SteamService.getActiveDownloads().keys + SteamService.getPartialDownloads()).toList()
+        if (steamIds.isNotEmpty()) {
+            steamAppDao.findApps(steamIds).forEach { app ->
+                val key = downloadKey(GameSource.STEAM, app.id.toString())
+                gameNameCache.putIfAbsent(key, app.name)
+                if (app.clientIconHash.isNotEmpty()) {
+                    gameIconCache.putIfAbsent(
+                        key,
+                        "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/${app.id}/${app.clientIconHash}.ico",
+                    )
+                }
+            }
+        }
+        val epicIds = (EpicService.getActiveDownloads().keys + EpicService.getPartialDownloads()).toList()
+        if (epicIds.isNotEmpty()) {
+            epicGameDao.getGamesById(epicIds).forEach { game ->
+                val key = downloadKey(GameSource.EPIC, game.id.toString())
+                gameNameCache.putIfAbsent(key, game.title)
+                gameIconCache.putIfAbsent(key, game.artCover)
+            }
+        }
+        val gogIds = (GOGService.getActiveDownloads().keys + GOGService.getPartialDownloads()).toList()
+        if (gogIds.isNotEmpty()) {
+            gogGameDao.getGamesByIds(gogIds).forEach { game ->
+                val key = downloadKey(GameSource.GOG, game.id)
+                gameNameCache.putIfAbsent(key, game.title)
+                gameIconCache.putIfAbsent(key, game.imageUrl.ifEmpty { game.iconUrl })
+            }
+        }
+        val amazonIds = (
+            AmazonService.getActiveDownloads().keys + AmazonService.getPartialDownloads(appContext)
+            ).toList()
+        if (amazonIds.isNotEmpty()) {
+            amazonGameDao.getGamesByProductIds(amazonIds).forEach { game ->
+                val key = downloadKey(GameSource.AMAZON, game.productId)
+                gameNameCache.putIfAbsent(key, game.title)
+                gameIconCache.putIfAbsent(key, game.artUrl)
+            }
+        }
+    }
+
     private suspend fun getSteamMetadata(appId: Int): Pair<String, String> {
         val key = downloadKey(GameSource.STEAM, appId.toString())
         val cachedName = gameNameCache[key]
@@ -472,6 +514,7 @@ class DownloadsViewModel @Inject constructor(
 
     private suspend fun refreshDownloadsSnapshot() {
         try {
+            prefetchDownloadMetadata()
             val liveDownloads = LinkedHashMap<String, DownloadItemState>()
             val activeBindings = LinkedHashMap<String, ActiveDownloadBinding>()
 

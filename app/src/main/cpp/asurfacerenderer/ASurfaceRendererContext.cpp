@@ -114,6 +114,14 @@ ASurfaceRendererContext::~ASurfaceRendererContext() {
         ANativeWindow_release(window);
         window = nullptr;
     }
+    if (javaVm && cachedAhbImageClass) {
+        JNIEnv* env = nullptr;
+        if (javaVm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) == JNI_OK && env) {
+            env->DeleteGlobalRef(cachedAhbImageClass);
+        }
+        cachedAhbImageClass = nullptr;
+        cachedSetSwapchainFence = nullptr;
+    }
 }
 
 bool ASurfaceRendererContext::reattachSurface(ANativeWindow* newWindow) {
@@ -297,21 +305,35 @@ void ASurfaceRendererContext::scanoutSetCursorVisibility(bool visible) {
     });
 }
 
+void ASurfaceRendererContext::cacheFenceMethod(JNIEnv* env, jobject ahbImage) {
+    if (cachedSetSwapchainFence || !env || !ahbImage) return;
+    jclass local = env->GetObjectClass(ahbImage);
+    if (!local) return;
+    cachedSetSwapchainFence = env->GetMethodID(local, "setSwapchainFence", "(II)V");
+    if (!cachedSetSwapchainFence) {
+        if (env->ExceptionCheck()) env->ExceptionClear();
+        env->DeleteLocalRef(local);
+        return;
+    }
+    cachedAhbImageClass = static_cast<jclass>(env->NewGlobalRef(local));
+    env->DeleteLocalRef(local);
+    if (!cachedAhbImageClass) {
+        cachedSetSwapchainFence = nullptr;
+        if (env->ExceptionCheck()) env->ExceptionClear();
+    }
+}
+
 void ASurfaceRendererContext::returnSourceFence(JNIEnv* env, jobject ahbImage, int sourceSlot, int fenceFd) {
     if (!env || !ahbImage || sourceSlot < 0) {
         if (fenceFd >= 0) close(fenceFd);
         return;
     }
-    jclass cls = env->GetObjectClass(ahbImage);
-    if (!cls) { if (fenceFd >= 0) close(fenceFd); return; }
-    const jmethodID method = env->GetMethodID(cls, "setSwapchainFence", "(II)V");
-    env->DeleteLocalRef(cls);
-    if (!method) {
-        if (env->ExceptionCheck()) env->ExceptionClear();
+    cacheFenceMethod(env, ahbImage);
+    if (!cachedSetSwapchainFence) {
         if (fenceFd >= 0) close(fenceFd);
         return;
     }
-    env->CallVoidMethod(ahbImage, method, sourceSlot, fenceFd);
+    env->CallVoidMethod(ahbImage, cachedSetSwapchainFence, sourceSlot, fenceFd);
     if (env->ExceptionCheck()) {
         env->ExceptionClear();
         if (fenceFd >= 0) close(fenceFd);

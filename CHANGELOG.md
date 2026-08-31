@@ -2,6 +2,10 @@
 
 ## 1.5.0 - 2026-08-31
 
+- Batch Steam installed-app and package-license reads on the library page, DLC unlock, and depot resolution so those paths no longer query one row at a time.
+- Prefetch download metadata in one query per store and load GOG install matches from a single catalog snapshot.
+- Sample store download progress at 200 ms, record frame times on the scanout path only, and skip HUD work when the overlay is hidden.
+- Cache the SurfaceFlinger fence JNI lookup and drop stale BGRA conversion work when the blit queue is already full.
 - Apply the selected theme and palette for real, including a working light mode and true AMOLED black.
 - Add Thor Ember, Ocean, Forest, Dusk and Slate color themes, plus Soft, Vibrant, Bold, Neutral, Rainbow and Mono palettes.
 - Put a visual appearance picker at the top of Settings so theme and palette can be changed on a handheld without a hidden dialog.

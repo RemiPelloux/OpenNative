@@ -2103,11 +2103,8 @@ fun XServerScreen(
                             if (frameRatingWindowId == -1 && window.isApplicationWindow()) {
                                 refreshFrameRatingTracking("content-update")
                             }
-                            if (window.id == frameRatingWindowId) {
-                                (context as? Activity)?.runOnUiThread {
-                                    frameRating?.update()
-                                }
-                            }
+                            // Frame times are recorded on the scanout path. Do not hop to the
+                            // UI thread on every content update.
                         }
 
                         override fun onModifyWindowProperty(window: Window, property: Property) {

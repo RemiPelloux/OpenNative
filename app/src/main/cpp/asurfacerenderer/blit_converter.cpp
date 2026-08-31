@@ -319,7 +319,7 @@ void BlitConverter::convertBGRAtoRGBAAsync(
     bool rejected = false;
     {
         std::lock_guard<std::mutex> lk(queueMutex_);
-        if (stopping_) {
+        if (stopping_ || taskQueue_.size() >= 3) {
             rejected = true;
         } else {
             taskQueue_.push_back([

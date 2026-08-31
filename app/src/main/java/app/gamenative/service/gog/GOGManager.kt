@@ -330,6 +330,9 @@ class GOGManager @Inject constructor(
         var detectedCount = 0
 
         try {
+            val knownGames = gogGameDao.getAllAsList()
+            val gamesById = knownGames.associateBy { it.id }
+            val gamesByTitle = knownGames.associateBy { sanitizeTitle(it.title) }
             // Check both internal and external storage paths
             val pathsToCheck = listOf(
                 GOGConstants.internalGOGGamesPath,
@@ -348,10 +351,10 @@ class GOGManager @Inject constructor(
 
                 for (installDir in installDirs) {
                     try {
-                        val detectedGame = detectGameFromDirectory(installDir)
+                        val detectedGame = detectGameFromDirectory(installDir, gamesById, gamesByTitle)
                         if (detectedGame != null) {
                             // Update database with installation info
-                            val existingGame = getGameFromDbById(detectedGame.id)
+                            val existingGame = gamesById[detectedGame.id] ?: getGameFromDbById(detectedGame.id)
                             if (existingGame != null && !existingGame.isInstalled) {
                                 val updatedGame = existingGame.copy(
                                     isInstalled = true,
@@ -383,7 +386,14 @@ class GOGManager @Inject constructor(
      * @param installDir The directory to check
      * @return GOGGame with installation info, or null if no game detected
      */
-    private suspend fun detectGameFromDirectory(installDir: File): GOGGame? {
+    private fun sanitizeTitle(title: String): String =
+        title.replace(Regex("[^a-zA-Z0-9 ]"), "").trim().lowercase()
+
+    private suspend fun detectGameFromDirectory(
+        installDir: File,
+        gamesById: Map<String, GOGGame>,
+        gamesByTitle: Map<String, GOGGame>,
+    ): GOGGame? {
         if (!installDir.exists() || !installDir.isDirectory) {
             return null
         }
@@ -404,7 +414,7 @@ class GOGManager @Inject constructor(
                 val infoJson = JSONObject(infoContent)
                 val gameId = infoJson.optString("gameId", "")
                 if (gameId.isNotEmpty()) {
-                    val game = getGameFromDbById(gameId)
+                    val game = gamesById[gameId] ?: getGameFromDbById(gameId)
                     if (game != null) {
                         val installSize = FileUtils.calculateDirectorySize(installDir)
                         return game.copy(
@@ -419,27 +429,19 @@ class GOGManager @Inject constructor(
             }
         }
 
-        // Fallback: Try to match by directory name with game titles in database
-        val allGames = gogGameDao.getAllAsList()
-        for (game in allGames) {
-            // Sanitize game title to match directory naming convention
-            val sanitizedTitle = game.title.replace(Regex("[^a-zA-Z0-9 ]"), "").trim()
-
-            if (dirName.equals(sanitizedTitle, ignoreCase = true)) {
-                // Verify it's actually a game directory (has executables or subdirectories)
-                val hasContent = installDir.listFiles()?.any {
-                    it.isDirectory || it.extension in listOf("exe", "dll", "bat")
-                } == true
-
-                if (hasContent) {
-                    val installSize = FileUtils.calculateDirectorySize(installDir)
-                    Timber.d("Matched directory '$dirName' to game '${game.title}'")
-                    return game.copy(
-                        isInstalled = true,
-                        installPath = installDir.absolutePath,
-                        installSize = installSize,
-                    )
-                }
+        val matched = gamesByTitle[dirName.lowercase()] ?: gamesByTitle[sanitizeTitle(dirName)]
+        if (matched != null) {
+            val hasContent = installDir.listFiles()?.any {
+                it.isDirectory || it.extension in listOf("exe", "dll", "bat")
+            } == true
+            if (hasContent) {
+                val installSize = FileUtils.calculateDirectorySize(installDir)
+                Timber.d("Matched directory '$dirName' to game '${matched.title}'")
+                return matched.copy(
+                    isInstalled = true,
+                    installPath = installDir.absolutePath,
+                    installSize = installSize,
+                )
             }
         }
 

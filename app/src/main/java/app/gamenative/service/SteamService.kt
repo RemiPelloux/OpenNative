@@ -647,11 +647,17 @@ class SteamService : Service(), IChallengeUrlChanged {
             }
         }
 
-        fun getPkgInfoOf(appId: Int): SteamLicense? {
+        fun getPkgInfoOf(appId: Int): SteamLicense? = pkgInfoIndex(listOf(appId))[appId]
+
+        fun pkgInfoIndex(appIds: Collection<Int>): Map<Int, SteamLicense> {
+            if (appIds.isEmpty()) return emptyMap()
             return runBlocking(Dispatchers.IO) {
-                instance?.licenseDao?.findLicense(
-                    instance?.appDao?.findApp(appId)?.packageId ?: INVALID_PKG_ID,
-                )
+                val apps = instance?.appDao?.findApps(appIds).orEmpty()
+                val licenses = instance?.licenseDao
+                    ?.findLicenses(apps.map { it.packageId }.distinct())
+                    .orEmpty()
+                    .associateBy { it.packageId }
+                apps.mapNotNull { app -> licenses[app.packageId]?.let { app.id to it } }.toMap()
             }
         }
 
@@ -735,6 +741,9 @@ class SteamService : Service(), IChallengeUrlChanged {
         fun getAllInstalledApps(): List<AppInfo>? {
             return runBlocking(Dispatchers.IO) { instance?.appInfoDao?.getAll() }
         }
+
+        fun installedAppIndex(): Map<Int, AppInfo> =
+            getAllInstalledApps()?.associateBy { it.id }.orEmpty()
 
         fun findSteamAppWithAppIds(appIds: List<Int>): List<SteamApp>? {
             return runBlocking(Dispatchers.IO) { instance?.appDao?.findSteamAppWithAppIds(appIds) }
@@ -1046,10 +1055,11 @@ class SteamService : Service(), IChallengeUrlChanged {
             val licensedDepots = getLicensedDepotIds(appId).orEmpty().toMutableSet()
 
             // Use the dlcAppID of the ownedDlc, to find the licensed depotIds from steam_license
-            val mainPackageDepotIds = getPkgInfoOf(appId)?.depotIds.orEmpty().toSet()
+            val licenseByApp = pkgInfoIndex(ownedDlc.keys + appId)
+            val mainPackageDepotIds = licenseByApp[appId]?.depotIds.orEmpty().toSet()
             val mapDlcDepotIds = mutableMapOf<Int, List<Int>>()
             ownedDlc.forEach { (dlcAppId, info) ->
-                val dlcDepotIds = getPkgInfoOf(dlcAppId)?.depotIds.orEmpty()
+                val dlcDepotIds = licenseByApp[dlcAppId]?.depotIds.orEmpty()
 
                 // Make sure licensedDepots contains the dlc depots
                 licensedDepots.addAll(dlcDepotIds)
@@ -1483,10 +1493,10 @@ class SteamService : Service(), IChallengeUrlChanged {
                     val branch = installedApp?.branch ?: "public"
                     val dlcAppIds = getInstalledDlcDepotsOf(appId).orEmpty().toMutableList()
 
+                    val installedIds = installedAppIndex().keys
                     getDownloadableDlcAppsOf(appId)?.forEach { dlcApp ->
-                        val installedDlcApp = getInstalledApp(dlcApp.id)
-                        if (installedDlcApp != null) {
-                            dlcAppIds.add(installedDlcApp.id)
+                        if (dlcApp.id in installedIds) {
+                            dlcAppIds.add(dlcApp.id)
                         }
                     }
 

@@ -227,6 +227,7 @@ private:
                               ConvertedBufferSlot* currentSlot);
     void returnSourceFence(JNIEnv* env, jobject ahbImage,
                            int sourceSlot, int fenceFd);
+    void cacheFenceMethod(JNIEnv* env, jobject ahbImage);
 
     bool ensureCpuSourceBufferRegistered(AHardwareBuffer* buffer);
 
@@ -238,4 +239,6 @@ private:
 
     std::mutex cpuSourceMutex;
     std::unordered_set<AHardwareBuffer*> registeredCpuSourceBuffers;
+    jclass cachedAhbImageClass = nullptr;
+    jmethodID cachedSetSwapchainFence = nullptr;
 };

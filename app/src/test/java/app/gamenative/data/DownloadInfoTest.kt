@@ -13,6 +13,21 @@ class DownloadInfoTest {
     val tempFolder = TemporaryFolder()
 
     @Test
+    fun `progress listeners are sampled and still publish completion`() {
+        var count = 0
+        val info = newDownloadInfo()
+        info.addProgressListener { count++ }
+        info.setProgress(0.1f)
+        info.setProgress(0.2f)
+        assertEquals(1, count)
+        Thread.sleep(DownloadInfo.PROGRESS_EMIT_INTERVAL_MS + 20L)
+        info.setProgress(0.3f)
+        assertEquals(2, count)
+        info.setProgress(1f)
+        assertEquals(3, count)
+    }
+
+    @Test
     fun `post install sync state is tracked independently`() {
         val info = DownloadInfo(
             jobCount = 1,

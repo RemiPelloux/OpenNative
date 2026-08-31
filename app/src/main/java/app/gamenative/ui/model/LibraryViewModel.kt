@@ -606,6 +606,7 @@ class LibraryViewModel @Inject constructor(
             fun lastPlayedFor(appId: String): Long = playHistoryByAppId[appId] ?: 0L
 
             val licensedDepotMap = SteamService.buildLicensedDepotMap(filteredSteamApps)
+            val installedAppIndex = SteamService.installedAppIndex()
 
             // Added this to avoid duplicate from custom imported steam game
             val steamEntriesAppIds = mutableSetOf<String>()
@@ -613,7 +614,7 @@ class LibraryViewModel @Inject constructor(
             val steamEntries: List<LibraryEntry> = filteredSteamApps.map { item ->
                 val isInstalled = downloadDirectorySet.contains(SteamService.getAppDirName(item))
                 val installedBranch = if (isInstalled) {
-                    SteamService.getInstalledApp(item.id)?.branch ?: "public"
+                    installedAppIndex[item.id]?.branch ?: "public"
                 } else {
                     "public"
                 }

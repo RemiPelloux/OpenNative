@@ -24,6 +24,7 @@ data class DownloadInfo(
     private var downloadJob: Job? = null
     private val persistenceLock = Any()
     private val downloadProgressListeners = CopyOnWriteArrayList<(Float) -> Unit>()
+    private val lastProgressEmitAt = AtomicLong(0L)
     private val progresses: Array<Float> = Array(jobCount) { 0f }
 
     // Reservation-based persistence scheduler
@@ -276,8 +277,13 @@ data class DownloadInfo(
     }
 
     fun emitProgressChange() {
+        val progress = getProgress()
+        val now = System.currentTimeMillis()
+        val last = lastProgressEmitAt.get()
+        if (progress < 1f && now - last < PROGRESS_EMIT_INTERVAL_MS) return
+        lastProgressEmitAt.set(now)
         for (listener in downloadProgressListeners) {
-            listener(getProgress())
+            listener(progress)
         }
     }
 
@@ -287,6 +293,7 @@ data class DownloadInfo(
         private const val PERSISTENCE_DIR = ".DownloadInfo"
         private const val PERSISTENCE_FILE = "bytes_downloaded.txt"
         internal const val DEFAULT_PERSIST_DEBOUNCE_MS = 10_000L
+        internal const val PROGRESS_EMIT_INTERVAL_MS = 200L
         private val persistenceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     }
 

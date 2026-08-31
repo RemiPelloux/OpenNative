@@ -56,6 +56,10 @@ public class FrameRating extends FrameLayout implements Runnable {
 
     public void update() {
         FrameTimeRing.record();
+        if (getVisibility() != VISIBLE) {
+            frameCount++;
+            return;
+        }
         if (lastTime == 0) {
             lastTime = SystemClock.elapsedRealtime();
             sessionStartTime = SystemClock.elapsedRealtime();
