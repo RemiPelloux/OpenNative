@@ -23,8 +23,8 @@ OpenNative is an independent open-source project. It does not include games, fir
 
 | Channel | Version | Status |
 | --- | --- | --- |
-| Stable | `1.4.2` | Secure in-app updates, five selectable debrid services and transfer reliability fixes |
-| Next milestone | `1.5.0` | Settings sharing, cockpit polish and remaining certification |
+| Stable | `1.5.0` | Live themes, handheld appearance picker and sampled download progress |
+| Next milestone | `2.0.0` | Identity migration, modular runtimes and remaining `1.5.0` certification items |
 | Architecture milestone | `2.0.0` | Long-term roadmap |
 
 ## Current capabilities
@@ -83,18 +83,13 @@ Performance varies by game, runtime, driver and thermal conditions. OpenNative d
 
 See [provider tabs](docs/CUSTOM_PROVIDER_TABS.md) and [feed contract](docs/PROVIDER_FEEDS.md).
 
-## Planned for 1.5.0
+## 1.5.0
 
-The following work remains after `1.4.2`:
+- Themes now apply live: Light, Dark, AMOLED, Thor Ember, Ocean, Forest, Dusk and Slate, with Soft through Mono palettes.
+- Settings opens with a visual appearance picker sized for handheld use.
+- Download progress updates are sampled so the Downloads list stays responsive during large transfers.
 
-| Area | Planned capability |
-| --- | --- |
-| Wine setup sessions | Full process-tree tracking, reboot/timeout states and richer executable review |
-| Settings sharing | Redacted per-game and global presets with diff preview, merge/replace and rollback |
-| Cockpit | Refined OpenNative secondary-screen UX with robust controller, rotation and hot-plug behavior |
-| Performance | Measured frame-delivery, shader, database, Compose and transfer-path optimization |
-
-Implementation is gated by security, recovery and performance criteria. See the [1.5.0 roadmap](docs/ROADMAP_1.5.0.md).
+Remaining certification items from the [1.5.0 roadmap](docs/ROADMAP_1.5.0.md) continue toward `2.0.0`: Wine setup sessions, settings sharing, cockpit polish and measured frame-delivery work.
 
 ## Platform support
 

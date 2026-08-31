@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0 - 2026-08-31
+
+- Apply the selected theme and palette for real, including a working light mode and true AMOLED black.
+- Add Thor Ember, Ocean, Forest, Dusk and Slate color themes, plus Soft, Vibrant, Bold, Neutral, Rainbow and Mono palettes.
+- Put a visual appearance picker at the top of Settings so theme and palette can be changed on a handheld without a hidden dialog.
+- Restyle settings tiles from the active color scheme so Light and AMOLED stay readable.
+- Sample download progress at 150 ms so byte-level callbacks no longer rebuild the Downloads list on every tick.
+
 ## 1.4.2 - 2026-08-30
 
 - Fix Skidrow encrypted ZIP installs by applying the password published in the source post, preserving the real extraction error, and deleting only failed job staging files.

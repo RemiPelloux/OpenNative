@@ -1,6 +1,7 @@
 package app.gamenative.ui.model
 
 import android.content.Context
+import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.gamenative.PluviaApp
@@ -83,6 +84,7 @@ class DownloadsViewModel @Inject constructor(
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
     private val observedDownloads = ConcurrentHashMap<String, ObservedDownload>()
+    private val lastProgressUiAtMs = ConcurrentHashMap<String, Long>()
 
     private val finishedDownloads = ConcurrentHashMap<String, DownloadItemState>()
     private val pausedDownloads = ConcurrentHashMap.newKeySet<String>()
@@ -135,6 +137,7 @@ class DownloadsViewModel @Inject constructor(
     private fun clearObservedDownloads() {
         observedDownloads.values.forEach { it.dispose() }
         observedDownloads.clear()
+        lastProgressUiAtMs.clear()
     }
 
     private fun normalizeStatusMessage(message: String?): String? {
@@ -409,7 +412,11 @@ class DownloadsViewModel @Inject constructor(
         activeBindings.forEach { (key, binding) ->
             if (observedDownloads[key]?.info === binding.info) return@forEach
 
-            val progressListener: (Float) -> Unit = {
+            val progressListener: (Float) -> Unit = listener@{
+                val now = SystemClock.elapsedRealtime()
+                val last = lastProgressUiAtMs[key] ?: 0L
+                if (now - last < PROGRESS_UI_INTERVAL_MS) return@listener
+                lastProgressUiAtMs[key] = now
                 viewModelScope.launch(Dispatchers.Default) {
                     updateObservedDownloadItem(binding)
                 }
@@ -752,5 +759,9 @@ class DownloadsViewModel @Inject constructor(
                 GameSource.CUSTOM_GAME -> Unit
             }
         }
+    }
+
+    private companion object {
+        const val PROGRESS_UI_INTERVAL_MS = 150L
     }
 }

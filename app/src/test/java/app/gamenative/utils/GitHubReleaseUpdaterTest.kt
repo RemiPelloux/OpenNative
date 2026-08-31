@@ -35,9 +35,10 @@ class GitHubReleaseUpdaterTest {
     @Test
     fun `compares numeric release versions`() {
         assertTrue(GitHubReleaseUpdater.isNewerVersion("1.4.2", "1.4.1"))
+        assertTrue(GitHubReleaseUpdater.isNewerVersion("1.5.0", "1.4.2"))
         assertTrue(GitHubReleaseUpdater.isNewerVersion("1.10.0", "1.9.9"))
         assertFalse(GitHubReleaseUpdater.isNewerVersion("1.4.1", "1.4.2"))
-        assertFalse(GitHubReleaseUpdater.isNewerVersion("1.4.2", "1.4.2"))
+        assertFalse(GitHubReleaseUpdater.isNewerVersion("1.5.0", "1.5.0"))
     }
 
     @Test

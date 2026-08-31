@@ -54,7 +54,6 @@ import app.gamenative.PluviaApp
 import app.gamenative.PrefManager
 import app.gamenative.R
 import app.gamenative.data.GameSource
-import app.gamenative.enums.AppTheme
 import app.gamenative.enums.LoginResult
 import app.gamenative.enums.PathType
 import app.gamenative.enums.SaveLocation
@@ -1053,14 +1052,11 @@ fun PluviaMain(
         // TODO: Make prelaunch/loading operations cancellable so Back can exit safely.
     }
 
+    val systemDark = isSystemInDarkTheme()
     PluviaTheme(
-        isDark = when (state.appTheme) {
-            AppTheme.AUTO -> isSystemInDarkTheme()
-            AppTheme.DAY -> false
-            AppTheme.NIGHT -> true
-            AppTheme.AMOLED -> true
-        },
-        isAmoled = (state.appTheme == AppTheme.AMOLED),
+        seedColor = state.appTheme.seedColor,
+        isDark = state.appTheme.isDark(systemDark),
+        isAmoled = state.appTheme.isAmoled,
         style = state.paletteStyle,
     ) {
         Box(modifier = Modifier.fillMaxSize()) {

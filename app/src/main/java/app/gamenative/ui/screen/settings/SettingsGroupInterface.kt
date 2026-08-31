@@ -137,8 +137,6 @@ fun SettingsGroupInterface(
 
     var openWebLinks by rememberSaveable { mutableStateOf(PrefManager.openWebLinksExternally) }
 
-    var openAppThemeDialog by rememberSaveable { mutableStateOf(false) }
-    var openAppPaletteDialog by rememberSaveable { mutableStateOf(false) }
 
     var openStartScreenDialog by rememberSaveable { mutableStateOf(false) }
     var startScreenOption by rememberSaveable(openStartScreenDialog) { mutableStateOf(PrefManager.startScreen) }
@@ -249,6 +247,18 @@ fun SettingsGroupInterface(
             PluviaApp.events.off<AndroidEvent.GOGAuthCodeReceived, Unit>(onGOGAuthCodeReceived)
             Timber.d("[SettingsGOG]: GOG auth code event listener unregistered")
         }
+    }
+
+    SettingsGroup(
+        modifier = Modifier.background(Color.Transparent),
+        title = { Text(text = "Appearance") },
+    ) {
+        SettingsThemePicker(
+            appTheme = appTheme,
+            paletteStyle = paletteStyle,
+            onAppTheme = onAppTheme,
+            onPaletteStyle = onPaletteStyle,
+        )
     }
 
     SettingsGroup(modifier = Modifier.background(Color.Transparent)) {

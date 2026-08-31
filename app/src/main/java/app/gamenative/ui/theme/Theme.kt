@@ -1,12 +1,13 @@
 package app.gamenative.ui.theme
 
 import android.app.Activity
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
@@ -14,6 +15,7 @@ import androidx.core.view.WindowCompat
 import com.alorma.compose.settings.ui.base.internal.SettingsTileColors
 import com.alorma.compose.settings.ui.base.internal.SettingsTileDefaults
 import com.materialkolor.PaletteStyle
+import com.materialkolor.rememberDynamicColorScheme
 
 /**
  * Custom color system for Pluvia, extending Material3.
@@ -105,78 +107,32 @@ private val DarkPluviaColors = PluviaColors(
 
 val BrandGradient = listOf(PluviaCyan, PluviaPurple, PluviaPink)
 
-// Light theme placeholder - customize when adding light theme support
-// private val LightPluviaColors = PluviaColors(...)
-
 private val LocalPluviaColors = staticCompositionLocalOf { DarkPluviaColors }
-
-/**
- * Material3 dark color scheme using Pluvia colors.
- */
-private val DarkColorScheme = darkColorScheme(
-    primary = PluviaPrimary,
-    onPrimary = PluviaForeground,
-    primaryContainer = PluviaPrimary.copy(alpha = 0.2f),
-    onPrimaryContainer = PluviaForeground,
-
-    secondary = PluviaSecondary,
-    onSecondary = PluviaForeground,
-    secondaryContainer = PluviaSecondary.copy(alpha = 0.8f),
-    onSecondaryContainer = PluviaForeground,
-
-    tertiary = PluviaCyan,
-    onTertiary = PluviaForeground,
-    tertiaryContainer = PluviaCyan.copy(alpha = 0.2f),
-    onTertiaryContainer = PluviaForeground,
-
-    background = PluviaBackground,
-    onBackground = PluviaForeground,
-
-    surface = PluviaCard,
-    onSurface = PluviaForeground,
-    surfaceVariant = PluviaSecondary,
-    onSurfaceVariant = PluviaForegroundMuted,
-    surfaceTint = PluviaPrimary,
-
-    inverseSurface = PluviaForeground,
-    inverseOnSurface = PluviaBackground,
-    inversePrimary = PluviaPrimary,
-
-    error = PluviaDestructive,
-    onError = PluviaForeground,
-    errorContainer = PluviaDestructive.copy(alpha = 0.2f),
-    onErrorContainer = PluviaForeground,
-
-    outline = PluviaForegroundMuted,
-    outlineVariant = PluviaSecondary,
-
-    scrim = Color.Black.copy(alpha = 0.5f),
-    surfaceBright = PluviaSecondary,
-    surfaceDim = PluviaBackground,
-    surfaceContainer = PluviaCard,
-    surfaceContainerHigh = PluviaSecondary,
-    surfaceContainerHighest = PluviaSecondary.copy(alpha = 0.9f),
-    surfaceContainerLow = PluviaBackground,
-    surfaceContainerLowest = PluviaBackground,
-)
 
 @Composable
 fun PluviaTheme(
     seedColor: Color = PluviaSeed,
-    isDark: Boolean = true, // for now, always force dark theme
+    isDark: Boolean = true,
     isAmoled: Boolean = false,
     style: PaletteStyle = PaletteStyle.TonalSpot,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = DarkColorScheme
-    val pluviaColors = if (isDark) DarkPluviaColors else DarkPluviaColors // We can use LightPluviaColors when ready
+    val colorScheme = rememberDynamicColorScheme(
+        seedColor = seedColor,
+        isDark = isDark,
+        isAmoled = isAmoled,
+        style = style,
+    )
+    val pluviaColors = remember(colorScheme, isAmoled) {
+        pluviaColorsFromScheme(colorScheme, isAmoled)
+    }
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         val window = (view.context as Activity).window
         val insetsController = WindowCompat.getInsetsController(window, view)
-        insetsController.isAppearanceLightStatusBars = false
-        insetsController.isAppearanceLightNavigationBars = false
+        insetsController.isAppearanceLightStatusBars = !isDark
+        insetsController.isAppearanceLightNavigationBars = !isDark
     }
 
     CompositionLocalProvider(LocalPluviaColors provides pluviaColors) {
@@ -187,6 +143,17 @@ fun PluviaTheme(
         )
     }
 }
+
+private fun pluviaColorsFromScheme(scheme: ColorScheme, isAmoled: Boolean): PluviaColors =
+    DarkPluviaColors.copy(
+        accentCyan = scheme.tertiary,
+        accentPurple = scheme.primary,
+        accentPink = scheme.secondary,
+        surfacePanel = if (isAmoled) Color.Black else scheme.surfaceContainer,
+        surfaceElevated = scheme.surfaceContainerHigh,
+        borderDefault = scheme.outline,
+        textMuted = scheme.onSurfaceVariant,
+    )
 
 /**
  * Accessor for Pluvia custom colors.
@@ -243,20 +210,20 @@ object DarkColors {
 // Settings tile color helpers
 @Composable
 fun settingsTileColors(): SettingsTileColors = SettingsTileDefaults.colors(
-    titleColor = PluviaForeground,
-    subtitleColor = PluviaForegroundMuted,
-    actionColor = PluviaCyan,
+    titleColor = MaterialTheme.colorScheme.onSurface,
+    subtitleColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    actionColor = MaterialTheme.colorScheme.primary,
 )
 
 @Composable
 fun settingsTileColorsAlt(): SettingsTileColors = SettingsTileDefaults.colors(
-    titleColor = PluviaForeground,
-    subtitleColor = PluviaForegroundMuted,
+    titleColor = MaterialTheme.colorScheme.onSurface,
+    subtitleColor = MaterialTheme.colorScheme.onSurfaceVariant,
 )
 
 @Composable
 fun settingsTileColorsDebug(): SettingsTileColors = SettingsTileDefaults.colors(
-    titleColor = PluviaDestructive,
-    subtitleColor = PluviaForegroundMuted,
-    actionColor = PluviaCyan,
+    titleColor = MaterialTheme.colorScheme.error,
+    subtitleColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    actionColor = MaterialTheme.colorScheme.primary,
 )
