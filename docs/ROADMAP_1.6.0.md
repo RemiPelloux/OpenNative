@@ -17,6 +17,11 @@ Work may proceed in parallel with remaining `1.5.0` measurement (Thor soak, Perf
 - Prefix size is explainable: Windows, users, temp, crash dumps, installer leftovers, shader caches.
 - Optional trim and snapshot actions preview what they will delete or copy and always keep a rollback.
 - Compatibility Doctor records wineserver, prefix and ImageFs timings in the existing launch timeline.
+- Every title has an isolation tier, a launch recipe hash and a container state (`Warm` `Cold` `Dirty` `Broken` `Locked`).
+- Last launch is explainable stage-by-stage against the previous successful launch (TTFF, wineserver, layer apply, RSS).
+- Slot B holds the last-known-good mutable prefix; Flip to slot B is one action and does not delete slot A until the user confirms.
+- Play, install and maintain I/O cannot run over each other. Catalog and trim wait.
+- Same-container activate does not delete `home/xuser` and relink.
 
 ## Delivery sequence
 
@@ -93,6 +98,44 @@ Gate: a custom non-Steam game launch creates no Steam client DLL or pipe. Steam 
 
 Gate: all release criteria at the end of this document pass with sanitized evidence.
 
+### Stage 8: isolation tiers and dirty map
+
+- Persist `Dedicated`, `Shared compact`, `Named group` and `Lab` on the game overlay, not as a hidden boolean.
+- Show cost (bytes, who shares) and risk (last dirty installer, DLL overrides) before a tier change.
+- Record which title installed which redistributable or registry-mutating setup on a shared prefix.
+- After a dirty installer, block the next unrelated shared-prefix launch until the player chooses Keep, Snapshot, or Evacuate.
+
+Gate: fixtures never auto-migrate a dedicated game into shared. A dirty-map miss cannot delete another title's files.
+
+### Stage 9: control plane, budgets and explain-last-launch
+
+- Keep a container index (`id`, mtime, state, recipe hash, last TTFF, wineserver RSS) so library and cockpit do not parse every config.
+- Record stage timings and the memory waterfall (Android available, process, wineserver, guest, wrapper, shader generation).
+- Show **Explain last launch** as a delta versus the previous success. Missed warm-start budgets name the stage that ran.
+- Apply soft wineserver RSS and boot-ms budgets as warnings and recommendations, never as a silent process kill.
+
+Gate: drawing the library performs one index read, not N config parses. Doctor fixtures include a deterministic delta sentence.
+
+### Stage 10: dual slot, repair and evacuate
+
+- After a clean exit, rotate slot B to the current mutable prefix when the recipe is marked good.
+- **Repair layer** re-applies one sealed digest (wincomponents or wrapper) without wiping users or saves.
+- **Evacuate title** clones overlay + save root to a dedicated prefix, then unbinds from shared, with resume and rollback.
+- **Lab launch** uses a throwaway overlay or prefix and cannot write slot A.
+
+Gate: kill-during-evacuate restores the source binding. Repair cannot replace an unrelated layer. Lab cannot persist session overlay without a prompt.
+
+### Stage 11: governors, watchdog and Container Studio
+
+- Enforce play / install / maintain I/O classes. Artwork decode and prefix walk cancel when wineserver becomes foreground.
+- Watchdog classifies wineserver death, lock timeout, swap cliff and hung installer into existing Doctor kinds.
+- Ship Container Studio: recipe diff, dirty map, transplant title, pin container home to a granted volume, relink when it returns.
+- Hot-apply env, frame cap, HUD and Safe launch without restarting wineserver. Wine build and wrapper changes still require a new launch.
+
+Gate: play-class fixtures prove no catalog query starts after wineserver ready. Volume-missing health is not a generic Wine path error. Hot-apply cannot change a sealed layer.
+
+The layer model, isolation tiers and control-plane fields are specified in [CONTAINER_PLATFORM.md](CONTAINER_PLATFORM.md).
+
 ## Player-facing features
 
 | Feature | Player outcome |
@@ -107,6 +150,19 @@ Gate: all release criteria at the end of this document pass with sanitized evide
 | Redistributable packs | Reviewed VC++, .NET, XNA, Media Foundation, PhysX installs with preview and rollback |
 | Virtual desktop | Optional Wine virtual desktop for games that mis-handle Android window size |
 | DPI / scaling | Per-title Wine DPI and integer-scale presentation without rewriting the prefix globally |
+| Isolation tier | Dedicated, Shared, Group or Lab with bytes and risk before confirm |
+| Container state badge | Warm, Cold, Dirty, Broken, Locked on the game or container card |
+| Explain last launch | This TTFF and RSS versus last success, by stage |
+| Dual slot | Flip to last-known-good prefix without deleting the current one first |
+| Repair layer | Re-apply one sealed wrapper or wincomponent set |
+| Evacuate title | Leave a poisoned shared prefix with the game and saves intact |
+| Dirty map | Who installed VC++ / .NET / overrides on this shared prefix |
+| Launch recipe | Shareable hash of the stack, no paths or secrets |
+| Memory waterfall | Android, process, wineserver, guest, wrapper, shaders in the cockpit |
+| Container Studio | Diff recipes, transplant a title, pin or relink a volume |
+| I/O class | Play pauses library work; maintain never runs during a game |
+| Wine service catalog | Visible list of helpers, not a hidden aggressive/essential byte |
+| Missing volume | Container health names the unmounted drive instead of a Wine crash |
 
 ## Runtime optimization workstreams
 
@@ -121,9 +177,13 @@ Gate: all release criteria at the end of this document pass with sanitized evide
 ### Container
 
 - Replace full-directory container scans with an id/mtime index.
+- Same-id `activateContainer` is a no-op; different-id activate stays transactional.
 - Avoid rewriting `Container` JSON when only transient launch state changed.
-- Snapshot before wincomponent, registry or redistributable mutation.
-- Estimate clone cost before "move to dedicated prefix".
+- Snapshot into slot B before wincomponent, registry or redistributable mutation.
+- Estimate clone cost before evacuate or "move to dedicated prefix".
+- Store sealed wincomponents by digest and reference them from prefixes.
+- Page-in the game executable while wineserver starts; cancel on back-out.
+- Share translator code caches by Wine + Box64/FEX generation only.
 
 ### ImageFs
 
@@ -142,11 +202,15 @@ Gate: all release criteria at the end of this document pass with sanitized evide
 
 `1.6.0` is release-ready only when all of the following are true:
 
-- Modern JVM, container-activate, prefix-marker, shared-prefix lock and trim suites pass in CI.
+- Modern JVM, container-activate, prefix-marker, shared-prefix lock, trim, evacuate and index suites pass in CI.
 - A warm second launch of a fixture container performs no wineboot, no MSI and no wrapper extract.
 - Shared-prefix game-A then game-B remaps `A:` without wineboot and without dropping the prefix lock on failure.
+- Library draw reads the container index once; it does not parse every `xuser-*` config.
+- Same-id activate does not unlink `home/xuser`.
 - Trim cannot delete saves or `A:` game files in fixtures.
+- Evacuate and slot-B flip survive kill, low space and cancel without losing the source prefix.
 - Activate crash fixtures restore a valid `xuser` pointer.
+- A play session starts no catalog, artwork or trim work after wineserver ready.
 - Thirty launch/stop cycles complete without ANR, native crash or unbounded wineserver RSS.
 - A 60-minute AYN Thor session records FPS, p95/p99, RSS, swap, temperature and wineserver RSS.
 - Performance claims meet [PERFORMANCE.md](PERFORMANCE.md). Unmeasured presentation work is documented as incomplete.

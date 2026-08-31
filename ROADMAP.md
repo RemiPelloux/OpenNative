@@ -18,7 +18,7 @@ Dates are intentionally omitted until the preceding quality gate passes. A featu
 | `1.4.0` | Shared Wine prefix for large libraries | Released |
 | `1.4.2` | Secure self-update, selectable debrid services and transfer reliability hardening | Released |
 | `1.5.0` | Handheld quality: themes, provider adapters, installer review, profile sharing safety and cockpit tabs | Released; device soak remains measurement-gated |
-| `1.6.0` | Wine warm-start, container activate, shared-prefix remap, prefix hygiene and launch smoothness | Next runtime-quality milestone |
+| `1.6.0` | Container platform: layers, isolation tiers, launch budgets, dual-slot repair and Wine warm-start | Next runtime-quality milestone |
 | `2.0.0` | Modular runtimes, compatibility profiles and safe OpenNative identity/data migration | Future architecture |
 | `2.x` | Broader graphics, CPU-translation, input, audio and device compatibility | Candidate portfolio |
 
@@ -26,6 +26,7 @@ Detailed plans:
 
 - [OpenNative 1.5.0](docs/ROADMAP_1.5.0.md)
 - [OpenNative 1.6.0](docs/ROADMAP_1.6.0.md)
+- [Container platform](docs/CONTAINER_PLATFORM.md)
 - [OpenNative 2.0.0](docs/ROADMAP_2.0.0.md)
 - [Feature and emulation roadmap](docs/EMULATION_ROADMAP.md)
 - [Custom provider tabs and Installer Manager](docs/CUSTOM_PROVIDER_TABS.md)
@@ -51,6 +52,7 @@ Version numbers indicate dependency order, not dates. A candidate becomes commit
 5. **Protect generic ARM64 behavior.** Device tuning remains capability-based, optional and reversible.
 6. **Separate metadata from execution.** Remote feeds cannot silently become filesystem paths, commands or executable policy.
 7. **Document limitations.** Release notes state what is supported, experimental and unresolved.
+8. **Containers are a control plane.** Isolation tier, layers and launch budgets are explicit. A folder plus JSON is not the product.
 
 ## OpenNative 1.5.0
 
@@ -136,6 +138,7 @@ Phases are promoted in order. UI prototypes may happen earlier, but transfer or 
 - Wine services, debug channels and Steam helpers stay off unless the title needs them.
 - FSYNC/NTSYNC are per-title measured options. `WINEESYNC=1` remains the default.
 - Presentation leftovers from `1.5.0` (BGRA conversion, buffer reuse, honest FPS evidence) continue here until they pass the measurement gate.
+- Isolation tiers, launch recipes, explain-last-launch, dual-slot rollback and Container Studio make container handling a product, not a folder plus JSON.
 
 ### Delivery phases
 
@@ -149,6 +152,10 @@ Phases are promoted in order. UI prototypes may happen earlier, but transfer or 
 | 5. ImageFs activate | Generation marker, incremental extras, transactional symlink | Crash leaves a valid `xuser` pointer |
 | 6. Guest helpers | Explorer/Steam only when needed | Custom non-Steam launch has no Steam pipe |
 | 7. Presentation cert | Perfetto, buffer reuse, soak | [PERFORMANCE.md](docs/PERFORMANCE.md) claims only |
+| 8. Isolation tiers | Dedicated / Shared / Group / Lab and dirty map | No silent migration; dirty installer blocks unrelated launch |
+| 9. Control plane | Index, recipe hash, TTFF delta, memory waterfall | Library draw is one index read |
+| 10. Dual slot | Slot B, repair layer, evacuate, Lab | Kill/low-space restore source |
+| 11. Governors | I/O classes, watchdog, Studio, hot-apply | No catalog I/O after wineserver ready |
 
 See [docs/ROADMAP_1.6.0.md](docs/ROADMAP_1.6.0.md) for the complete plan.
 
@@ -180,17 +187,19 @@ See [docs/ROADMAP_2.0.0.md](docs/ROADMAP_2.0.0.md) for the complete architecture
 The detailed [feature and emulation roadmap](docs/EMULATION_ROADMAP.md) covers the candidate portfolio. Its headline directions are:
 
 1. **Compatibility Doctor:** explain failed launches and offer scoped repair, safe-mode launch and known-good rollback.
-2. **Wine warm-start:** skip wineboot, MSI and overlay copies when the prefix marker is clean; measure wineserver as a service.
-3. **Container activate:** transactional `xuser` symlink, ImageFs generation markers, shared-prefix drive remap and prefix locks.
-4. **Prefix hygiene:** storage breakdown, opt-in trim, font-cache reuse and reviewed redistributable packs.
-5. **Runtime Lab:** install and compare side-by-side Wine/Proton, Box64/FEX, graphics-driver and DirectX-wrapper combinations.
-6. **Graphics paths:** improve DirectX 8-12, OpenGL/Zink and native Vulkan routing with per-title fallbacks and visual-conformance tests.
-7. **Frame quality:** reduce presentation copies, improve frame pacing, harden LSFG integration and evaluate spatial upscaling without overstating generated frames as native performance.
-8. **Translation efficiency:** measure JIT/code-cache behavior, thread placement and WoW64/ARM64EC compatibility before applying reversible per-title recommendations.
-9. **Console-like play:** faster first launch, controller hot-plug and multi-controller reliability, gyro/touch profiles, low-latency audio and docked-display modes.
-10. **Storage and recovery:** resumable installs, prefix snapshots, save-aware backup, external-storage diagnostics and transaction-like component activation.
-11. **Compatibility knowledge:** signed profiles with provenance, device scope, confidence, user-visible diffs and local override protection.
-12. **Large-library efficiency:** share immutable runtime data by default and offer opt-in container groups for games that can safely use one Wine prefix.
+2. **Container platform:** layered prefixes, isolation tiers, launch recipes, dual-slot rollback, dirty map and Container Studio.
+3. **Wine warm-start:** skip wineboot, MSI and overlay copies when the prefix marker is clean; measure wineserver as a service.
+4. **Launch budgets:** TTFF, layer-apply, wineserver RSS and a play/install/maintain I/O governor.
+5. **Container activate:** transactional `xuser` symlink, same-id no-op, ImageFs generation markers, shared-prefix drive remap and prefix locks.
+6. **Prefix hygiene:** storage breakdown, opt-in trim, font-cache reuse and reviewed redistributable packs.
+7. **Runtime Lab:** install and compare side-by-side Wine/Proton, Box64/FEX, graphics-driver and DirectX-wrapper combinations.
+8. **Graphics paths:** improve DirectX 8-12, OpenGL/Zink and native Vulkan routing with per-title fallbacks and visual-conformance tests.
+9. **Frame quality:** reduce presentation copies, improve frame pacing, harden LSFG integration and evaluate spatial upscaling without overstating generated frames as native performance.
+10. **Translation efficiency:** measure JIT/code-cache behavior, thread placement and WoW64/ARM64EC compatibility before applying reversible per-title recommendations.
+11. **Console-like play:** faster first launch, controller hot-plug and multi-controller reliability, gyro/touch profiles, low-latency audio and docked-display modes.
+12. **Storage and recovery:** resumable installs, prefix snapshots, save-aware backup, external-storage diagnostics and transaction-like component activation.
+13. **Compatibility knowledge:** signed profiles with provenance, device scope, confidence, user-visible diffs and local override protection.
+14. **Large-library efficiency:** share immutable runtime data by default and offer opt-in container groups for games that can safely use one Wine prefix.
 
 ## Explicit non-goals
 

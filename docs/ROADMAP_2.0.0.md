@@ -31,7 +31,8 @@ Exit criteria: runtime modules can be upgraded or rolled back independently, man
 
 ### Compact containers and shared prefix groups
 
-- Reuse the `1.6.0` prefix generation marker, transactional activate and shared-prefix lock so modular components do not reintroduce full wineboot on every launch.
+- Reuse the `1.6.0` layer model, prefix generation marker, transactional activate, dual slot and shared-prefix lock so modular components do not reintroduce full wineboot on every launch.
+- Put Wine/Proton, wincomponents and graphics wraps in the content-addressed sealed store described in [CONTAINER_PLATFORM.md](CONTAINER_PLATFORM.md).
 - Measure container disk use by immutable runtime files, Wine prefix, redistributables, caches, saves and game-owned data before changing storage policy.
 - Store verified immutable runtime/component payloads once and reference them from isolated per-game containers, preserving isolation while removing safe duplication.
 - Introduce an opt-in **container group** that lets multiple compatible games share one mutable Wine prefix.

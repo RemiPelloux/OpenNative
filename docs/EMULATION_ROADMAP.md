@@ -36,6 +36,7 @@ Every promoted feature requires a rollback path, supported-device scope, automat
 | Performance | Changes improve smoothness or efficiency, not only a synthetic score | Repeatable FPS, p95/p99, power, memory and thermal evidence |
 | Recovery | A failed install, migration or launch leaves actionable recovery material | No unverified deletion; interrupted operations resume or roll back |
 | Portability | Useful settings can move between devices without leaking private data | Redacted, versioned, diffable profiles round-trip correctly |
+| Container control | Isolation, repair and launch cost are visible without opening files | Tier change is confirmed; warm launch skips unchanged layers; slot B restores |
 
 ## 1. Compatibility Doctor and one-tap recovery
 
@@ -432,7 +433,31 @@ A failed remount or clone must leave the previous drive map and prefix intact. N
 
 Desktop-skip must not break installer UIs. Window-policy changes require resize, focus-loss and secondary-display fixtures.
 
-## 17. Research lab
+## 17. Container platform and control plane
+
+**Status: Committed: 1.6 contracts and player surfaces; Committed: 2.0 sealed content store**
+
+The full model lives in [CONTAINER_PLATFORM.md](CONTAINER_PLATFORM.md). Headline features:
+
+- Layered stack: ImageFs → Wine/Proton → wincomponents → graphics wrap → mutable prefix → game overlay → session overlay.
+- Isolation tiers: Dedicated, Shared compact, Named group, Lab. No silent migration.
+- Container index and states: `Sealed` `Warm` `Cold` `Dirty` `Broken` `Locked`.
+- Launch recipe hash for Doctor and settings share, without paths or secrets.
+- Explain last launch versus previous success (TTFF, wineserver, layer apply, RSS).
+- Memory waterfall in the cockpit: Android, process, wineserver, guest, wrapper, shaders.
+- Dual-slot mutable prefix (A current, B last good) and one-action flip.
+- Repair one sealed layer; evacuate one title from a poisoned shared prefix.
+- Dirty map of who installed redistributables on a shared prefix.
+- Play / install / maintain I/O classes and a local watchdog.
+- Container Studio: recipe diff, transplant, volume pin/relink.
+- Same-id activate is a no-op; sealed wincomponents are content-addressed.
+- Hot-apply env, frame cap, HUD and Safe launch; sealed layers still need a new launch.
+
+### Promotion gate
+
+Library composition cannot parse N container JSON files. Evacuate, slot flip and repair need kill/low-space fixtures. A faster activate is rejected if it can leave `home/xuser` empty.
+
+## 18. Research lab
 
 These ideas are intentionally outside committed milestones until prototypes prove that they are maintainable and safe:
 
@@ -448,13 +473,16 @@ These ideas are intentionally outside committed milestones until prototypes prov
 - OverlayFS or reflink clones for prefixes on filesystems that guarantee copy-on-write safety.
 - In-kernel NTSYNC or futex-based Wine sync when Android and the Wine build expose a supported contract.
 - Pre-warm the shared prefix while charging and idle, cancelled immediately when the user launches a game.
+- OverlayFS or reflink for sealed layers on filesystems that guarantee copy-on-write, without requiring root.
+- Background layer-verify of slot B while charging, never during play.
+- Per-title Android I/O priority only if it cannot starve other apps without an explicit opt-in.
 
 Research is rejected if it requires DRM bypass, unsafe host changes, downloaded shader caches, undisclosed telemetry, unreviewable binary sources or a device-specific hack enabled for everyone.
 
 ## Delivery order
 
 1. Finish remaining `1.5.0` measurement: Thor soak, Perfetto presentation traces and honest FPS evidence.
-2. Land `1.6.0` warm-prefix, wineserver, ImageFs activate, shared-prefix remap and prefix trim on the current architecture.
+2. Land `1.6.0` warm-prefix, container platform (layers, tiers, index, dual slot, governors) and presentation measurement on the current architecture.
 3. Land `2.0.0` identity migration and immutable modular-component contracts.
 4. Qualify a small runtime matrix before expanding the number of downloadable versions.
 5. Add Compatibility Doctor data to every layer before automatic recommendations.

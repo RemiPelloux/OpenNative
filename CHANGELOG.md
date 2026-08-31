@@ -3,7 +3,8 @@
 ## Unreleased
 
 - Add the `1.6.0` runtime-quality roadmap for Wine warm-start, container activate, shared-prefix remap, prefix trim and launch smoothness.
-- Expand the feature and emulation roadmap with wineserver, ImageFs, guest I/O and XServer idle-cost work.
+- Define the OpenNative container platform: layered prefixes, isolation tiers, launch budgets, dual-slot repair, dirty map and Container Studio.
+- Expand the feature and emulation roadmap with wineserver, ImageFs, guest I/O, XServer idle-cost and control-plane work.
 
 ## 1.5.0 - 2026-08-31
 
