@@ -100,6 +100,8 @@ import app.gamenative.data.LaunchInfo
 import app.gamenative.data.LibraryItem
 import app.gamenative.data.ShooterModeConfig
 import app.gamenative.data.SteamApp
+import app.gamenative.compat.SafeLaunchOnce
+import app.gamenative.compat.SessionRecovery
 import app.gamenative.events.AndroidEvent
 import app.gamenative.events.SteamEvent
 import app.gamenative.ui.enums.Orientation
@@ -491,6 +493,13 @@ fun XServerScreen(
     )
 
     remember(container.id) { AdaptiveEngineCoordinator.prepareForLaunch(container) }
+    remember(appId) {
+        SessionRecovery.markStarted(context.filesDir, appId, "game")
+        if (SafeLaunchOnce.consume(appId)) {
+            container.putExtra("lsfgArmed", "false")
+        }
+        true
+    }
     val xServerState = rememberSaveable(stateSaver = XServerState.Saver) {
         mutableStateOf(
             XServerState(
@@ -4670,6 +4679,7 @@ private fun exit(
     navigateBack: () -> Unit,
 ) {
     Timber.i("Exit called")
+    SessionRecovery.markClean()
 
     if (!isExiting.compareAndSet(false, true)) {
         Timber.i("Exit already in progress, ignoring duplicate request")

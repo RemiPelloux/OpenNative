@@ -55,6 +55,12 @@ class PerformanceCockpitView(
     private val adaptiveValue = TextView(context)
     private val keyboardView = ExternalOnScreenKeyboardView(context, xServer)
     private val keyboardPanel = buildKeyboardPanel()
+    private var selectedTab = 1
+    private lateinit var sessionBand: View
+    private lateinit var metricsBand: View
+    private lateinit var actionBand: View
+    private lateinit var touchpadBand: View
+    private val tabButtons = ArrayList<TextView>(3)
 
     private val updateMetrics = object : Runnable {
         override fun run() {
@@ -75,12 +81,18 @@ class PerformanceCockpitView(
                 ViewGroup.LayoutParams.MATCH_PARENT,
             )
         }
+        sessionBand = buildAdaptiveBand()
+        metricsBand = buildMetricsBand()
+        actionBand = buildActionBand()
+        touchpadBand = buildTouchpad(xServer, touchpadViewProvider)
         content.addView(buildHeader())
-        content.addView(buildMetricsBand())
-        content.addView(buildAdaptiveBand())
-        content.addView(buildActionBand())
-        content.addView(buildTouchpad(xServer, touchpadViewProvider))
+        content.addView(buildTabStrip())
+        content.addView(sessionBand)
+        content.addView(metricsBand)
+        content.addView(actionBand)
+        content.addView(touchpadBand)
         addView(content)
+        showTab(1)
 
         keyboardPanel.layoutParams = LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -179,6 +191,42 @@ class PerformanceCockpitView(
             iconRes = R.drawable.icon_popup_menu_cpu,
             onClick = onTogglePerformanceHud,
         )
+    }
+
+    private fun buildTabStrip(): View = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL
+        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44))
+        setPadding(dp(12), 0, dp(12), 0)
+        addTab(this, 0, R.string.cockpit_tab_session)
+        addTab(this, 1, R.string.cockpit_tab_performance)
+        addTab(this, 2, R.string.cockpit_tab_shortcuts)
+    }
+
+    private fun addTab(parent: LinearLayout, index: Int, labelRes: Int) {
+        val tab = TextView(context).apply {
+            setText(labelRes)
+            setTextColor(Color.parseColor(TEXT))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            gravity = Gravity.CENTER
+            isFocusable = true
+            isClickable = true
+            contentDescription = context.getString(labelRes)
+            setOnClickListener { showTab(index) }
+        }
+        tabButtons.add(tab)
+        parent.addView(tab, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
+    }
+
+    private fun showTab(index: Int) {
+        selectedTab = index
+        sessionBand.visibility = if (index == 0) View.VISIBLE else View.GONE
+        metricsBand.visibility = if (index == 1) View.VISIBLE else View.GONE
+        actionBand.visibility = if (index == 2) View.VISIBLE else View.GONE
+        touchpadBand.visibility = if (index == 2) View.VISIBLE else View.GONE
+        tabButtons.forEachIndexed { i, button ->
+            button.background = if (i == index) solidBackground(SURFACE_ACTIVE) else solidBackground(SURFACE)
+        }
     }
 
     private fun buildAdaptiveBand(): View = LinearLayout(context).apply {

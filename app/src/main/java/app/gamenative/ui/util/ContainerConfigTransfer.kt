@@ -8,6 +8,7 @@ import app.gamenative.ui.util.SnackbarManager
 import app.gamenative.utils.BestConfigService
 import app.gamenative.utils.ContainerUtils
 import app.gamenative.utils.ManifestInstaller
+import java.io.File
 import java.io.IOException
 import kotlin.text.Charsets
 import kotlinx.coroutines.CancellationException
@@ -199,8 +200,17 @@ object ContainerConfigTransfer {
                 val currentData = ContainerUtils.toContainerData(container)
                 val mappedData = ContainerUtils.applyBestConfigMapToContainerData(currentData, bestConfigMap)
                 val originalJson = JSONObject(jsonText)
+                val backupDir = File(context.filesDir, "profile-backups")
+                val currentJson = PortableContainerProfile.export(
+                    currentData,
+                    container.getExtra("fpsLimiterEnabled", "true").toBooleanStrictOrNull() ?: true,
+                    container.getExtra("fpsLimiterTarget", "60").toIntOrNull() ?: 60,
+                )
+                ProfileImport.writeBackup(ProfileImport.backupFile(backupDir, appId), currentJson)
                 val updatedData = if (PortableContainerProfile.isPortable(originalJson)) {
-                    PortableContainerProfile.apply(mappedData, originalJson)
+                    val selected = ProfileCategory.entries.toSet() - ProfileCategory.OTHER
+                    val merged = ProfileImport.merge(currentJson, originalJson, selected, replace = true)
+                    PortableContainerProfile.apply(mappedData, merged)
                 } else {
                     mappedData
                 }

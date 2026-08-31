@@ -15,6 +15,9 @@ interface ProviderTransferJobDao {
     @Query("SELECT * FROM provider_transfer_jobs ORDER BY updated_at DESC")
     fun observeAll(): Flow<List<ProviderTransferJobEntity>>
 
+    @Query("SELECT * FROM provider_transfer_jobs")
+    suspend fun getAll(): List<ProviderTransferJobEntity>
+
     @Query("SELECT * FROM provider_transfer_jobs WHERE job_id = :jobId LIMIT 1")
     suspend fun getById(jobId: String): ProviderTransferJobEntity?
 

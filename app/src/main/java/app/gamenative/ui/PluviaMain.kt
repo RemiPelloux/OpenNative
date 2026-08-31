@@ -76,6 +76,8 @@ import app.gamenative.ui.component.dialog.state.MessageDialogState
 import app.gamenative.ui.components.BootingSplash
 import app.gamenative.ui.enums.AppOptionMenuType
 import app.gamenative.ui.enums.ConnectionState
+import app.gamenative.compat.SafeLaunchOnce
+import app.gamenative.compat.SessionRecovery
 import app.gamenative.launch.LaunchReadiness
 import app.gamenative.ui.enums.DialogType
 import app.gamenative.ui.enums.Orientation
@@ -936,12 +938,19 @@ fun PluviaMain(
         }
 
         DialogType.CRASH -> {
-            onDismissClick = null
+            onDismissClick = {
+                SessionRecovery.markClean(context.filesDir)
+                viewModel.setHasCrashedLastStart(false)
+                setMessageDialogState(MessageDialogState(false))
+            }
             onDismissRequest = {
+                SessionRecovery.markClean(context.filesDir)
                 viewModel.setHasCrashedLastStart(false)
                 setMessageDialogState(MessageDialogState(false))
             }
             onConfirmClick = {
+                SessionRecovery.pending(context.filesDir)?.let { SafeLaunchOnce.arm(it.appId) }
+                SessionRecovery.markClean(context.filesDir)
                 viewModel.setHasCrashedLastStart(false)
                 setMessageDialogState(MessageDialogState(false))
             }
@@ -1209,14 +1218,24 @@ fun PluviaMain(
                                     confirmBtnText = context.getString(R.string.main_update_button),
                                     dismissBtnText = context.getString(R.string.main_later_button),
                                 )
-                            } else if (state.hasCrashedLastStart) {
+                            } else if (state.hasCrashedLastStart || SessionRecovery.pending(context.filesDir) != null) {
                                 viewModel.setAnnoyingDialogShown(true)
+                                val marker = SessionRecovery.pending(context.filesDir)
                                 msgDialogState = MessageDialogState(
                                     visible = true,
                                     type = DialogType.CRASH,
                                     title = context.getString(R.string.main_recent_crash_title),
-                                    message = context.getString(R.string.main_recent_crash_message),
-                                    confirmBtnText = context.getString(R.string.ok),
+                                    message = if (marker != null) {
+                                        context.getString(R.string.session_recovery_message, marker.appId)
+                                    } else {
+                                        context.getString(R.string.main_recent_crash_message)
+                                    },
+                                    confirmBtnText = if (marker != null) {
+                                        context.getString(R.string.session_recovery_safe_launch)
+                                    } else {
+                                        context.getString(R.string.ok)
+                                    },
+                                    dismissBtnText = context.getString(R.string.session_recovery_dismiss),
                                 )
                             }
                         }

@@ -869,8 +869,14 @@
     <string name="external_display_mode_keyboard">Utiliser comme clavier complet</string>
     <string name="external_display_mode_hybrid">Hybride (pavé tactile + bouton clavier)</string>
     <string name="external_display_mode_cockpit">Cockpit performance (mesures + raccourcis)</string>
-    <string name="cockpit_title">COCKPIT PERFORMANCE</string>
+    <string name="cockpit_title">OPENNATIVE</string>
+    <string name="cockpit_tab_session">Session</string>
+    <string name="cockpit_tab_performance">Performance</string>
+    <string name="cockpit_tab_shortcuts">Raccourcis</string>
     <string name="cockpit_live">ACTIF</string>
+    <string name="session_recovery_message">La dernière session de %1$s a été interrompue. Le lancement sûr désactive les couches optionnelles pour un démarrage, sans enregistrer ce changement.</string>
+    <string name="session_recovery_safe_launch">Lancement sûr</string>
+    <string name="session_recovery_dismiss">Ignorer</string>
     <string name="cockpit_fps">FPS</string>
     <string name="cockpit_frame_p95">FRAME P95</string>
     <string name="cockpit_cpu_gpu">CPU / GPU</string>

@@ -5,6 +5,10 @@ object ProviderFeedParser {
         if (SkidrowHtmlParser.looksLike(body, contentType)) {
             return limit(SkidrowHtmlParser.parse(body))
         }
+        val site = SiteCatalogParser.matchingSpec(body, contentType)
+        if (site != null) {
+            return limit(SiteCatalogParser.parse(body, site))
+        }
         val kind = kindHint ?: FeedKind.detect(contentType, body)
         val page = when (kind) {
             FeedKind.JSON -> JsonFeedParser.parse(body)

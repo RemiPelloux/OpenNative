@@ -1,6 +1,8 @@
 package app.gamenative.provider
 
 import java.io.IOException
+import java.io.InterruptedIOException
+import java.net.SocketTimeoutException
 import okhttp3.FormBody
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -67,7 +69,10 @@ class AllDebridHttp(
     private fun read(request: Request): JSONObject {
         val response = try {
             httpClient.newCall(request).execute()
-        } catch (_: IOException) {
+        } catch (error: IOException) {
+            if (error is SocketTimeoutException || error is InterruptedIOException) {
+                throw ProviderException(ProviderErrorCode.TIMEOUT, "Link resolver timed out")
+            }
             throw ProviderException(ProviderErrorCode.NETWORK, "Link resolver request failed")
         }
         response.use { resp ->

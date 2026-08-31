@@ -13,6 +13,7 @@ object ProviderWineSetup {
     @Volatile private var pendingPack: String? = null
     @Volatile private var pendingPolicy: CleanupPolicy = CleanupPolicy.DELETE_AFTER_VERIFIED_INSTALL
     @Volatile private var hooked = false
+    @Volatile private var session: InstallerSessionState? = null
 
     data class Launch(val appId: String, val pack: File)
 
@@ -41,6 +42,10 @@ object ProviderWineSetup {
         pendingAppId = item.appId
         pendingPack = titleFolder.absolutePath
         pendingPolicy = policy
+        session = InstallerSessionState(
+            sessionId = item.appId,
+            startedAtMs = System.currentTimeMillis(),
+        )
         return Launch(item.appId, titleFolder)
     }
 
@@ -56,12 +61,26 @@ object ProviderWineSetup {
         val appId = pendingAppId ?: return
         val pack = pendingPack?.let(::File) ?: return
         val policy = pendingPolicy
-        pendingAppId = null
-        pendingPack = null
+        val now = System.currentTimeMillis()
+        val parent = InstallerSessionMachine.onParentExit(
+            session ?: InstallerSessionState(appId, now),
+            now,
+        )
         val gameDir = InstallerGameDir.hostFolder(pack.name)
         val game = ExecutableDiscovery.discover(gameDir).firstOrNull()
             ?: ExecutableDiscovery.discover(pack).firstOrNull()
-            ?: return
+        val evaluated = InstallerSessionMachine.evaluate(
+            state = parent,
+            nowMs = now + InstallerSessionMachine.PARENT_GRACE_MS + InstallerSessionMachine.QUIESCENCE_MS,
+            discoveredExe = game != null,
+            rebootHint = false,
+        )
+        session = evaluated
+        if (evaluated.outcome != InstallerSessionOutcome.QUIESCENT_SUCCESS || game == null) {
+            return
+        }
+        pendingAppId = null
+        pendingPack = null
         val root = if (game.absolutePath.startsWith(gameDir.absolutePath)) gameDir else pack
         runCatching {
             val container = ContainerUtils.getContainer(context, appId)
@@ -77,7 +96,7 @@ object ProviderWineSetup {
             folders.add(gameDir.absolutePath)
             PrefManager.customGameManualFolders = folders
             CustomGameScanner.invalidateCache()
-            if (policy != CleanupPolicy.KEEP) {
+            if (policy == CleanupPolicy.DELETE_AFTER_VERIFIED_INSTALL) {
                 InstallerCleanup.removePack(pack, gameDir)
             }
         }

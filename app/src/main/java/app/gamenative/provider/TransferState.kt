@@ -27,6 +27,8 @@ object TransferStateMachine {
         TransferState.CLEANING,
     )
 
+    fun isActive(state: TransferState): Boolean = state in active
+
     fun canTransition(from: TransferState, to: TransferState): Boolean {
         if (from == to) return true
         if (to == TransferState.PAUSED || to == TransferState.CANCELLED || to == TransferState.FAILED) {

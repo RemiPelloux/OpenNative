@@ -1,5 +1,6 @@
 package app.gamenative.provider
 
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -148,6 +149,41 @@ class AllDebridClientTest {
         val delayed = server.takeRequest()
         assertEquals("POST", delayed.method)
         assertEquals("id=99", delayed.body.readUtf8())
+    }
+
+    @Test
+    fun `maps http 429 to rate limit without leaking the key`() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(429).setBody("too many"))
+        try {
+            client.validateCredential("secret-key")
+            throw AssertionError("expected failure")
+        } catch (error: ProviderException) {
+            assertEquals(ProviderErrorCode.RATE_LIMIT, error.code)
+            assertTrue(!error.message.orEmpty().contains("secret-key"))
+        }
+    }
+
+    @Test
+    fun `maps a request timeout without leaking the key`() = runBlocking {
+        client = AllDebridClient(
+            httpClient = OkHttpClient.Builder()
+                .callTimeout(50, TimeUnit.MILLISECONDS)
+                .build(),
+            baseUrl = server.url("/").toString().trimEnd('/'),
+            allowLoopbackHttp = true,
+        )
+        server.enqueue(
+            MockResponse()
+                .setHeadersDelay(400, TimeUnit.MILLISECONDS)
+                .setBody("""{"status":"success","data":{"user":{"username":"remi"}}}"""),
+        )
+        try {
+            client.validateCredential("secret-key")
+            throw AssertionError("expected failure")
+        } catch (error: ProviderException) {
+            assertEquals(ProviderErrorCode.TIMEOUT, error.code)
+            assertTrue(!error.message.orEmpty().contains("secret-key"))
+        }
     }
 
     @Test

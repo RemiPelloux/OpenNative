@@ -960,8 +960,14 @@
     <string name="external_display_mode_keyboard">Use as full keyboard</string>
     <string name="external_display_mode_hybrid">Hybrid (touchpad + keyboard button)</string>
     <string name="external_display_mode_cockpit">Performance cockpit (metrics + shortcuts)</string>
-    <string name="cockpit_title">PERFORMANCE COCKPIT</string>
+    <string name="cockpit_title">OPENNATIVE</string>
+    <string name="cockpit_tab_session">Session</string>
+    <string name="cockpit_tab_performance">Performance</string>
+    <string name="cockpit_tab_shortcuts">Shortcuts</string>
     <string name="cockpit_live">LIVE</string>
+    <string name="session_recovery_message">The last session for %1$s was interrupted. Safe launch disables optional layers for one start without saving that change.</string>
+    <string name="session_recovery_safe_launch">Safe launch</string>
+    <string name="session_recovery_dismiss">Dismiss</string>
     <string name="cockpit_fps">FPS</string>
     <string name="cockpit_frame_p95">P95 FRAME</string>
     <string name="cockpit_cpu_gpu">CPU / GPU</string>
@@ -2279,6 +2285,9 @@
     <string name="provider_settings_export_subtitle">Writes a JSON bundle of names and feed URLs. Keys stay on this device.</string>
     <string name="provider_settings_import">Import provider tabs</string>
     <string name="provider_settings_import_subtitle">Adds tabs from an OpenNative JSON bundle</string>
+    <string name="provider_settings_orphans">Clean leftover staging</string>
+    <string name="provider_settings_orphans_subtitle">Removes provider extract folders that no longer belong to an active transfer</string>
+    <string name="provider_settings_orphans_cleaned">Removed %1$d leftover staging folder(s)</string>
     <string name="provider_bundle_exported">Provider tabs exported</string>
     <string name="provider_bundle_imported">Imported %1$d provider tab(s)</string>
     <string name="provider_need_url">Enter a JSON feed URL or an RSS URL</string>

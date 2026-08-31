@@ -46,6 +46,17 @@ class ProviderTransferCoordinator @Inject constructor(
 
     suspend fun getJob(jobId: String): TransferJob? = jobDao.getById(jobId)?.toDomain()
 
+    suspend fun cleanOrphanStaging(): Int = withContext(Dispatchers.IO) {
+        val busy = jobDao.getAll()
+            .map { it.toDomain() }
+            .filter { TransferStateMachine.isActive(it.state) }
+            .map { it.jobId }
+            .toSet()
+        val orphans = OrphanStagingScanner.scan(stagingRoot, busy)
+        OrphanStagingScanner.remove(orphans)
+        orphans.size
+    }
+
     suspend fun enqueue(
         tab: ProviderTab,
         item: ProviderFeedItem,
@@ -188,8 +199,9 @@ class ProviderTransferCoordinator @Inject constructor(
             executableSelected = selectedExe.exists(),
             receiptCommitted = true,
             installerOwnedByJob = !installer.exists() || installer.absolutePath == job.finalPath,
+            userConfirmed = confirmed,
         )
-        if (!InstallerCleanup.shouldSkip(job, destination) && (confirmed || decision.canDelete)) {
+        if (!InstallerCleanup.shouldSkip(job, destination) && decision.canDelete) {
             InstallerCleanup.remove(job, destination, stagingRoot)
         }
         return persist(

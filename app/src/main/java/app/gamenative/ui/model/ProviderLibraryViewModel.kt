@@ -358,7 +358,28 @@ class ProviderLibraryViewModel @Inject constructor(
 
     fun completeInstall(job: TransferJob, exe: File, tab: ProviderTab) {
         viewModelScope.launch {
+            val confirmed = tab.cleanupPolicy != app.gamenative.provider.CleanupPolicy.ASK
+            runCatching { transfers.completePortableInstall(job, exe, tab.cleanupPolicy, confirmed) }
+        }
+    }
+
+    fun confirmCleanup(job: TransferJob, exe: File, tab: ProviderTab) {
+        viewModelScope.launch {
             runCatching { transfers.completePortableInstall(job, exe, tab.cleanupPolicy, confirmed = true) }
+        }
+    }
+
+    fun cleanOrphanStaging() {
+        viewModelScope.launch {
+            runCatching { transfers.cleanOrphanStaging() }
+                .onSuccess { count ->
+                    _ui.update {
+                        it.copy(bundleStatus = context.getString(R.string.provider_settings_orphans_cleaned, count))
+                    }
+                }
+                .onFailure { error ->
+                    _ui.update { it.copy(bundleStatus = error.message ?: error.toString()) }
+                }
         }
     }
 

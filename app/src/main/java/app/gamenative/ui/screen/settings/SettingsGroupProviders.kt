@@ -66,6 +66,12 @@ fun SettingsGroupProviders(
             subtitle = { Text(stringResource(R.string.provider_settings_refresh_subtitle)) },
             onClick = viewModel::refreshAll,
         )
+        SettingsMenuLink(
+            colors = settingsTileColors(),
+            title = { Text(stringResource(R.string.provider_settings_orphans)) },
+            subtitle = { Text(stringResource(R.string.provider_settings_orphans_subtitle)) },
+            onClick = viewModel::cleanOrphanStaging,
+        )
         if (!ui.bundleStatus.isNullOrBlank()) {
             SettingsMenuLink(
                 colors = settingsTileColors(),

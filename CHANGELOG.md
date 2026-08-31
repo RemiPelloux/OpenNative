@@ -7,6 +7,12 @@
 - Put a visual appearance picker at the top of Settings so theme and palette can be changed on a handheld without a hidden dialog.
 - Restyle settings tiles from the active color scheme so Light and AMOLED stay readable.
 - Sample download progress at 150 ms so byte-level callbacks no longer rebuild the Downloads list on every tick.
+- Parse SteamRIP, AnkerGames and GOGUnlocked HTML catalogs through the existing provider contract, with independent fixture-backed failure.
+- Track Wine installer sessions so a parent process exiting first cannot be treated as a successful install.
+- Classify launch failures, offer a one-shot safe launch, and recover interrupted game sessions after Android kills the process.
+- Preview portable profile imports, back up the previous profile, and keep Ask-after-install cleanup off until the user confirms.
+- Split the secondary-display cockpit into Session, Performance and Shortcuts tabs with OpenNative branding.
+- Scan leftover provider staging folders from Settings after a transfer is no longer active.
 
 ## 1.4.2 - 2026-08-30
 

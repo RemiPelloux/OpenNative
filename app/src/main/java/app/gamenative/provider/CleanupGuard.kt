@@ -14,9 +14,13 @@ object CleanupGuard {
         executableSelected: Boolean,
         receiptCommitted: Boolean,
         installerOwnedByJob: Boolean,
+        userConfirmed: Boolean = false,
     ): CleanupDecision {
         if (policy == CleanupPolicy.KEEP) {
             return CleanupDecision(false, "Policy keeps the installer")
+        }
+        if (policy == CleanupPolicy.ASK && !userConfirmed) {
+            return CleanupDecision(false, "Waiting for the user to confirm cleanup")
         }
         if (!sessionComplete) return CleanupDecision(false, "Install session is incomplete")
         if (!requiredFilesPresent) return CleanupDecision(false, "Required files are missing")

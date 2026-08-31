@@ -184,6 +184,9 @@ private fun PolicyButtons(draft: ProviderTabDraft, onChange: (ProviderTabDraft) 
     TextButton(onClick = { onChange(draft.copy(cleanupPolicy = CleanupPolicy.DELETE_AFTER_VERIFIED_INSTALL)) }) {
         Text(stringResource(R.string.provider_cleanup_delete))
     }
+    TextButton(onClick = { onChange(draft.copy(cleanupPolicy = CleanupPolicy.ASK)) }) {
+        Text(stringResource(R.string.provider_cleanup_ask))
+    }
     TextButton(onClick = { onChange(draft.copy(refreshPolicy = RefreshPolicy.DAILY)) }) {
         Text(stringResource(R.string.provider_refresh_daily))
     }

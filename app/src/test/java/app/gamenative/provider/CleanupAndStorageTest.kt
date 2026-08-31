@@ -32,6 +32,32 @@ class CleanupAndStorageTest {
     }
 
     @Test
+    fun `ask policy waits for confirmation`() {
+        val waiting = CleanupGuard.evaluate(
+            policy = CleanupPolicy.ASK,
+            sessionComplete = true,
+            requiredFilesPresent = true,
+            hashesMatch = true,
+            executableSelected = true,
+            receiptCommitted = true,
+            installerOwnedByJob = true,
+            userConfirmed = false,
+        )
+        assertFalse(waiting.canDelete)
+        val confirmed = CleanupGuard.evaluate(
+            policy = CleanupPolicy.ASK,
+            sessionComplete = true,
+            requiredFilesPresent = true,
+            hashesMatch = true,
+            executableSelected = true,
+            receiptCommitted = true,
+            installerOwnedByJob = true,
+            userConfirmed = true,
+        )
+        assertTrue(confirmed.canDelete)
+    }
+
+    @Test
     fun `keep policy never deletes`() {
         val decision = CleanupGuard.evaluate(
             policy = CleanupPolicy.KEEP,

@@ -23,8 +23,8 @@ OpenNative is an independent open-source project. It does not include games, fir
 
 | Channel | Version | Status |
 | --- | --- | --- |
-| Stable | `1.5.0` | Live themes, handheld appearance picker and sampled download progress |
-| Next milestone | `2.0.0` | Identity migration, modular runtimes and remaining `1.5.0` certification items |
+| Stable | `1.5.0` | Handheld appearance, provider adapters, installer review, profile import safety and cockpit tabs |
+| Next milestone | `2.0.0` | Identity migration, modular runtimes and measured device-certification follow-up |
 | Architecture milestone | `2.0.0` | Long-term roadmap |
 
 ## Current capabilities
@@ -88,8 +88,13 @@ See [provider tabs](docs/CUSTOM_PROVIDER_TABS.md) and [feed contract](docs/PROVI
 - Themes now apply live: Light, Dark, AMOLED, Thor Ember, Ocean, Forest, Dusk and Slate, with Soft through Mono palettes.
 - Settings opens with a visual appearance picker sized for handheld use.
 - Download progress updates are sampled so the Downloads list stays responsive during large transfers.
+- SteamRIP, AnkerGames and GOGUnlocked HTML catalogs reuse the existing provider, transfer and verified-install pipeline.
+- Wine installer sessions wait for process-tree quiescence and mark parent-exits-first cases as needs review.
+- Interrupted sessions can be recovered with a one-shot safe launch that does not overwrite the saved profile.
+- Portable profile import previews diffs, writes a rollback backup, and Ask-after-install cleanup stays off until confirmed.
+- The secondary-display cockpit uses Session, Performance and Shortcuts tabs with OpenNative branding.
 
-Remaining certification items from the [1.5.0 roadmap](docs/ROADMAP_1.5.0.md) continue toward `2.0.0`: Wine setup sessions, settings sharing, cockpit polish and measured frame-delivery work.
+Device soak traces and claimed frame-delivery gains are not part of this APK. Those remain measurement-gated work. See [1.5.0 roadmap](docs/ROADMAP_1.5.0.md).
 
 ## Platform support
 
