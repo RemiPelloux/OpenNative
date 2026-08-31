@@ -20,7 +20,9 @@ Improving compatibility means treating these layers as a tested system. Updating
 | --- | --- |
 | **Committed: 1.5** | Daily-driver work accepted for `1.5.0`; it must fit the current architecture |
 | **Committed: 1.6** | Wine, container and launch-path work accepted for `1.6.0`; no identity migration |
-| **Committed: 2.0** | Architecture required for the `2.0.0` modular-runtime milestone |
+| **Committed: 1.7** | Daily-play input, audio, Doctor, queue and save backup |
+| **Committed: 1.8** | Graphics preflight, path fallbacks, integer scale, unified library |
+| **Committed: 2.0** | The eight required `2.0.0` majors; not leftover `1.x` work |
 | **Candidate: 2.x** | Prioritized feature that needs a design, prototype and measured maintenance cost before assignment |
 | **Research** | Exploration only; no release promise |
 
@@ -221,7 +223,7 @@ OpenNative will not download third-party shader caches. Shader data remains loca
 
 ## 8. Input and handheld controls
 
-**Status: Committed: 1.5 reliability; Candidate: 2.x features**
+**Status: Committed: 1.7 reliability; gyro and docked extras in 1.8; Console Shell in 2.0**
 
 ### Planned improvements
 
@@ -483,11 +485,12 @@ Research is rejected if it requires DRM bypass, unsafe host changes, downloaded 
 
 1. Finish remaining `1.5.0` measurement: Thor soak, Perfetto presentation traces and honest FPS evidence.
 2. Land `1.6.0` warm-prefix, container platform (layers, tiers, index, dual slot, governors) and presentation measurement on the current architecture.
-3. Land `2.0.0` identity migration and immutable modular-component contracts.
-4. Qualify a small runtime matrix before expanding the number of downloadable versions.
-5. Add Compatibility Doctor data to every layer before automatic recommendations.
-6. Promote graphics, CPU, frame, input and audio improvements one at a time with A/B evidence.
-7. Expand device coverage only after the generic capability model passes on the primary handheld.
+3. Land `1.7.0` daily-play: input, audio, Doctor, Shader Health, install queue, save-aware backup.
+4. Land `1.8.0` graphics preflight, path fallbacks, integer scale, unified library, move/repair.
+5. Land `2.0.0` only when all eight majors ship: Identity, Runtime Fabric, Presentation Engine 2.0, Exchange, Link, Console Shell, Save Vault, Launch Protocol + Adapter SDK.
+6. Qualify a small Runtime Fabric matrix before expanding the number of downloadable versions.
+7. Add Compatibility Doctor data to every layer before automatic Exchange recommendations.
+8. Expand device-family certification only after the generic capability model passes on the primary handheld.
 
 ## Release evidence
 

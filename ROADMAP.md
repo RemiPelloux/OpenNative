@@ -19,13 +19,17 @@ Dates are intentionally omitted until the preceding quality gate passes. A featu
 | `1.4.2` | Secure self-update, selectable debrid services and transfer reliability hardening | Released |
 | `1.5.0` | Handheld quality: themes, provider adapters, installer review, profile sharing safety and cockpit tabs | Released; device soak remains measurement-gated |
 | `1.6.0` | Container platform: layers, isolation tiers, launch budgets, dual-slot repair and Wine warm-start | Next runtime-quality milestone |
-| `2.0.0` | Modular runtimes, compatibility profiles and safe OpenNative identity/data migration | Future architecture |
-| `2.x` | Broader graphics, CPU-translation, input, audio and device compatibility | Candidate portfolio |
+| `1.7.0` | Daily-play console: input, audio, Doctor, Shader Health, install queue, save backup | After `1.6.0` |
+| `1.8.0` | Last `1.x`: graphics preflight, path fallbacks, integer scale, unified library, move/repair | After `1.7.0` |
+| `2.0.0` | Eight required majors: Identity, Runtime Fabric, Presentation Engine 2.0, Exchange, Link, Console Shell, Save Vault, Launch Protocol + Adapter SDK | Future architecture |
+| `2.x` | Broader GPU families, translation and research promotions | Candidate portfolio |
 
 Detailed plans:
 
 - [OpenNative 1.5.0](docs/ROADMAP_1.5.0.md)
 - [OpenNative 1.6.0](docs/ROADMAP_1.6.0.md)
+- [OpenNative 1.7.0](docs/ROADMAP_1.7.0.md)
+- [OpenNative 1.8.0](docs/ROADMAP_1.8.0.md)
 - [Container platform](docs/CONTAINER_PLATFORM.md)
 - [OpenNative 2.0.0](docs/ROADMAP_2.0.0.md)
 - [Feature and emulation roadmap](docs/EMULATION_ROADMAP.md)
@@ -159,28 +163,34 @@ Phases are promoted in order. UI prototypes may happen earlier, but transfer or 
 
 See [docs/ROADMAP_1.6.0.md](docs/ROADMAP_1.6.0.md) for the complete plan.
 
+## OpenNative 1.7.0
+
+Daily-play on the current package. Input, audio, Doctor, Shader Health, install queue and save-aware backup. No identity migration.
+
+See [docs/ROADMAP_1.7.0.md](docs/ROADMAP_1.7.0.md).
+
+## OpenNative 1.8.0
+
+Last `1.x` product: graphics preflight and fallbacks, integer scale, honest LSFG metrics, unified library, move/repair, capability reports. Still the current application id.
+
+See [docs/ROADMAP_1.8.0.md](docs/ROADMAP_1.8.0.md).
+
 ## OpenNative 2.0.0
 
-The `2.0.0` milestone begins after `1.5.0` certification. `1.6.0` runtime work may proceed in parallel because it does not migrate application identity. Its scope includes:
+`2.0.0` is a major product. A build that only finishes `1.8.0` leftovers cannot use this version. All eight majors are required:
 
-- A resumable migration to a final OpenNative application identity and storage layout.
-- Modular Wine/Proton, Box64/FEX, graphics-driver and DirectX-wrapper contracts.
-- Signed component manifests with independent update and rollback.
-- A versioned OpenNative compatibility/profile catalog with local override protection.
-- Explainable local optimization recommendations with confidence and rollback.
-- Broader validation across Qualcomm/Adreno, Mali and additional Android ARM64 platforms.
-- Unified phone, tablet, handheld and secondary-display navigation architecture.
+1. **Identity** — new application id, resumable migration, source tree kept until verify.
+2. **Runtime Fabric** — signed side-by-side Wine/Proton, translators, drivers and wrappers with lockfiles and rollback.
+3. **Presentation Engine 2.0** — Vulkan/zero-copy scanout that can retire BGRA `sfCompat` when traces allow; scale/upscale as engine stages.
+4. **Compatibility Exchange** — signed catalogs, local overrides, share-sheet and LAN import; no account required.
+5. **OpenNative Link** — paired LAN companion for library, queue, recipe push and sanitized Doctor pull.
+6. **Console Shell** — docked living-room mode; handheld as controller; TV-safe UI.
+7. **Save Vault** — versioned saves outside the Wine prefix.
+8. **Launch Protocol + Adapter SDK** — intent/lockfile API and signed provider plugins with no Wine authority.
 
-### Compatibility platform outcomes
+Device Family Cert, in-app Cert Lab and the local optimizer are required for certification. They do not replace a missing major.
 
-- Install Wine/Proton, Box64/FEX, Turnip/Mesa and DXVK/VKD3D components independently without replacing a working stack.
-- Resolve only tested component combinations and keep a one-action rollback to the last known-good set.
-- Offer clear per-title launch profiles for DirectX 8/9/10/11/12, OpenGL and native Vulkan paths.
-- Compare cold and warm shader behavior, CPU-translation pressure, frame pacing and thermals through repeatable local captures.
-- Share signed compatibility profiles while preserving local overrides and never bundling games, saves, credentials or shader binaries.
-- Expand validation beyond Qualcomm/Adreno without hiding device-specific limitations behind universal defaults.
-
-See [docs/ROADMAP_2.0.0.md](docs/ROADMAP_2.0.0.md) for the complete architecture plan.
+See [docs/ROADMAP_2.0.0.md](docs/ROADMAP_2.0.0.md).
 
 ## Feature portfolio after 1.5
 
@@ -200,6 +210,7 @@ The detailed [feature and emulation roadmap](docs/EMULATION_ROADMAP.md) covers t
 12. **Storage and recovery:** resumable installs, prefix snapshots, save-aware backup, external-storage diagnostics and transaction-like component activation.
 13. **Compatibility knowledge:** signed profiles with provenance, device scope, confidence, user-visible diffs and local override protection.
 14. **Large-library efficiency:** share immutable runtime data by default and offer opt-in container groups for games that can safely use one Wine prefix.
+15. **2.0 majors:** Identity, Runtime Fabric, Presentation Engine 2.0, Compatibility Exchange, OpenNative Link, Console Shell, Save Vault, Launch Protocol + Adapter SDK.
 
 ## Explicit non-goals
 
@@ -211,6 +222,7 @@ The detailed [feature and emulation roadmap](docs/EMULATION_ROADMAP.md) covers t
 - Device-specific tuning enabled without consent.
 - Package/storage renaming without atomic migration and rollback.
 - Performance claims without reproducible before/after evidence.
+- Tagging `2.0.0` on a build that omits any of the eight required majors.
 
 ## Tracking and governance
 

@@ -25,7 +25,8 @@ OpenNative is an independent open-source project. It does not include games, fir
 | --- | --- | --- |
 | Stable | `1.5.0` | Handheld appearance, provider adapters, installer review, profile import safety and cockpit tabs |
 | Next milestone | `1.6.0` | Container platform, Wine warm-start, launch budgets and dual-slot repair |
-| Architecture milestone | `2.0.0` | Identity migration, modular runtimes and measured device-certification follow-up |
+| Then | `1.7.0` → `1.8.0` | Daily-play console, then graphics preflight and unified library |
+| Architecture milestone | `2.0.0` | Eight required majors: Identity, Runtime Fabric, Presentation 2.0, Exchange, Link, Console Shell, Save Vault, Adapter SDK |
 
 ## Current capabilities
 
@@ -165,6 +166,9 @@ Mockito and MockK use an explicit ByteBuddy agent for JDKs that restrict dynamic
 | [Roadmap](ROADMAP.md) | Milestones, delivery phases and release gates |
 | [1.5.0 roadmap](docs/ROADMAP_1.5.0.md) | Handheld-quality implementation and validation plan |
 | [1.6.0 roadmap](docs/ROADMAP_1.6.0.md) | Wine, container, prefix and launch-smoothness plan |
+| [1.7.0 roadmap](docs/ROADMAP_1.7.0.md) | Daily-play: input, audio, Doctor, queue, save backup |
+| [1.8.0 roadmap](docs/ROADMAP_1.8.0.md) | Graphics paths, integer scale, unified library, move/repair |
+| [2.0.0 roadmap](docs/ROADMAP_2.0.0.md) | Eight required majors |
 | [Container platform](docs/CONTAINER_PLATFORM.md) | Layered prefixes, isolation tiers, budgets and repair |
 | [Feature and emulation roadmap](docs/EMULATION_ROADMAP.md) | Planned runtime, graphics, translation, input, audio and recovery improvements |
 | [Provider tabs](docs/CUSTOM_PROVIDER_TABS.md) | Provider, AllDebrid, transfer and Installer Manager contract |

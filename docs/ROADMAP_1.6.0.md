@@ -4,7 +4,7 @@
 
 `1.6.0` is a runtime-quality milestone on the current package and container architecture. It must make Wine, prefixes and guest launch cheaper and more predictable without migrating application identity or introducing a downloadable modular-runtime store.
 
-`2.0.0` still owns identity migration and independently versioned Wine/Proton packages. `1.6.0` only changes how the existing ImageFs, container, wineserver and presentation path start, idle and recover.
+`1.7.0` takes daily-play (input, audio, Doctor). `1.8.0` takes graphics-path productization. `2.0.0` still owns the eight required majors (Identity, Runtime Fabric, Presentation Engine 2.0, Exchange, Link, Console Shell, Save Vault, Adapter SDK). `1.6.0` only changes how the existing ImageFs, container, wineserver and presentation path start, idle and recover.
 
 Work may proceed in parallel with remaining `1.5.0` measurement (Thor soak, Perfetto). A `1.6.0` APK must not claim a frame-rate gain until the [performance method](PERFORMANCE.md) is satisfied.
 

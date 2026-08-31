@@ -229,4 +229,4 @@ Exit criteria: provider tabs do not alter built-in sources, refresh has bounded 
 
 Release only when user data remains intact during an in-place update, the full CI matrix is green, no severity-one or severity-two regression remains open, and all performance statements link to reproducible evidence.
 
-Unfinished presentation measurement (Thor soak, Perfetto, BGRA ownership) and Wine/container warm-start work continue in [`ROADMAP_1.6.0.md`](ROADMAP_1.6.0.md).
+Unfinished presentation measurement (Thor soak, Perfetto, BGRA ownership) and Wine/container warm-start work continue in [`ROADMAP_1.6.0.md`](ROADMAP_1.6.0.md). Daily-play, graphics-path and architecture majors are sequenced in [`ROADMAP_1.7.0.md`](ROADMAP_1.7.0.md), [`ROADMAP_1.8.0.md`](ROADMAP_1.8.0.md) and [`ROADMAP_2.0.0.md`](ROADMAP_2.0.0.md).

@@ -2,110 +2,172 @@
 
 ## Goal
 
-`2.0.0` is an architectural release: OpenNative-owned identity and data migration, modular runtime components, broader device validation and a stable compatibility contract. Work starts after the `1.5.0` quality gates are met. Wine warm-start, container activate and prefix hygiene that fit the current architecture belong in [`1.6.0`](ROADMAP_1.6.0.md) and may proceed in parallel.
+`2.0.0` is a **major product**, not a larger `1.8.0`. It changes what OpenNative is: its identity on the device, how runtimes are installed, how frames reach the panel, how two devices talk, and how compatibility knowledge moves — without shipping games, secrets or shader caches.
 
-## 1. Identity and data migration
+`1.6.0`–`1.8.0` must stay on the current package and ImageFs. `2.0.0` begins after `1.5.0` certification. `1.6`–`1.8` work may land first; it is not a substitute for the features below.
 
-- Define the final OpenNative application ID and public storage layout.
-- Build a resumable migration that inventories, stages, hashes and atomically promotes containers, saves, profiles and cache metadata.
-- Never delete the source installation automatically; provide verification and rollback reports.
-- Version every persisted schema and test upgrades from each supported OpenNative release.
-- Keep legal attribution, third-party notices and Git history intact.
+A `2.0.0` APK that only migrates storage or only adds another settings screen is not `2.0.0`.
 
-Exit criteria: interrupted, low-space and corrupted-file migrations recover safely; old and new builds can be distinguished; no save or container is orphaned.
+## Major features (required)
 
-## 2. Modular runtime architecture
+These eight features are the release. Each has its own exit criteria. Shipping five of them and calling the build `2.0.0` is not allowed.
 
-- Introduce stable interfaces for Wine/Proton, Box64/FEX, graphics drivers and DirectX wrappers.
-- Resolve component compatibility through signed manifests with immutable versions and hashes.
-- Isolate download, validation, extraction and activation so a failed component cannot damage a working runtime.
-- Make renderer and translation-runtime selection capabilities-based instead of device-name based.
-- Support rollback to the previous compatible component set.
-- Model a runtime stack as an explicit lockfile: Wine/Proton, guest architecture, Box64/FEX, graphics driver, DirectX wrapper, audio layer and optional presentation features.
-- Keep multiple immutable versions side by side so changing one title never mutates another title's known-good stack.
-- Add compatibility constraints and preflight checks for ABI, Android API, GPU family, Vulkan extensions, wrapper/runtime pair and prefix architecture.
-- Separate component download from activation; activation commits only after integrity, load and smoke checks pass.
-- Provide a read-only runtime inspector showing provenance, license, digest, disk use, dependent games and rollback availability.
+| # | Feature | Player-visible change |
+| --- | --- | --- |
+| 1 | **OpenNative Identity** | New application id and storage layout, resumable migration, old install left intact until verify |
+| 2 | **Runtime Fabric** | Install, pin and roll back Wine/Proton, Box64/FEX, Mesa/Turnip, DXVK/VKD3D as signed, side-by-side packages |
+| 3 | **Presentation Engine 2.0** | Vulkan scanout path that can retire `sfCompat` BGRA conversion when traces prove ownership; integer scale and optional spatial upscale as engine stages |
+| 4 | **Compatibility Exchange** | Signed per-title catalogs with provenance, device scope and local-override protection; optional peer import over a share sheet or LAN |
+| 5 | **OpenNative Link** | First-party companion on the same LAN: library, queue, recipe push, sanitized Doctor pull — no account required |
+| 6 | **Console Shell** | Docked living-room mode: TV-safe UI, handheld as a controller, game stays on the big surface |
+| 7 | **Save Vault** | Versioned, prefix-independent save store with timeline, export and restore |
+| 8 | **Launch Protocol + Adapter SDK** | Documented intent/lockfile API for other apps; signed in-process provider plugins |
 
-Exit criteria: runtime modules can be upgraded or rolled back independently, manifests reject tampering, and compatibility validation covers supported combinations.
+Supporting work (Device Family Cert, Cert Lab, local optimizer) is required for release quality but is not a substitute for any row above.
 
-### Compact containers and shared prefix groups
+## 1. OpenNative Identity
 
-- Reuse the `1.6.0` layer model, prefix generation marker, transactional activate, dual slot and shared-prefix lock so modular components do not reintroduce full wineboot on every launch.
-- Put Wine/Proton, wincomponents and graphics wraps in the content-addressed sealed store described in [CONTAINER_PLATFORM.md](CONTAINER_PLATFORM.md).
-- Measure container disk use by immutable runtime files, Wine prefix, redistributables, caches, saves and game-owned data before changing storage policy.
-- Store verified immutable runtime/component payloads once and reference them from isolated per-game containers, preserving isolation while removing safe duplication.
-- Introduce an opt-in **container group** that lets multiple compatible games share one mutable Wine prefix.
-- Keep graphics, translator, display, input, environment and launch settings in per-game overlays rather than rewriting the shared group's base configuration on every launch.
-- Serialize mutations and launches against a shared prefix so two installs or games cannot modify it concurrently.
-- Track which game installed shared redistributables, registry changes and middleware; warn when removing one title could affect the group.
-- Let a game leave a group through a verified clone to a dedicated prefix, and let a user restore the whole group from a pre-change snapshot.
-- Never migrate existing isolated containers automatically. Show estimated space saved, compatibility risks and required free space before opt-in migration.
+- Final application id, public storage roots and content-provider authorities.
+- Resumable inventory → hash → stage → atomic promote of containers, vault, recipes, caches.
+- Never auto-delete the source tree. Verification report and rollback.
+- Schema versions from every supported `1.x` release.
+- Attribution, notices and git history stay.
 
-Exit criteria: compact isolated containers preserve byte-identical mutable prefixes, grouped games retain independent launch profiles, concurrent prefix mutation is impossible, and group-to-dedicated migration passes interrupted-copy and rollback tests.
+Exit: interrupted, low-space and corrupt migrations recover; old and new builds are distinguishable; no save or container is orphaned.
 
-### Runtime qualification matrix
+## 2. Runtime Fabric
 
-- Boot a minimal 32-bit and 64-bit Windows probe for every promoted Wine/Proton and translator combination.
-- Exercise process creation, registry, filesystem case behavior, common redistributables, audio initialization, XInput and a Vulkan/Direct3D smoke scene.
-- Test fresh prefix, upgraded prefix and rollback paths; a new runtime cannot silently rewrite every existing prefix.
-- Publish the qualified combinations and retain explicit **experimental** labels for combinations outside the matrix.
+A store for **components OpenNative is allowed to redistribute**, not for games.
 
-Exit criteria: a promoted component stack passes deterministic smoke tests on its declared device/GPU scope and rollback restores the prior launch result and prefix association.
+- Signed manifests: version, license, ABI, GPU scope, digest, compatible peers.
+- Side-by-side immutable trees. One title’s pin cannot mutate another title’s stack.
+- Lockfile per game: Wine/Proton, translator, driver, wrapper, audio, presentation extras.
+- Download ≠ activate. Activate after integrity, load and smoke.
+- One-action rollback to the last lockfile that produced a successful launch.
+- Runtime inspector: provenance, disk, dependents, rollback availability.
+- OpenNative-operated mirror only for components with verified rights ([INDEPENDENCE.md](INDEPENDENCE.md)).
 
-## 3. OpenNative compatibility catalog
+### Compact layers
 
-- Define a versioned, reviewable per-title profile format with provenance and exact runtime requirements.
-- Keep local user overrides separate from catalog defaults and display every applied difference.
-- Update profiles only with user approval and preserve rollback history.
-- Collect no gameplay telemetry by default; diagnostic evidence remains local and explicitly exported.
-- Reject universal presets that lack device/game evidence.
+Reuse the `1.6.0` layer model. Sealed Wine/wincomponents/wraps live in the content-addressed fabric. Mutable prefixes stay private or grouped by explicit tier.
 
-Exit criteria: catalog updates are signed, reversible and deterministic, and never overwrite a local profile silently.
+### Qualification matrix
 
-## 4. Predictive optimization with safeguards
+32/64-bit probes, registry, filesystem, audio, XInput, DX/Vulkan smoke, fresh/upgrade/rollback prefix. Unpublished combinations stay **experimental**.
 
-- Train only on local, bounded session summaries from the same title and device.
-- Predict whether a next-launch resolution/runtime experiment is likely to improve p95 frametime or thermals.
-- Require confidence, hysteresis, cooldown and an automatic rollback proposal after a failed experiment.
-- Keep clocks, unsafe affinity, shader downloads and in-session renderer reconstruction outside the optimizer.
-- Make every recommendation explainable from measured CPU, GPU, memory, thermal and pacing pressure.
+Exit: tamper-evident manifests; independent upgrade/rollback; smoke on the declared GPU family; compact containers do not rewrite a foreign prefix.
 
-Exit criteria: offline replay tests prove deterministic decisions, false-positive bounds are documented, and disabling the optimizer restores exact user settings.
+## 3. Presentation Engine 2.0
 
-## 5. Rendering and translation evolution
+This is the engine major, not another HUD tweak.
 
-- Separate Android presentation, guest rendering and translation-runtime lifecycle behind tested ownership contracts.
-- Reduce copies and synchronization only after traces establish buffer lifetime and thread boundaries.
-- Add cold/warm shader and pipeline benchmarks shared across supported backends.
-- Establish crash-safe cache journals and format-aware invalidation without scanning the frame path.
-- Validate Qualcomm/Adreno, Mali and at least one additional Android ARM64 GPU family.
-- Route DirectX 8/9/10/11/12, OpenGL and native Vulkan through explicit per-title capabilities and fallbacks rather than one universal renderer choice.
-- Add visual-conformance scenes for color, alpha, depth, texture formats, presentation, resize, fullscreen and device-loss behavior.
-- Instrument CPU translation startup, JIT/code-cache growth, invalidation, hot threads and synchronization stalls without sampling the frame path continuously.
-- Evaluate Box64, FEX and ARM64EC/WoW64 paths per workload; recommendations apply on the next launch and always preserve the previous setting.
-- Harden LSFG lifecycle, pacing and failure fallback before exposing broader frame-generation presets.
-- Evaluate integer scaling and a spatial upscaler as optional presentation stages with sharpness, aspect and latency controls.
+- Split **guest render**, **convert**, **scanout** and **display** behind ownership tests.
+- Ship a Vulkan (or proven zero-copy) scanout that can become the default when Perfetto shows BGRA `sfCompat` is no longer required for that device/driver.
+- Keep `sfCompat` as a fallback path with an honest label.
+- Integer scaling and optional spatial upscale as ordered stages (resolution, sharpness, aspect, latency).
+- Crash-safe shader journals; format-aware invalidation; no frame-path walks.
+- LSFG remains optional. Rendered vs displayed FPS stay separate.
+- HDR / VRR stay research unless a device contract is proven.
 
-Exit criteria: no backend relies on a hidden device-specific default, visual conformance tests pass, and target workloads meet the performance gates in `PERFORMANCE.md`.
+Exit: traces for both paths; default scanout wins [PERFORMANCE.md](PERFORMANCE.md) without visual corruption; fallback still launches. No FPS claim without five alternating A/B runs.
 
-The complete layer-by-layer plan, including audio, input, storage and experimental work, is maintained in [EMULATION_ROADMAP.md](EMULATION_ROADMAP.md).
+## 4. Compatibility Exchange
 
-## 6. Product architecture
+- Versioned profile objects: game build, device/GPU scope, lockfile, evidence label (`Maintainer` `Community` `Experimental` `Outdated`).
+- Apply only after a grouped diff. Local overrides never overwritten.
+- Rollback history for every accepted catalog change.
+- Offline snapshot of the last verified catalog.
+- Import from Android share or Link. Export strips paths, accounts, saves, binaries, shader caches.
+- Optional signed catalog feed that OpenNative publishes. Peers can share files without an OpenNative account.
+- No gameplay telemetry by default.
 
-- Unify phone, tablet, handheld and secondary-display navigation around one state model.
-- Preserve touch, controller, keyboard and accessibility focus through lifecycle changes.
-- Provide per-game diagnostics, profile history and component health without nested or blocking overlays.
-- Make destructive maintenance previewable, scoped and undoable where feasible.
-- Complete localization of all user-visible OpenNative strings.
+Exit: signed, deterministic, reversible. A profile without device/game evidence cannot be marked stable.
 
-Exit criteria: automated state tests and device QA cover recreation, rotation, display loss, process restore and controller reconnect.
+## 5. OpenNative Link
+
+A major surface that Winlator-class apps do not have as a first-party product.
+
+- Companion (desktop or second Android) discovers the handheld on the LAN with a one-time pairing code.
+- Capabilities: browse library, start/stop a queued install, push a recipe, pull a sanitized Doctor bundle, watch job stage (not a live game stream).
+- Pairing keys in Android Keystore. TLS. No store credentials leave the device.
+- Works offline after pairing. No OpenNative login.
+- Refuse WAN relay, “cloud remote play” and unsolicited inbound control.
+
+Exit: pairing fixtures; revoked companion cannot call; exports match the existing redaction rules; killing Link cannot kill an active guest.
+
+## 6. Console Shell
+
+- One navigation state for handheld, phone, tablet, TV/docked and the existing secondary cockpit.
+- **Living-room mode:** game on HDMI/internal big surface; handheld or a paired controller drives a TV-safe launcher.
+- Focus, scale and safe-area for 10-foot UI.
+- Unplug dock: game continues on the panel; shell follows.
+- Multi-user Android profiles stay isolated; OpenNative does not merge libraries across users.
+
+Exit: dock plug/unplug and display-loss matrices. Localization of every new shell string.
+
+## 7. Save Vault
+
+Saves are a product, not a side effect of a Wine prefix.
+
+- Detect and register save roots (Windows known folders, Steam userdata, user override).
+- Timeline of snapshots with size, game build and recipe hash.
+- Restore, export, import with preview. Default set excludes `A:` game files and `windows/`.
+- Vault lives outside the mutable prefix so evacuate / fabric rollback cannot drop saves.
+- Optional Keystore-wrapped archive. No automatic cloud upload.
+
+Exit: prefix trim, slot-B flip and identity migration cannot delete vault objects. Conflict with store cloud-save uses the `1.8.0` dialog plus a vault snapshot.
+
+## 8. Launch Protocol and Adapter SDK
+
+- Public intent / document contract: launch by installation id or recipe hash, return Doctor correlation id.
+- Other apps (launchers, voice, Tasker-class tools) may start a game they did not install only if the user granted that install.
+- **Adapter SDK:** signed plugin package that implements the existing provider catalog/resolver interfaces.
+- Plugins cannot receive filesystem, Wine or cleanup authority. They return metadata and user-selected links.
+- Disable one plugin without blocking others. Last valid snapshot stays.
+
+Exit: a sample plugin built in CI against fake feeds. A malicious path in plugin JSON cannot escape staging. Intents cannot launch an install the caller does not own.
+
+## 9. Supporting majors (required for certification)
+
+### Device Family Cert
+
+- Qualcomm/Adreno remains primary.
+- Mali certified with the same capability document, not a rename of Adreno defaults.
+- One additional Android ARM64 GPU family smoked and documented.
+- Thermal/power recommendations only; no forced clocks.
+
+### Cert Lab
+
+- In-app, user-owned: smoke scenes, five-run capture, visual stills, sanitized share.
+- Uses only games and files the user already has.
+- Labels **pass / fail / inconclusive**. Never a marketing FPS number without the protocol.
+
+### Local optimizer
+
+- Same-device session summaries only.
+- Next-launch resolution or lockfile experiment with confidence, cooldown and rollback.
+- Explainable from the memory waterfall and pacing pressure.
 
 ## Release certification
 
-- Reproducible signed builds with provenance, checksums and SBOM.
-- Migration tests from every supported stable release.
-- 100 launch/stop cycles and multi-hour soak sessions on the primary certification devices.
-- Representative games across DirectX 9/11/12 and OpenGL/Vulkan translation paths.
+`2.0.0` ships only when **all eight major features** meet their exit criteria and:
+
+- Reproducible signed builds, checksums, SBOM, component-mirror provenance.
+- Migration tests from every supported stable `1.x`.
+- 100 launch/stop cycles and multi-hour soaks on primary devices.
+- Representative DX9/11/12 and GL/Vulkan titles on Adreno and Mali.
+- Link pairing, vault restore, fabric rollback and scanout fallback fixtures pass.
 - No unresolved critical security, data-loss, rendering-corruption or input regression.
-- Published limitations and measured results; no unsupported performance claims.
+- Published limitations. No unsupported performance claims.
+
+## Explicit non-goals
+
+- Shipping or indexing copyrighted games.
+- DRM bypass or kernel anti-cheat claims.
+- Downloaded third-party shader caches.
+- WAN remote play, accounts as a requirement, or gameplay telemetry by default.
+- Root, custom kernels, OverlayFS that needs a patched Android.
+- Forced clocks, fan firmware or global scheduler changes.
+- A `2.0.0` tag on a build that only finishes `1.8.0` leftovers.
+
+Layer-by-layer emulation work that is not one of the eight majors stays in [EMULATION_ROADMAP.md](EMULATION_ROADMAP.md). Container layers stay in [CONTAINER_PLATFORM.md](CONTAINER_PLATFORM.md).
