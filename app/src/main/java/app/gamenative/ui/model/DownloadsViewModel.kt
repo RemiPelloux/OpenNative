@@ -412,10 +412,11 @@ class DownloadsViewModel @Inject constructor(
         activeBindings.forEach { (key, binding) ->
             if (observedDownloads[key]?.info === binding.info) return@forEach
 
-            val progressListener: (Float) -> Unit = listener@{
+            val progressListener: (Float) -> Unit = listener@{ progress ->
                 val now = SystemClock.elapsedRealtime()
                 val last = lastProgressUiAtMs[key] ?: 0L
-                if (now - last < PROGRESS_UI_INTERVAL_MS) return@listener
+                val isTerminal = progress >= 1f || progress < 0f
+                if (!isTerminal && now - last < PROGRESS_UI_INTERVAL_MS) return@listener
                 lastProgressUiAtMs[key] = now
                 viewModelScope.launch(Dispatchers.Default) {
                     updateObservedDownloadItem(binding)
