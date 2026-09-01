@@ -6,6 +6,7 @@ import com.winlator.container.Container
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.After
 import org.junit.Before
@@ -158,6 +159,26 @@ class PreInstallStepsTest {
             "wine explorer /desktop=shell,1024x768 winhandler.exe cmd /c \"echo step1 & taskkill /F /IM explorer.exe & wineserver -k\"",
             result.first().executable,
         )
+    }
+
+    @Test
+    fun getPreInstallCommands_killsWineserverOnlyOnTheLastStep() {
+        PreInstallSteps.setStepsProviderForTests {
+            listOf(
+                FakeStep(Marker.VCREDIST_INSTALLED, applies = true, command = "echo one"),
+                FakeStep(Marker.OPENAL_INSTALLED, applies = true, command = "echo two"),
+            )
+        }
+        val result = PreInstallSteps.getPreInstallCommands(
+            container = container,
+            appId = "STEAM_1",
+            gameSource = GameSource.STEAM,
+            screenInfo = "1024x768",
+            containerVariantChanged = false,
+        )
+        assertEquals(2, result.size)
+        assertFalse(result.first().executable.contains("wineserver -k"))
+        assertTrue(result.last().executable.contains("wineserver -k"))
     }
 
 }

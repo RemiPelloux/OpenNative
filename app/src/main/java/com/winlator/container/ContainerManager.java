@@ -25,10 +25,14 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class ContainerManager {
+    private static final HashMap<String, Long> CONFIG_MTIMES = new HashMap<>();
+    private static final HashMap<String, JSONObject> CONFIG_CACHE = new HashMap<>();
+
     private final ArrayList<Container> containers = new ArrayList<>();
     private final File homeDir;
     private final Context context;
@@ -57,14 +61,11 @@ public class ContainerManager {
                         container.setRootDir(new File(homeDir, ImageFs.USER+"-"+container.id));
                         try {
                             File configFile = container.getConfigFile();
-                            String configContent = FileUtils.readString(configFile);
-
-                            if (configContent == null || configContent.trim().isEmpty()) {
+                            JSONObject data = readConfigCached(containerId, configFile);
+                            if (data == null) {
                                 Log.w("ContainerManager", "Container config file is null or empty, skipping: " + containerId);
                                 continue;
                             }
-
-                            JSONObject data = new JSONObject(configContent);
                             container.loadData(data);
                             containers.add(container);
                         } catch (Exception e) {
@@ -79,10 +80,56 @@ public class ContainerManager {
     }
 
     public void activateContainer(Container container) {
-        container.setRootDir(new File(homeDir, ImageFs.USER+"-"+container.id));
-        File file = new File(homeDir, ImageFs.USER);
-        file.delete();
-        FileUtils.symlink("./"+ImageFs.USER+"-"+container.id, file.getPath());
+        File target = new File(homeDir, ImageFs.USER + "-" + container.id);
+        container.setRootDir(target);
+        File link = new File(homeDir, ImageFs.USER);
+        File next = new File(homeDir, ImageFs.USER + ".next");
+        String current = FileUtils.isSymlink(link) ? FileUtils.readSymlink(link) : "";
+        app.gamenative.container.ActivatePlan plan = app.gamenative.container.ActivatePolicy.INSTANCE.plan(
+            container.id,
+            current,
+            link.exists(),
+            next.exists()
+        );
+        if (plan.getSkip()) {
+            return;
+        }
+        if (plan.getRecoverNext() && next.renameTo(link)) {
+            return;
+        }
+        File prev = new File(homeDir, ImageFs.USER + ".prev");
+        FileUtils.delete(next);
+        FileUtils.symlink(plan.getExpectedLink(), next.getPath());
+        if (link.exists()) {
+            FileUtils.delete(prev);
+            if (!link.renameTo(prev)) {
+                FileUtils.delete(link);
+            }
+        }
+        if (!next.renameTo(link)) {
+            FileUtils.symlink(plan.getExpectedLink(), link.getPath());
+        }
+        FileUtils.delete(prev);
+    }
+
+    private static JSONObject readConfigCached(String containerId, File configFile) throws JSONException {
+        if (configFile == null || !configFile.isFile()) {
+            return null;
+        }
+        long mtime = configFile.lastModified();
+        Long cachedMtime = CONFIG_MTIMES.get(containerId);
+        JSONObject cached = CONFIG_CACHE.get(containerId);
+        if (cached != null && cachedMtime != null && cachedMtime == mtime) {
+            return cached;
+        }
+        String configContent = FileUtils.readString(configFile);
+        if (configContent == null || configContent.trim().isEmpty()) {
+            return null;
+        }
+        JSONObject data = new JSONObject(configContent);
+        CONFIG_MTIMES.put(containerId, mtime);
+        CONFIG_CACHE.put(containerId, data);
+        return data;
     }
 
     public void createContainerAsync(String containerId, final JSONObject data, Callback<Container> callback) {

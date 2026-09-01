@@ -18,7 +18,7 @@ Dates are intentionally omitted until the preceding quality gate passes. A featu
 | `1.4.0` | Shared Wine prefix for large libraries | Released |
 | `1.4.2` | Secure self-update, selectable debrid services and transfer reliability hardening | Released |
 | `1.5.0` | Handheld quality: themes, provider adapters, installer review, profile sharing safety and cockpit tabs | Released; device soak remains measurement-gated |
-| `1.6.0` | Container platform: layers, isolation tiers, launch budgets, dual-slot repair and Wine warm-start | Next runtime-quality milestone |
+| `1.6.0` | Container platform: layers, isolation tiers, launch budgets, dual-slot repair and Wine warm-start | Released; device soak remains measurement-gated |
 | `1.7.0` | Daily-play console: input, audio, Doctor, Shader Health, install queue, save backup | After `1.6.0` |
 | `1.8.0` | Last `1.x`: graphics preflight, path fallbacks, integer scale, unified library, move/repair | After `1.7.0` |
 | `2.0.0` | Eight required majors: Identity, Runtime Fabric, Presentation Engine 2.0, Exchange, Link, Console Shell, Save Vault, Launch Protocol + Adapter SDK | Future architecture |

@@ -6,7 +6,7 @@
 
 `1.7.0` takes daily-play (input, audio, Doctor). `1.8.0` takes graphics-path productization. `2.0.0` still owns the eight required majors (Identity, Runtime Fabric, Presentation Engine 2.0, Exchange, Link, Console Shell, Save Vault, Adapter SDK). `1.6.0` only changes how the existing ImageFs, container, wineserver and presentation path start, idle and recover.
 
-Work may proceed in parallel with remaining `1.5.0` measurement (Thor soak, Perfetto). A `1.6.0` APK must not claim a frame-rate gain until the [performance method](PERFORMANCE.md) is satisfied.
+The first `1.6.0` APK ships the platform contracts: warm-start marker, transactional activate, prefix lock, config-mtime cache, Doctor lock/volume kinds, last-launch explain, dual-slot registry snapshot and save-safe trim. Thor soak, Perfetto scanout proof, named-group UI and a full Container Studio screen remain open. A `1.6.0` APK must not claim a frame-rate gain until the [performance method](PERFORMANCE.md) is satisfied.
 
 ## Product outcomes
 

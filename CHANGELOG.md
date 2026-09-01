@@ -1,11 +1,21 @@
 # Changelog
 
+## 1.6.0 - 2026-09-01
+
+- Skip wineboot and overlay copies on a warm prefix when the generation marker matches and the last shutdown was clean.
+- Make same-container activate a no-op and replace `xuser` through a next/prev symlink so a crash cannot leave an empty pointer.
+- Cache container config JSON by mtime so constructing ContainerManager does not re-parse unchanged files.
+- Lock a shared prefix so a second game or installer cannot mutate it at the same time.
+- Name a missing game volume and a held prefix lock as Doctor kinds instead of a generic Wine crash.
+- Kill wineserver only after the last pre-install step, not between sequential prerequisite installs.
+- Pause provider catalog refresh while a play session owns the prefix.
+- Record last-launch stage timings, a recipe hash, isolation tier and a dual-slot registry snapshot after a clean exit.
+- Trim preview refuses Saved Games and Steam userdata. Installers mark a shared prefix dirty.
+- This APK does not claim a frame-rate gain or a 60-minute Thor soak.
+
 ## Unreleased
 
-- Add the `1.6.0` runtime-quality roadmap for Wine warm-start, container activate, shared-prefix remap, prefix trim and launch smoothness.
-- Define the OpenNative container platform: layered prefixes, isolation tiers, launch budgets, dual-slot repair, dirty map and Container Studio.
 - Add `1.7.0` daily-play and `1.8.0` last-`1.x` roadmaps, and require eight named majors for `2.0.0`.
-- Expand the feature and emulation roadmap with wineserver, ImageFs, guest I/O, XServer idle-cost and control-plane work.
 
 ## 1.5.0 - 2026-08-31
 

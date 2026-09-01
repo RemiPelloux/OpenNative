@@ -87,6 +87,7 @@ object ProviderWineSetup {
             InstallerGameDir.remapDriveA(container, root.absolutePath)
             container.executablePath = game.relativeTo(root).invariantSeparatorsPath
             container.saveData()
+            app.gamenative.container.ContainerControlStore.markDirty(container.rootDir, appId, true)
         }
         if (root == gameDir) {
             val marker = File(pack, ".gamenative")

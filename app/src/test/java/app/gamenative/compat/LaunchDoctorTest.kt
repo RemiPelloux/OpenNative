@@ -23,6 +23,11 @@ class LaunchDoctorTest {
         val graphics = LaunchDoctor.classify(LaunchDoctorInput(hint = "vkCreateDevice failed"))
         assertEquals(LaunchFailureKind.GRAPHICS_INIT, graphics.kind)
         assertEquals(LaunchRecovery.SAFE_LAUNCH, graphics.recovery)
+
+        val locked = LaunchDoctor.classify(LaunchDoctorInput(hint = "prefix lock held by game-b"))
+        assertEquals(LaunchFailureKind.PREFIX_LOCKED, locked.kind)
+        val volume = LaunchDoctor.classify(LaunchDoctorInput(hint = "volume missing at granted location"))
+        assertEquals(LaunchFailureKind.VOLUME_MISSING, volume.kind)
     }
 
     @Test

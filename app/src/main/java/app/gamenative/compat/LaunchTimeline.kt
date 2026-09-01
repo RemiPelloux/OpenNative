@@ -7,7 +7,7 @@ class LaunchTimeline(
 
     fun mark(stage: String) {
         val name = stage.trim()
-        if (name.isEmpty() || events.size >= 8) return
+        if (name.isEmpty() || events.size >= 16) return
         if (events.lastOrNull() == name) return
         events.add(name)
     }

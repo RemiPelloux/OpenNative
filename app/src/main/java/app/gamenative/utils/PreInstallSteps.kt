@@ -69,17 +69,20 @@ object PreInstallSteps {
                     gameDir = gameDir,
                     gameDirPath = gameDirPath,
                 )?.let { cmd ->
-                    commands.add(
-                        PreInstallCommand(
-                            marker = step.marker,
-                            executable = wrapAsGuestExecutable(cmd, screenInfo),
-                        ),
-                    )
+                    commands.add(PreInstallCommand(marker = step.marker, executable = cmd))
                 }
             }
         }
 
-        return commands
+        return commands.mapIndexed { index, command ->
+            command.copy(
+                executable = wrapAsGuestExecutable(
+                    cmdChain = command.executable,
+                    screenInfo = screenInfo,
+                    killServer = index == commands.lastIndex,
+                ),
+            )
+        }
     }
 
     fun markAllDone(container: Container) {
@@ -102,9 +105,13 @@ object PreInstallSteps {
         }
     }
 
-    private fun wrapAsGuestExecutable(cmdChain: String, screenInfo: String): String {
-        val wrapped = "winhandler.exe cmd /c \"$cmdChain & taskkill /F /IM explorer.exe & wineserver -k\""
-        return "wine explorer /desktop=shell,$screenInfo $wrapped"
+    private fun wrapAsGuestExecutable(cmdChain: String, screenInfo: String, killServer: Boolean): String {
+        val stop = if (killServer) {
+            " & taskkill /F /IM explorer.exe & wineserver -k"
+        } else {
+            " & taskkill /F /IM explorer.exe"
+        }
+        return "wine explorer /desktop=shell,$screenInfo winhandler.exe cmd /c \"$cmdChain$stop\""
     }
 
     private fun getGameDir(container: Container): File? {

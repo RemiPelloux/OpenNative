@@ -7,6 +7,8 @@ enum class LaunchFailureKind {
     CPU_TRANSLATION,
     GRAPHICS_INIT,
     LOW_STORAGE,
+    PREFIX_LOCKED,
+    VOLUME_MISSING,
     ABNORMAL_EXIT,
 }
 
@@ -29,6 +31,7 @@ data class LaunchDiagnosis(
     val resolution: String,
     val frameLimit: String,
     val timeline: List<String>,
+    val lastExplain: String = "",
 )
 
 data class LaunchDoctorInput(
@@ -44,6 +47,7 @@ data class LaunchDoctorInput(
     val freeBytes: Long = Long.MAX_VALUE,
     val timeline: List<String> = emptyList(),
     val sessionLengthSec: Int = 0,
+    val lastExplain: String = "",
 )
 
 object LaunchDoctor {
@@ -63,6 +67,7 @@ object LaunchDoctor {
             resolution = input.resolution,
             frameLimit = input.frameLimit,
             timeline = input.timeline,
+            lastExplain = input.lastExplain,
         )
     }
 
@@ -82,10 +87,16 @@ object LaunchDoctor {
             append(diagnosis.timeline.joinToString(" → "))
             append('.')
         }
+        if (diagnosis.lastExplain.isNotBlank()) {
+            append(' ')
+            append(diagnosis.lastExplain)
+        }
     }
 
     private fun kindOf(input: LaunchDoctorInput, hint: String): LaunchFailureKind = when {
         input.freeBytes < LOW_STORAGE_BYTES || hint.contains("no space") -> LaunchFailureKind.LOW_STORAGE
+        hint.contains("prefix lock") -> LaunchFailureKind.PREFIX_LOCKED
+        hint.contains("volume missing") -> LaunchFailureKind.VOLUME_MISSING
         input.executableMissing || hint.contains("not found") || hint.contains("invalid exe") ->
             LaunchFailureKind.INVALID_EXECUTABLE
         hint.contains("missing") && (hint.contains("component") || hint.contains("dxvk") || hint.contains("wine")) ->
@@ -105,6 +116,8 @@ object LaunchDoctor {
         LaunchFailureKind.CPU_TRANSLATION -> "CPU translation faulted while starting the Windows binary."
         LaunchFailureKind.GRAPHICS_INIT -> "Graphics initialization failed before the first frame."
         LaunchFailureKind.LOW_STORAGE -> "There is not enough free storage to complete this launch."
+        LaunchFailureKind.PREFIX_LOCKED -> "Another game or installer is already using this Wine prefix."
+        LaunchFailureKind.VOLUME_MISSING -> "The game drive is on a volume that is not mounted."
         LaunchFailureKind.ABNORMAL_EXIT -> "The session ended before a playable state was reached."
     }
 
@@ -112,6 +125,8 @@ object LaunchDoctor {
         LaunchFailureKind.MISSING_COMPONENT -> LaunchRecovery.REPAIR_COMPONENT
         LaunchFailureKind.INVALID_EXECUTABLE -> LaunchRecovery.CHOOSE_EXECUTABLE
         LaunchFailureKind.LOW_STORAGE -> LaunchRecovery.EXPORT_REPORT
+        LaunchFailureKind.PREFIX_LOCKED -> LaunchRecovery.RETRY
+        LaunchFailureKind.VOLUME_MISSING -> LaunchRecovery.EXPORT_REPORT
         LaunchFailureKind.WINE_FAILURE,
         LaunchFailureKind.CPU_TRANSLATION,
         LaunchFailureKind.GRAPHICS_INIT,

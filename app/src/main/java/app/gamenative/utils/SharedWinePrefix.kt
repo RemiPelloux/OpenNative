@@ -79,6 +79,11 @@ object SharedWinePrefix {
             rememberMember(context, appId)
         }
         container.saveData()
+        val control = app.gamenative.container.ContainerControlStore.read(container.rootDir, true)
+        app.gamenative.container.ContainerControlStore.write(
+            container.rootDir,
+            control.copy(isolation = app.gamenative.container.IsolationTier.SHARED_COMPACT),
+        )
     }
 
     private fun overlayDir(context: Context): File =

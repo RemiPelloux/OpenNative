@@ -23,8 +23,8 @@ OpenNative is an independent open-source project. It does not include games, fir
 
 | Channel | Version | Status |
 | --- | --- | --- |
-| Stable | `1.5.0` | Handheld appearance, provider adapters, installer review, profile import safety and cockpit tabs |
-| Next milestone | `1.6.0` | Container platform, Wine warm-start, launch budgets and dual-slot repair |
+| Stable | `1.6.0` | Container platform: warm prefix, prefix lock, transactional activate and last-launch explain |
+| Next milestone | `1.7.0` | Daily-play console: input, audio, Doctor, queue and save backup |
 | Then | `1.7.0` → `1.8.0` | Daily-play console, then graphics preflight and unified library |
 | Architecture milestone | `2.0.0` | Eight required majors: Identity, Runtime Fabric, Presentation 2.0, Exchange, Link, Console Shell, Save Vault, Adapter SDK |
 
@@ -95,7 +95,15 @@ See [provider tabs](docs/CUSTOM_PROVIDER_TABS.md) and [feed contract](docs/PROVI
 - Portable profile import previews diffs, writes a rollback backup, and Ask-after-install cleanup stays off until confirmed.
 - The secondary-display cockpit uses Session, Performance and Shortcuts tabs with OpenNative branding.
 
-Device soak traces and claimed frame-delivery gains are not part of this APK. Those remain measurement-gated work. See [1.5.0 roadmap](docs/ROADMAP_1.5.0.md).
+Device soak traces and claimed frame-delivery gains are not part of the `1.5.0` or `1.6.0` APKs. Those remain measurement-gated. See [1.6.0 roadmap](docs/ROADMAP_1.6.0.md).
+
+## 1.6.0
+
+- A warm prefix skips wineboot and matching overlay copies.
+- Same-container activate no longer deletes `home/xuser` and relinks.
+- Shared-prefix play takes a lock; catalog refresh waits.
+- Doctor distinguishes a held prefix lock and a missing volume.
+- Clean exits write a recipe hash, last-launch explain and a dual-slot registry snapshot.
 
 ## Platform support
 

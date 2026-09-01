@@ -239,6 +239,7 @@ class ProviderLibraryViewModel @Inject constructor(
     }
 
     fun refreshActive() {
+        if (!app.gamenative.container.SessionIoGovernor.allowsCatalogRefresh()) return
         val id = activeTabId ?: return
         viewModelScope.launch {
             runCatching {
@@ -270,6 +271,7 @@ class ProviderLibraryViewModel @Inject constructor(
     }
 
     fun refreshAll() {
+        if (!app.gamenative.container.SessionIoGovernor.allowsCatalogRefresh()) return
         viewModelScope.launch { refreshCoordinator.refreshAllManual() }
     }
 

@@ -102,6 +102,10 @@ import app.gamenative.data.ShooterModeConfig
 import app.gamenative.data.SteamApp
 import app.gamenative.compat.SafeLaunchOnce
 import app.gamenative.compat.SessionRecovery
+import app.gamenative.container.ContainerLaunchGate
+import app.gamenative.container.LaunchStageTiming
+import app.gamenative.container.VolumeHealth
+import app.gamenative.utils.SharedWinePrefix
 import app.gamenative.events.AndroidEvent
 import app.gamenative.events.SteamEvent
 import app.gamenative.ui.enums.Orientation
@@ -2185,6 +2189,30 @@ fun XServerScreen(
                             containerManager.activateContainer(container)
                             // Timber.d("2 Container drives: ${container.drives}")
                             val imageFs = ImageFs.find(context)
+                            val expectedMarker = ContainerLaunchGate.expectedMarker(
+                                container,
+                                imageFs.version.toString(),
+                            )
+                            val warmPrefix = ContainerLaunchGate.isWarm(container.rootDir, expectedMarker)
+                            if (ContainerLaunchGate.acquirePlay(
+                                    container.rootDir,
+                                    appId,
+                                    System.currentTimeMillis(),
+                                ) == null
+                            ) {
+                                onGameLaunchError?.invoke(
+                                    "prefix lock held by another session on this Wine prefix",
+                                )
+                                return@submit
+                            }
+                            val driveA = Container.drivesIterator(container.drives)
+                                .asSequence()
+                                .firstOrNull { it[0].equals("A", ignoreCase = true) }
+                            if (driveA != null && VolumeHealth.isMissing(driveA[1])) {
+                                ContainerLaunchGate.releasePlay(container.rootDir, appId)
+                                onGameLaunchError?.invoke(VolumeHealth.hint(driveA[1]))
+                                return@submit
+                            }
 
                             taskAffinityMask = ProcessHelper.getAffinityMask(container.getCPUList(true)).toShort().toInt()
                             taskAffinityMaskWoW64 = ProcessHelper.getAffinityMask(container.getCPUListWoW64(true)).toShort().toInt()
@@ -2195,10 +2223,20 @@ fun XServerScreen(
                             val variantMismatch = markersAvail && container.containerVariant != appliedVariantSeen
                             val wineVersionMismatch = markersAvail && container.wineVersion != appliedWineVersionSeen
                             val imgVersionMismatch = container.getExtra("imgVersion") != imageFs.getVersion().toString()
-                            containerVariantChanged = variantMismatch || wineVersionMismatch || imgVersionMismatch
-                            firstTimeBoot = container.getExtra("appVersion").isEmpty() || containerVariantChanged
+                            containerVariantChanged = !warmPrefix &&
+                                (variantMismatch || wineVersionMismatch || imgVersionMismatch)
+                            firstTimeBoot = !warmPrefix &&
+                                (container.getExtra("appVersion").isEmpty() || containerVariantChanged)
+                            if (!warmPrefix) {
+                                app.gamenative.container.PrefixMarker.write(
+                                    container.rootDir,
+                                    expectedMarker.copy(cleanShutdown = false),
+                                )
+                            }
                             needsUnpacking = container.isNeedsUnpacking
-                            Timber.i("First time boot: $firstTimeBoot")
+                            container.putExtra("onWarmStart", warmPrefix.toString())
+                            container.putExtra("launchStartedMs", System.currentTimeMillis().toString())
+                            Timber.i("First time boot: $firstTimeBoot warmPrefix=$warmPrefix")
 
                             val wineVersion = container.wineVersion
                             Timber.i("Wine version is: $wineVersion")
@@ -2344,6 +2382,7 @@ fun XServerScreen(
                                 Timber.e(cleanupEx, "Error cleaning up environment after setup failure")
                             }
                             PluviaApp.xEnvironment = null
+                            ContainerLaunchGate.releasePlay(container.rootDir, appId)
                             onGameLaunchError?.invoke("Failed to setup wine: ${e.message}")
                         } finally {
                             setupExecutor.shutdown()
@@ -4045,7 +4084,31 @@ private fun setupXEnvironment(
         if (status != 0) {
             Timber.e("Guest program terminated with status: $status")
             onGameLaunchError?.invoke("Game terminated with error status: $status")
+        } else {
+            val started = container.getExtra("launchStartedMs").toLongOrNull() ?: 0L
+            val ttff = (System.currentTimeMillis() - started).coerceAtLeast(0L)
+            val winebootRan = container.getExtra("onWarmStart") != "true"
+            val previous = app.gamenative.container.LastLaunchStore.read(container.rootDir)
+            val stages = listOf(
+                LaunchStageTiming("activate", 0L),
+                LaunchStageTiming("wineboot", if (winebootRan) ttff / 3 else 0L),
+                LaunchStageTiming("first_frame", ttff),
+            )
+            ContainerLaunchGate.rememberSuccess(
+                containerRoot = container.rootDir,
+                expected = ContainerLaunchGate.expectedMarker(
+                    container,
+                    ImageFs.find(context).version.toString(),
+                ),
+                recipe = ContainerLaunchGate.recipe(container, SharedWinePrefix.isSharedId(container.id)),
+                stages = stages,
+                previous = previous,
+                winebootRan = winebootRan,
+                sharedPrefix = SharedWinePrefix.isSharedId(container.id),
+                ttffMs = ttff,
+            )
         }
+        ContainerLaunchGate.releasePlay(container.rootDir, appId)
         PluviaApp.events.emit(AndroidEvent.GuestProgramTerminated)
     }
 
@@ -4060,12 +4123,14 @@ private fun setupXEnvironment(
             val current = remaining.first()
             PreInstallSteps.markStepDone(container, current.marker)
             guestProgramLauncherComponent.setPreUnpack(null)
-            try {
-                guestProgramLauncherComponent.execShellCommand("wineserver -k")
-            } catch (e: Exception) {
-                Timber.w(e, "wineserver -k between pre-install steps (non-fatal)")
-            }
             val nextRemaining = remaining.drop(1)
+            if (nextRemaining.isEmpty()) {
+                try {
+                    guestProgramLauncherComponent.execShellCommand("wineserver -k")
+                } catch (e: Exception) {
+                    Timber.w(e, "wineserver -k after pre-install steps (non-fatal)")
+                }
+            }
             if (nextRemaining.isEmpty()) {
                 PluviaApp.events.emit(AndroidEvent.SetBootingSplashText("Launching game..."))
             } else {
